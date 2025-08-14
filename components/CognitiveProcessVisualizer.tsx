@@ -1,6 +1,6 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
-import type { CognitiveProcess, ChatMessage, PlanStep } from '../types';
-import { BrainCircuitIcon, UserIcon, BookOpenIcon, CogIcon, CheckCircleIcon, CubeTransparentIcon, PlayIcon, PencilIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, PlusCircleIcon, CodeBracketIcon, LightBulbIcon, LinkIcon, ArrowRightIcon } from './Icons';
+import type { CognitiveProcess, ChatMessage, PlanStep, CognitiveConstitution, SimulatedImage } from '../types';
+import { BrainCircuitIcon, UserIcon, BookOpenIcon, CogIcon, CheckCircleIcon, CubeTransparentIcon, PlayIcon, PencilIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, PlusCircleIcon, CodeBracketIcon, LightBulbIcon, LinkIcon, ArrowRightIcon, PhotographIcon, SparklesIcon } from './Icons';
 import Markdown from 'react-markdown';
 
 interface CognitiveProcessVisualizerProps {
@@ -11,6 +11,7 @@ interface CognitiveProcessVisualizerProps {
   onAddPlanStep: (messageId: string) => void;
   onDeletePlanStep: (messageId: string, stepIndex: number) => void;
   onSavePlanAsToolchain: (plan: PlanStep[]) => void;
+  constitutions: CognitiveConstitution[];
 }
 
 const GroundingCitations: React.FC<{ metadata: any }> = memo(({ metadata }) => {
@@ -58,6 +59,31 @@ const UserMessage: React.FC<{ message: ChatMessage }> = memo(({ message }) => (
 ));
 UserMessage.displayName = 'UserMessage';
 
+const SimulatedImageViewer: React.FC<{ image: SimulatedImage }> = memo(({ image }) => {
+    const { balance, complexity, harmony, novelty } = image.properties;
+    
+    // Generate a deterministic but visually interesting background
+    const gradientAngle = (harmony * 360).toFixed(0);
+    const colorStop1 = `hsl(${(novelty * 360).toFixed(0)}, 70%, 50%)`;
+    const colorStop2 = `hsl(${(balance * 120 + 240).toFixed(0)}, 60%, 50%)`;
+
+    return (
+        <div className="mt-2 p-2 bg-nexus-dark/50 rounded-md">
+            <p className="text-xs text-nexus-text-muted font-mono mb-2">Generated Image: {image.id}</p>
+            <div 
+                className="w-full h-24 rounded border-2 border-nexus-surface"
+                style={{
+                    background: `linear-gradient(${gradientAngle}deg, ${colorStop1}, ${colorStop2})`,
+                    filter: `blur(${(1-complexity) * 3}px)`,
+                    opacity: 0.8
+                }}
+            ></div>
+        </div>
+    );
+});
+SimulatedImageViewer.displayName = 'SimulatedImageViewer';
+
+
 const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: boolean, onUpdate: (newStep: PlanStep) => void, onDelete: () => void, onMove: (direction: 'up' | 'down') => void, isFirst: boolean, isLast: boolean }> = ({ step, isCurrent, isEditable, onUpdate, onDelete, onMove, isFirst, isLast }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -94,16 +120,33 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
             case 'google_search': return <CubeTransparentIcon className="w-4 h-4 text-blue-400" />;
             case 'code_interpreter': return <CodeBracketIcon className="w-4 h-4 text-purple-400" />;
             case 'evoke_qualia': return <LightBulbIcon className="w-4 h-4 text-yellow-400" />;
+            case 'generate_image': return <PhotographIcon className="w-4 h-4 text-green-400" />;
+            case 'analyze_image_input': return <SparklesIcon className="w-4 h-4 text-pink-400" />;
             default: return <CogIcon className="w-4 h-4 text-gray-400" />;
         }
     }
+    
+    const renderResult = () => {
+        if (!step.result) return null;
+
+        if (typeof step.result === 'object' && step.result.id?.startsWith('img-')) {
+            return <SimulatedImageViewer image={step.result as SimulatedImage} />;
+        }
+        
+        return <p className="text-xs text-green-400/80 font-mono italic">Result: {String(step.result).substring(0, 100)}...</p>;
+    };
+
 
     return (
         <li className={`p-2 rounded-md transition-all duration-300 ${isCurrent ? 'bg-nexus-primary/10' : ''} ${isEditable ? 'hover:bg-nexus-surface/50' : ''}`}>
              <div className="flex items-center gap-3 cursor-pointer" onClick={() => setIsOpen(!isOpen)}>
                  <div className="pt-0.5">{statusIcon()}</div>
                  <div className="flex-grow">
-                     <p className={`font-semibold flex items-center gap-2 ${isCurrent ? 'text-nexus-primary' : 'text-nexus-text'}`}>{getStepIcon()} {step.description}</p>
+                     <p className={`font-semibold flex items-center gap-2 ${isCurrent ? 'text-nexus-primary' : 'text-nexus-text'}`}>
+                        {getStepIcon()}
+                        {step.description}
+                        {step.inputRef && <span className="text-xs text-nexus-text-muted font-mono">(Input: Step {step.inputRef})</span>}
+                     </p>
                  </div>
                  <span className={`transform transition-transform duration-200 ${isOpen ? 'rotate-90' : 'rotate-0'}`}>
                      <ArrowRightIcon className="w-4 h-4 text-nexus-text-muted" />
@@ -125,9 +168,7 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
                         </div>
                     ) : (
                         <div className="flex items-center justify-between mt-1">
-                            <div>
-                                {step.result && <p className="text-xs text-green-400/80 font-mono italic">Result: {step.result.substring(0, 100)}...</p>}
-                            </div>
+                            <div className="flex-grow">{renderResult()}</div>
                             {isEditable && (
                                 <div className="flex-shrink-0 flex items-center gap-1">
                                     { (step.tool !== 'synthesize_answer') && <button onClick={() => setIsEditing(true)} className="p-1 text-nexus-text-muted hover:text-nexus-primary" title="Edit Step"><PencilIcon className="w-4 h-4"/></button> }
@@ -145,9 +186,10 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
 };
 
 const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMessage }> = memo((props) => {
-    const { message, onExecutePlan, onUpdatePlanStep, onReorderPlan, onAddPlanStep, onDeletePlanStep, onSavePlanAsToolchain } = props;
+    const { message, onExecutePlan, onUpdatePlanStep, onReorderPlan, onAddPlanStep, onDeletePlanStep, onSavePlanAsToolchain, constitutions } = props;
     const isPlanEditable = message.state === 'awaiting_execution' && !message.isPlanFinalized;
     const [isPlanOpen, setIsPlanOpen] = useState(true);
+    const activeConstitution = constitutions.find(c => c.id === message.constitutionId);
 
     const renderContent = () => {
         if (message.state === 'planning') {
@@ -169,6 +211,15 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
                             </span>
                              {isPlanEditable ? "Cognitive Plan (Review & Edit)" : "Cognitive Plan"}
                         </span>
+                         {activeConstitution && (
+                            <div className="relative group text-xs font-normal normal-case bg-nexus-dark px-2 py-0.5 rounded-full text-nexus-secondary font-mono" title={activeConstitution.description}>
+                                {activeConstitution.name}
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-nexus-dark text-white text-xs rounded-md p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">
+                                     Constitution active during planning.
+                                     <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-nexus-dark"></div>
+                                </div>
+                            </div>
+                        )}
                          {message.isPlanFinalized && (
                             <button onClick={() => onSavePlanAsToolchain(message.plan!)} title="Save as Toolchain" className="flex items-center gap-1 text-xs bg-nexus-surface px-2 py-1 rounded text-nexus-text-muted hover:bg-nexus-primary hover:text-nexus-dark transition-all">
                                 <LinkIcon className="w-3 h-3"/> Save as Toolchain

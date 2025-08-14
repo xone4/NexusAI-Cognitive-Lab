@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, QualiaVector, Interaction, SuggestionProfile } from '../types';
+import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, QualiaVector, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal } from '../types';
 
 // IMPORTANT: This would be populated by a secure mechanism in a real app
 const API_KEY = process.env.API_KEY;
@@ -13,6 +13,8 @@ let replicaState: Replica;
 let toolsState: MentalTool[];
 let toolchainsState: Toolchain[];
 let cognitiveProcess: CognitiveProcess;
+let constitutionsState: CognitiveConstitution[];
+let evolutionState: EvolutionState;
 let isCancelled = false;
 let appSettings: AppSettings = {
     model: 'gemini-2.5-flash',
@@ -23,6 +25,7 @@ let appSettings: AppSettings = {
 };
 
 let currentController: AbortController | null = null;
+let evolutionInterval: any = null;
 
 let logSubscribers: ((log: LogEntry) => void)[] = [];
 let performanceSubscribers: ((dataPoint: PerformanceDataPoint) => void)[] = [];
@@ -30,6 +33,9 @@ let replicaSubscribers: ((replicaState: Replica) => void)[] = [];
 let cognitiveProcessSubscribers: ((process: CognitiveProcess) => void)[] = [];
 let toolsSubscribers: ((tools: MentalTool[]) => void)[] = [];
 let toolchainSubscribers: ((toolchains: Toolchain[]) => void)[] = [];
+let constitutionSubscribers: ((constitutions: CognitiveConstitution[]) => void)[] = [];
+let evolutionSubscribers: ((evolutionState: EvolutionState) => void)[] = [];
+
 
 let suggestedQueries: string[] | null = null;
 let suggestionsPromise: Promise<string[]> | null = null;
@@ -38,6 +44,8 @@ const SUGGESTIONS_CACHE_KEY = 'nexusai-query-suggestions';
 const REPLICA_STATE_KEY = 'nexusai-replica-state';
 const TOOLS_STATE_KEY = 'nexusai-tools-state';
 const TOOLCHAINS_STATE_KEY = 'nexusai-toolchains-state';
+const CONSTITUTIONS_STATE_KEY = 'nexusai-constitutions-state';
+
 
 const saveReplicaState = () => {
     try {
@@ -66,11 +74,20 @@ const saveToolchainsState = () => {
     }
 };
 
+const saveConstitutionsState = () => {
+    try {
+        localStorage.setItem(CONSTITUTIONS_STATE_KEY, JSON.stringify(constitutionsState));
+    } catch (error) {
+        console.error("Failed to save constitutions state to localStorage", error);
+        log('ERROR', 'Failed to save constitutions state.');
+    }
+};
+
 
 const log = (level: LogEntry['level'], message: string) => {
   const verbosityMap = {
-      STANDARD: ['ERROR', 'WARN', 'SYSTEM', 'AI', 'REPLICA'],
-      VERBOSE: ['ERROR', 'WARN', 'SYSTEM', 'AI', 'REPLICA', 'INFO'],
+      STANDARD: ['ERROR', 'WARN', 'SYSTEM', 'AI', 'REPLICA', 'NETWORK'],
+      VERBOSE: ['ERROR', 'WARN', 'SYSTEM', 'AI', 'REPLICA', 'INFO', 'NETWORK'],
   };
   if (!verbosityMap[appSettings.logVerbosity].includes(level)) {
       return;
@@ -103,6 +120,16 @@ const notifyTools = () => {
 const notifyToolchains = () => {
     const toolchainsSnapshot = JSON.parse(JSON.stringify(toolchainsState));
     toolchainSubscribers.forEach(cb => cb(toolchainsSnapshot));
+}
+
+const notifyConstitutions = () => {
+    const constitutionsSnapshot = JSON.parse(JSON.stringify(constitutionsState));
+    constitutionSubscribers.forEach(cb => cb(constitutionsSnapshot));
+}
+
+const notifyEvolution = () => {
+    const evolutionSnapshot = JSON.parse(JSON.stringify(evolutionState));
+    evolutionSubscribers.forEach(cb => cb(evolutionSnapshot));
 }
 
 const findReplica = (id: string, node: Replica): {parent: Replica | null, node: Replica, index: number} | null => {
@@ -172,6 +199,27 @@ const updateReplicaState = (node: Replica, root: Replica) => {
 
 
 const initialize = () => {
+    // --- Load Constitutions ---
+    const savedConstitutionsJSON = localStorage.getItem(CONSTITUTIONS_STATE_KEY);
+    let loadedConstitutions = false;
+    if (savedConstitutionsJSON) {
+        try {
+            const parsed = JSON.parse(savedConstitutionsJSON);
+            if(Array.isArray(parsed) && parsed.length > 0) {
+                constitutionsState = parsed;
+                loadedConstitutions = true;
+            }
+        } catch (e) { console.warn('Corrupted constitutions state. Initializing defaults.', e); }
+    }
+    if (!loadedConstitutions) {
+        constitutionsState = [
+            { id: 'const-balanced', name: 'Balanced Protocol', description: 'Standard operating parameters for general-purpose cognition.', rules: [] },
+            { id: 'const-creative', name: 'Creative Expansion', description: 'Loosens constraints to allow for more novel connections and plans.', rules: [{type: 'MAX_PLAN_STEPS', value: 20, description: 'Allows for complex, multi-stage planning (up to 20 steps).'}] },
+            { id: 'const-logical', name: 'Strict Logic', description: 'Enforces rigorous, efficient processing with minimal deviation.', rules: [{type: 'MAX_REPLICAS', value: 3, description: 'Limits cognitive branching to 3 sub-replicas.'}, {type: 'FORBIDDEN_TOOLS', value: ['evoke_qualia'], description: 'Disables use of subjective qualia tools.'}] },
+        ];
+        saveConstitutionsState();
+    }
+
     // --- Load Replicas State ---
     const savedReplicasJSON = localStorage.getItem(REPLICA_STATE_KEY);
     let loadedReplicas = false;
@@ -180,11 +228,12 @@ const initialize = () => {
             const parsed = JSON.parse(savedReplicasJSON);
             if (parsed && typeof parsed === 'object' && !Array.isArray(parsed) && parsed.id) {
                 // Ensure interactions array exists on all loaded replicas
-                const addInteractions = (node: Replica) => {
+                const fixReplica = (node: Replica) => {
                     node.interactions = node.interactions || [];
-                    node.children.forEach(addInteractions);
+                    node.activeConstitutionId = node.activeConstitutionId || constitutionsState[0].id;
+                    node.children.forEach(fixReplica);
                 };
-                addInteractions(parsed);
+                fixReplica(parsed);
                 replicaState = parsed;
                 loadedReplicas = true;
             } else {
@@ -206,9 +255,10 @@ const initialize = () => {
             memoryUsage: 75,
             cpuUsage: 60,
             interactions: [],
+            activeConstitutionId: constitutionsState[0].id,
             children: [
-                { id: 'replica-1', name: 'Sub-Cognition-β1', depth: 1, status: 'Active', load: 45, purpose: 'Sensory Data Analysis', efficiency: 88, memoryUsage: 50, cpuUsage: 40, children: [], interactions: [] },
-                { id: 'replica-2', name: 'Sub-Cognition-β2', depth: 1, status: 'Dormant', load: 10, purpose: 'Archived Task Simulation', efficiency: 75, memoryUsage: 15, cpuUsage: 5, children: [], interactions: [] }
+                { id: 'replica-1', name: 'Sub-Cognition-β1', depth: 1, status: 'Active', load: 45, purpose: 'Sensory Data Analysis', efficiency: 88, memoryUsage: 50, cpuUsage: 40, children: [], interactions: [], activeConstitutionId: constitutionsState[0].id, },
+                { id: 'replica-2', name: 'Sub-Cognition-β2', depth: 1, status: 'Dormant', load: 10, purpose: 'Archived Task Simulation', efficiency: 75, memoryUsage: 15, cpuUsage: 5, children: [], interactions: [], activeConstitutionId: constitutionsState[0].id, }
             ]
         };
         saveReplicaState();
@@ -268,11 +318,24 @@ const initialize = () => {
         history: [],
         activeQualiaVector: null,
     };
+    
+    // Evolution state is also ephemeral for this simulation
+    evolutionState = {
+        isRunning: false,
+        config: {
+            populationSize: 50,
+            mutationRate: 0.1,
+            generations: 100,
+            fitnessGoal: 'SHORTEST_CHAIN'
+        },
+        progress: [],
+        fittestIndividual: null
+    };
 };
 
 initialize();
 
-const planSchema = { type: Type.OBJECT, properties: { plan: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { step: { type: Type.INTEGER }, description: { type: Type.STRING }, tool: { type: Type.STRING, enum: ['google_search', 'synthesize_answer', 'code_interpreter', 'evoke_qualia'] }, query: { type: Type.STRING }, code: { type: Type.STRING }, concept: { type: Type.STRING } }, required: ['step', 'description', 'tool'] } } }, required: ['plan'] };
+const planSchema = { type: Type.OBJECT, properties: { plan: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { step: { type: Type.INTEGER }, description: { type: Type.STRING }, tool: { type: Type.STRING, enum: ['google_search', 'synthesize_answer', 'code_interpreter', 'evoke_qualia', 'generate_image', 'analyze_image_input'] }, query: { type: Type.STRING }, code: { type: Type.STRING }, concept: { type: Type.STRING }, inputRef: { type: Type.INTEGER } }, required: ['step', 'description', 'tool'] } } }, required: ['plan'] };
 
 const getSystemInstruction = () => {
     const personalityInstruction = {
@@ -290,6 +353,8 @@ const getSystemInstruction = () => {
     - \`google_search\`: Use for any query that requires up-to-date, real-world information. The 'query' field should be a concise search term.
     - \`code_interpreter\`: Use for calculations, data manipulation, or any logical operations. The 'code' field should contain valid JavaScript that returns a value.
     - \`evoke_qualia\`: Use for queries involving abstract, emotional, or subjective concepts. This sets an internal "cognitive context" or "mood". The 'concept' field should contain the abstract idea (e.g., "melancholic nostalgia"). This step does not produce direct output but influences the final synthesis. Use it sparingly and only when appropriate.
+    - \`generate_image\`: Use to create a simulated image from a concept. The 'concept' field should describe the image. This step's result is a special image object.
+    - \`analyze_image_input\`: Use to analyze a previously generated image. Requires 'inputRef' to be set to the step number of the 'generate_image' step.
     - \`synthesize_answer\`: The final step of any plan. This tool takes the results of all previous steps to compose the final answer for the user.
 
     2.  **EXECUTION STAGE**: After the user approves your plan, you will execute it. You will be called upon to perform each step. For the final 'synthesize_answer' step, you will be given the original query, the results of all previous plan steps, and potentially an active "Qualia Vector" representing a cognitive state. Your task is to compose a comprehensive, well-formatted markdown answer that is factually accurate but whose tone, style, and metaphors are subtly influenced by this active cognitive state.`;
@@ -332,6 +397,8 @@ const service = {
         initialReplicas: JSON.parse(JSON.stringify(replicaState)),
         initialTools: JSON.parse(JSON.stringify(toolsState)),
         initialToolchains: JSON.parse(JSON.stringify(toolchainsState)),
+        initialConstitutions: JSON.parse(JSON.stringify(constitutionsState)),
+        initialEvolutionState: JSON.parse(JSON.stringify(evolutionState)),
         initialCognitiveProcess: JSON.parse(JSON.stringify(cognitiveProcess)),
         initialLogs: [
             { id: 'init-1', timestamp: Date.now() - 2000, level: 'SYSTEM', message: 'NexusAI Cognitive Core Initializing...' },
@@ -369,7 +436,8 @@ const service = {
                 memoryUsage: 20 + Math.random() * 10,
                 cpuUsage: 25 + Math.random() * 10,
                 children: [],
-                interactions: []
+                interactions: [],
+                activeConstitutionId: parent.activeConstitutionId,
             };
             parent.children.push(newReplica);
             log('REPLICA', `Spawning new replica ${newReplica.name} under ${parent.name}.`);
@@ -445,6 +513,26 @@ const service = {
             saveReplicaState();
         }
     },
+    
+    setReplicaConstitution: (replicaId: string, constitutionId: string) => {
+        const result = findReplica(replicaId, replicaState);
+        if(result) {
+            result.node.activeConstitutionId = constitutionId;
+            log('REPLICA', `Assigned new constitution to ${result.node.name}.`);
+            notifyReplicas();
+            saveReplicaState();
+        }
+    },
+    
+    broadcastProblem: (replicaId: string, problem: string) => {
+        const result = findReplica(replicaId, replicaState);
+        if(result) {
+            log('NETWORK', `Replica ${result.node.name} is broadcasting problem: "${problem}"`);
+            // In a real system, this would trigger a complex bidding/collaboration flow.
+            // Here, we just log it.
+        }
+    },
+
 
     // --- TOOL MANAGEMENT ---
     forgeTool: async ({ purpose, capabilities }: { purpose: string, capabilities: string[] }) => {
@@ -653,6 +741,8 @@ const service = {
         notifyReplicas();
         notifyTools();
         notifyToolchains();
+        notifyConstitutions();
+        notifyEvolution();
         log('SYSTEM', 'System has been reset to its default state.');
         setTimeout(() => { window.location.reload(); }, 500);
     },
@@ -826,7 +916,7 @@ const service = {
         const query = cognitiveProcess.history.find(m => m.role === 'user')?.text || '';
 
         try {
-            const executionContext: string[] = [];
+            const executionContext: any[] = [];
             for (let i = 0; i < modelMessage.plan.length; i++) {
                 if (isCancelled) return;
                 const step = modelMessage.plan[i];
@@ -862,6 +952,35 @@ const service = {
                     cognitiveProcess.activeQualiaVector = JSON.parse(response.text);
                     step.result = `Cognitive state set to "${step.concept}".`;
                     log('AI', `Evoked qualia for "${step.concept}". Internal state updated.`);
+                } else if (step.tool === 'generate_image') {
+                    // This is a simulation, not a real API call
+                    step.result = {
+                        id: `img-${Date.now()}`,
+                        concept: step.concept,
+                        properties: {
+                            balance: Math.random(),
+                            complexity: Math.random(),
+                            harmony: Math.random(),
+                            novelty: Math.random(),
+                        },
+                    };
+                    executionContext.push(`Step ${i+1} (${step.description}) Result: Generated image object for "${step.concept}"`);
+                } else if (step.tool === 'analyze_image_input') {
+                    if (step.inputRef && executionContext[step.inputRef - 1]) {
+                        // In a real scenario, you'd pass the image data to a multimodal model.
+                        // Here, we just simulate analyzing the object from a previous step.
+                        const imageResult = modelMessage.plan[step.inputRef - 1].result;
+                        if (typeof imageResult === 'object' && imageResult.id?.startsWith('img-')) {
+                            step.result = `Analysis of ${imageResult.id}: The image exhibits properties of novelty=${imageResult.properties.novelty.toFixed(2)} and complexity=${imageResult.properties.complexity.toFixed(2)}.`;
+                        } else {
+                            step.result = "Error: Input reference is not a valid image.";
+                            step.status = 'error';
+                        }
+                    } else {
+                        step.result = "Error: Invalid or missing input reference for analysis.";
+                        step.status = 'error';
+                    }
+                    executionContext.push(`Step ${i+1} (${step.description}) Result: ${step.result}`);
                 }
                 
                 if (step.status !== 'error') step.status = 'complete';
@@ -927,13 +1046,18 @@ const service = {
         notifyCognitiveProcess();
 
         const modelMessage: ChatMessage = { id: `msg-${Date.now()}-model`, role: 'model', text: '', state: 'planning', isPlanFinalized: false };
+        const activeReplica = findReplica('nexus-core', replicaState);
+        if (activeReplica) {
+            modelMessage.constitutionId = activeReplica.node.activeConstitutionId;
+        }
+
         cognitiveProcess.history.push(modelMessage);
         cognitiveProcess.state = 'Planning';
         log('AI', 'Initiating cognitive planning stage...');
         notifyCognitiveProcess();
 
         try {
-            const planningPrompt = `Given the user's query, create a step-by-step plan. Available tools: "google_search", "code_interpreter", "evoke_qualia", "synthesize_answer". The final step must be "synthesize_answer". User query: "${query}"`;
+            const planningPrompt = `Given the user's query, create a step-by-step plan. Available tools: "google_search", "code_interpreter", "evoke_qualia", "generate_image", "analyze_image_input", "synthesize_answer". The final step must be "synthesize_answer". User query: "${query}"`;
             
             const planningResponse = await ai.models.generateContent({
                 model: appSettings.model, contents: planningPrompt,
@@ -960,12 +1084,67 @@ const service = {
         }
     },
     
+    // --- EVOLUTION ---
+    startEvolution: (config: EvolutionConfig) => {
+        if (evolutionState.isRunning) return;
+        service.stopEvolution(); // Clear any existing interval just in case
+        log('SYSTEM', `Starting evolution with goal: ${config.fitnessGoal}`);
+        evolutionState.isRunning = true;
+        evolutionState.config = config;
+        evolutionState.progress = [];
+        evolutionState.fittestIndividual = null;
+        notifyEvolution();
+    
+        let currentGeneration = 0;
+        evolutionInterval = setInterval(() => {
+            currentGeneration++;
+            const lastBest = evolutionState.progress[evolutionState.progress.length - 1]?.bestFitness || Math.random() * 0.5;
+            const newBest = Math.min(0.99, lastBest + Math.random() * 0.1);
+            const newAvg = newBest - Math.random() * 0.2;
+            
+            evolutionState.progress.push({
+                generation: currentGeneration,
+                bestFitness: newBest,
+                averageFitness: Math.max(0, newAvg),
+            });
+    
+            const toolCount = Math.floor(Math.random() * 4) + 2;
+            const toolIds = [...Array(toolCount)].map(() => toolsState[Math.floor(Math.random() * toolsState.length)].id);
+            evolutionState.fittestIndividual = {
+                id: `evo-${currentGeneration}`,
+                name: `Evolved Chain Gen ${currentGeneration}`,
+                description: `Fittest from generation ${currentGeneration}`,
+                toolIds,
+            };
+            
+            notifyEvolution();
+    
+            if (currentGeneration >= config.generations) {
+                service.stopEvolution();
+            }
+        }, 500);
+    },
+    
+    stopEvolution: () => {
+        if (evolutionInterval) {
+            clearInterval(evolutionInterval);
+            evolutionInterval = null;
+        }
+        if (evolutionState.isRunning) {
+            log('SYSTEM', 'Evolution has been stopped.');
+            evolutionState.isRunning = false;
+            notifyEvolution();
+        }
+    },
+
     subscribeToLogs: (callback: (log: LogEntry) => void) => { logSubscribers.push(callback); },
     subscribeToPerformance: (callback: (dataPoint: PerformanceDataPoint) => void) => { performanceSubscribers.push(callback); },
     subscribeToReplicas: (callback: (replicaState: Replica) => void) => { replicaSubscribers.push(callback); },
     subscribeToCognitiveProcess: (callback: (process: CognitiveProcess) => void) => { cognitiveProcessSubscribers.push(callback); },
     subscribeToTools: (callback: (tools: MentalTool[]) => void) => { toolsSubscribers.push(callback); },
     subscribeToToolchains: (callback: (toolchains: Toolchain[]) => void) => { toolchainSubscribers.push(callback); },
+    subscribeToConstitutions: (callback: (constitutions: CognitiveConstitution[]) => void) => { constitutionSubscribers.push(callback); },
+    subscribeToEvolution: (callback: (evolutionState: EvolutionState) => void) => { evolutionSubscribers.push(callback); },
 
     unsubscribeFromAll: () => {
         logSubscribers = [];
@@ -974,6 +1153,8 @@ const service = {
         cognitiveProcessSubscribers = [];
         toolsSubscribers = [];
         toolchainSubscribers = [];
+        constitutionSubscribers = [];
+        evolutionSubscribers = [];
     }
 };
 

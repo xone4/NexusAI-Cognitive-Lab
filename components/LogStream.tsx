@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, memo } from 'react';
 import type { LogEntry } from '../types';
 
@@ -13,6 +12,7 @@ const levelColors: Record<LogEntry['level'], string> = {
     SYSTEM: 'text-nexus-accent',
     REPLICA: 'text-nexus-primary',
     AI: 'text-purple-400',
+    NETWORK: 'text-cyan-400',
 };
 
 const LogItem = memo(({ log }: { log: LogEntry }) => (

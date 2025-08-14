@@ -1,5 +1,3 @@
-
-
 export interface Interaction {
   targetId: string;
   type: 'data_flow'; // Future: 'collaboration' | 'conflict'
@@ -10,7 +8,7 @@ export interface Replica {
   id: string;
   name: string;
   depth: number;
-  status: 'Active' | 'Dormant' | 'Evolving' | 'Spawning' | 'Pruning' | 'Recalibrating';
+  status: 'Active' | 'Dormant' | 'Evolving' | 'Spawning' | 'Pruning' | 'Recalibrating' | 'Bidding';
   children: Replica[];
   load: number;
   purpose: string;
@@ -18,6 +16,7 @@ export interface Replica {
   memoryUsage: number;
   cpuUsage: number;
   interactions: Interaction[];
+  activeConstitutionId: string;
 }
 
 export interface MentalTool {
@@ -42,6 +41,22 @@ export interface Toolchain {
   toolIds: string[]; // Ordered list of MentalTool IDs
 }
 
+// --- Cognitive Constitution Types ---
+export type RuleType = 'MAX_REPLICAS' | 'MAX_PLAN_STEPS' | 'FORBIDDEN_TOOLS' | 'REQUIRED_TOOLS';
+
+export interface ConstitutionRule {
+    type: RuleType;
+    value: any; // Can be number, string[], etc.
+    description: string;
+}
+
+export interface CognitiveConstitution {
+    id: string;
+    name: string;
+    description: string;
+    rules: ConstitutionRule[];
+}
+
 export interface PerformanceDataPoint {
   time: string;
   cpu: number;
@@ -52,11 +67,12 @@ export interface PerformanceDataPoint {
 export interface LogEntry {
   id:string;
   timestamp: number;
-  level: 'INFO' | 'WARN' | 'ERROR' | 'SYSTEM' | 'REPLICA' | 'AI';
+  level: 'INFO' | 'WARN' | 'ERROR' | 'SYSTEM' | 'REPLICA' | 'AI' | 'NETWORK';
   message: string;
+  source?: string; // Optional Replica ID
 }
 
-export type ActiveView = 'dashboard' | 'replicas' | 'tools' | 'architecture' | 'analysis' | 'settings';
+export type ActiveView = 'dashboard' | 'replicas' | 'tools' | 'architecture' | 'analysis' | 'settings' | 'evolution';
 
 export type LogVerbosity = 'STANDARD' | 'VERBOSE';
 export type SystemPersonality = 'BALANCED' | 'CREATIVE' | 'LOGICAL';
@@ -77,12 +93,13 @@ export type ThinkingState = 'Idle' | 'Receiving' | 'Planning' | 'AwaitingExecuti
 export interface PlanStep {
     step: number;
     description: string;
-    tool: 'google_search' | 'synthesize_answer' | 'code_interpreter' | 'evoke_qualia';
+    tool: 'google_search' | 'synthesize_answer' | 'code_interpreter' | 'evoke_qualia' | 'generate_image' | 'analyze_image_input';
     query?: string;
     code?: string;
-    concept?: string; // For evoke_qualia tool
+    concept?: string; // For evoke_qualia & generate_image
+    inputRef?: number; // References the step number for input, e.g., for analyze_image_input
     status: 'pending' | 'executing' | 'complete' | 'error';
-    result?: string;
+    result?: any; // Can be complex objects like images
     citations?: any[];
 }
 
@@ -106,6 +123,7 @@ export interface ChatMessage {
     groundingMetadata?: any; // For final answer citations
     isPlanFinalized?: boolean;
     qualiaVector?: QualiaVector; // Snapshot of the active qualia vector when this message was synthesized
+    constitutionId?: string; // Track which constitution was active for this plan
 }
 
 export interface CognitiveProcess {
@@ -135,4 +153,81 @@ export interface AnalysisConfig {
 export interface SystemAnalysisResult {
     summary: string;
     suggestions: SystemSuggestion[];
+}
+
+// Type for simulated image result
+export interface SimulatedImage {
+    id: string;
+    concept: string;
+    properties: {
+        balance: number; // 0 to 1
+        complexity: number; // 0 to 1
+        harmony: number; // 0 to 1
+        novelty: number; // 0 to 1
+    };
+}
+
+// Types for The Evolution Chamber
+export type FitnessGoal = 'SHORTEST_CHAIN' | 'LOWEST_COMPLEXITY' | 'HIGHEST_COMPLEXITY' | 'FEWEST_TOOLS' | 'MAXIMIZE_VISUAL_BALANCE';
+
+export interface EvolutionConfig {
+    populationSize: number;
+    mutationRate: number; // 0 to 1
+    generations: number;
+    fitnessGoal: FitnessGoal;
+}
+
+export interface EvolutionProgress {
+    generation: number;
+    bestFitness: number;
+    averageFitness: number;
+}
+
+export interface EvolutionState {
+    isRunning: boolean;
+    config: EvolutionConfig;
+    progress: EvolutionProgress[];
+    fittestIndividual: Toolchain | null;
+}
+
+// Types for Proactive Insights & Curiosity
+export interface CuriosityConstitution extends CognitiveConstitution {
+    // This is a marker interface for now, but could have unique properties later
+    // e.g., preferred_goals: FitnessGoal[]
+}
+
+export interface ProactiveInsight {
+    id: string;
+    timestamp: number;
+    title: string;
+    summary: string; // AI-generated summary of why this is interesting
+    relevanceScore: number; // 0 to 1, how confident the AI is about this insight
+    originatingGoal: FitnessGoal;
+    actionableToolchain: Toolchain; // The evolved toolchain that produced the insight
+}
+
+export interface ProactiveExplorationState {
+    isActive: boolean; // Is the background "dreaming" process running?
+    lastCycleTimestamp: number;
+    generatedInsights: ProactiveInsight[];
+}
+
+// --- Cognitive Packet for inter-replica communication ---
+export interface CognitiveBid {
+    bidderId: string; // Replica ID making the bid
+    problemId: string; // ID of the problem being bid on
+    proposedPlan: PlanStep[]; // The plan the replica thinks will solve the problem
+    confidenceScore: number; // 0-1, how confident the replica is
+}
+
+export interface CognitiveProblem {
+    id: string;
+    description: string;
+    broadcastById: string; // Who is asking
+    winningBid?: CognitiveBid;
+    isOpen: boolean;
+}
+
+export interface CognitiveNetworkState {
+    activeProblems: CognitiveProblem[];
 }

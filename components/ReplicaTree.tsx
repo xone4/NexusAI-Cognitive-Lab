@@ -1,6 +1,6 @@
 import React, { memo, useState, useMemo } from 'react';
-import type { Replica } from '../types';
-import { ReplicaIcon, CogIcon, TrashIcon, PencilIcon, BrainCircuitIcon } from './Icons';
+import type { Replica, CognitiveConstitution } from '../types';
+import { ReplicaIcon, CogIcon, TrashIcon, PencilIcon, BrainCircuitIcon, ShareIcon } from './Icons';
 import DashboardCard from './DashboardCard';
 import ReplicaNetwork from './ReplicaNetwork';
 
@@ -11,6 +11,9 @@ interface ReplicasViewProps {
     onPruneReplica: (replicaId: string) => void;
     onRecalibrate: (replicaId: string) => void;
     onAssignPurpose: (replicaId: string, purpose: string) => void;
+    constitutions: CognitiveConstitution[];
+    onSetConstitution: (replicaId: string, constitutionId: string) => void;
+    onBroadcastProblem: (replicaId: string, problem: string) => void;
 }
 
 const statusColors: Record<Replica['status'], { text: string; border: string; bg: string }> = {
@@ -20,6 +23,7 @@ const statusColors: Record<Replica['status'], { text: string; border: string; bg
   Spawning: { text: 'text-yellow-400', border: 'border-yellow-400', bg: 'bg-yellow-400' },
   Pruning: { text: 'text-gray-500', border: 'border-gray-500', bg: 'bg-gray-500' },
   Recalibrating: { text: 'text-blue-400', border: 'border-blue-400', bg: 'bg-blue-400' },
+  Bidding: { text: 'text-orange-400', border: 'border-orange-400', bg: 'bg-orange-400' },
 };
 
 const StatBar: React.FC<{ label: string; value: number; color: string; max?: number }> = ({ label, value, color, max = 100 }) => {
@@ -67,9 +71,26 @@ const PurposeModal: React.FC<{ currentPurpose: string; onSave: (newPurpose: stri
     );
 };
 
+const BroadcastModal: React.FC<{ onBroadcast: (problem: string) => void; onClose: () => void; }> = ({ onBroadcast, onClose }) => {
+    const [problem, setProblem] = useState('');
+    return (
+         <div className="fixed inset-0 bg-nexus-dark/80 backdrop-blur-sm flex items-center justify-center z-50 animate-spawn-in">
+            <form onSubmit={(e) => { e.preventDefault(); onBroadcast(problem); }} className="bg-nexus-surface p-6 rounded-lg shadow-2xl w-full max-w-md border border-nexus-primary/50">
+                <h3 className="text-lg font-bold text-nexus-text mb-4">Broadcast a Problem to the Network</h3>
+                <textarea value={problem} onChange={(e) => setProblem(e.target.value)} required className="w-full h-24 p-3 bg-nexus-dark/70 border border-nexus-surface rounded-md focus:outline-none focus:ring-2 focus:ring-nexus-primary text-nexus-text resize-none" placeholder="e.g., 'Find the most efficient route for a fleet of 10 drones...'"/>
+                <div className="flex justify-end space-x-3 mt-4">
+                    <button type="button" onClick={onClose} className="py-2 px-4 rounded-md text-nexus-text-muted hover:bg-nexus-dark">Cancel</button>
+                    <button type="submit" className="py-2 px-4 rounded-md bg-nexus-primary text-nexus-dark font-bold hover:bg-nexus-secondary">Broadcast</button>
+                </div>
+            </form>
+        </div>
+    );
+};
 
-const ReplicaCard: React.FC<Omit<ReplicasViewProps, 'rootReplica'> & { replica: Replica; path: string; }> = memo(({ replica, path, isThinking, onSpawnReplica, onPruneReplica, onRecalibrate, onAssignPurpose }) => {
+const ReplicaCard: React.FC<Omit<ReplicasViewProps, 'rootReplica'> & { replica: Replica; path: string; }> = memo(({ replica, path, isThinking, onSpawnReplica, onPruneReplica, onRecalibrate, onAssignPurpose, constitutions, onSetConstitution, onBroadcastProblem }) => {
     const [isPurposeModalOpen, setPurposeModalOpen] = useState(false);
+    const [isBroadcastModalOpen, setBroadcastModalOpen] = useState(false);
+    
     const color = statusColors[replica.status] || statusColors.Dormant;
     const animationClass = replica.status === 'Pruning' ? 'animate-fade-out' : replica.status === 'Spawning' ? 'animate-spawn-in' : '';
 
@@ -78,30 +99,47 @@ const ReplicaCard: React.FC<Omit<ReplicasViewProps, 'rootReplica'> & { replica: 
         setPurposeModalOpen(false);
     };
     
+    const handleBroadcast = (problem: string) => {
+        onBroadcastProblem(replica.id, problem);
+        setBroadcastModalOpen(false);
+    };
+
     const isCore = replica.depth === 0;
+    const activeConstitution = constitutions.find(c => c.id === replica.activeConstitutionId);
 
     return (
         <>
             {isPurposeModalOpen && <PurposeModal currentPurpose={replica.purpose} onSave={handleSavePurpose} onClose={() => setPurposeModalOpen(false)} />}
+            {isBroadcastModalOpen && <BroadcastModal onBroadcast={handleBroadcast} onClose={() => setBroadcastModalOpen(false)} />}
             <DashboardCard 
                 title={replica.name} 
                 icon={<ReplicaIcon className={color.text} />} 
                 className={`border-l-4 ${color.border} ${animationClass} transition-all duration-300`}
             >
                 <div className="space-y-4">
-                    {/* Path & Status */}
                     <div>
                         <p className="text-xs font-mono text-nexus-text-muted break-words">{path}</p>
                         <p className={`text-sm font-bold ${color.text}`}>Status: {replica.status}</p>
                     </div>
 
-                    {/* Purpose */}
-                    <div className="p-3 bg-nexus-dark/30 rounded-md">
-                        <label className="text-xs font-semibold text-nexus-primary uppercase tracking-wider">Purpose</label>
-                        <p className="text-sm text-nexus-text mt-1 italic">"{replica.purpose}"</p>
+                    <div className="p-3 bg-nexus-dark/30 rounded-md space-y-2">
+                        <div>
+                            <label className="text-xs font-semibold text-nexus-primary uppercase tracking-wider">Purpose</label>
+                            <p className="text-sm text-nexus-text mt-1 italic">"{replica.purpose}"</p>
+                        </div>
+                        <div className="pt-2 border-t border-nexus-surface/30">
+                            <label className="text-xs font-semibold text-nexus-primary uppercase tracking-wider">Constitution</label>
+                            <select 
+                                value={replica.activeConstitutionId}
+                                onChange={(e) => onSetConstitution(replica.id, e.target.value)}
+                                disabled={isThinking}
+                                className="w-full mt-1 text-sm bg-nexus-dark/50 border-none rounded p-1 focus:ring-1 focus:ring-nexus-secondary"
+                            >
+                                {constitutions.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            </select>
+                        </div>
                     </div>
 
-                    {/* Stats */}
                     <div className="space-y-3">
                         <StatBar label="Load" value={replica.load} color="bg-nexus-primary" />
                         <StatBar label="Efficiency" value={replica.efficiency} color="bg-green-500" />
@@ -109,7 +147,6 @@ const ReplicaCard: React.FC<Omit<ReplicasViewProps, 'rootReplica'> & { replica: 
                         <StatBar label="CPU" value={replica.cpuUsage} color={color.bg} />
                     </div>
 
-                    {/* Actions */}
                     <div className="grid grid-cols-2 gap-2 pt-2 border-t border-nexus-surface/30">
                         <button onClick={() => onRecalibrate(replica.id)} disabled={isThinking || replica.status !== 'Active'} className="replica-btn bg-blue-500/10 text-blue-400 border-blue-500/50 hover:bg-blue-500/20">
                             <CogIcon className="w-4 h-4" /> Recalibrate
@@ -122,6 +159,9 @@ const ReplicaCard: React.FC<Omit<ReplicasViewProps, 'rootReplica'> & { replica: 
                         </button>
                          <button onClick={() => onPruneReplica(replica.id)} disabled={isThinking || isCore} className="replica-btn bg-red-500/10 text-red-400 border-red-500/50 hover:bg-red-500/20">
                             <TrashIcon className="w-4 h-4" /> Prune
+                        </button>
+                        <button onClick={() => setBroadcastModalOpen(true)} disabled={isThinking || replica.status !== 'Active'} className="replica-btn bg-purple-500/10 text-purple-400 border-purple-500/50 hover:bg-purple-500/20 col-span-2">
+                            <ShareIcon className="w-4 h-4" /> Broadcast Problem
                         </button>
                     </div>
                 </div>
@@ -155,7 +195,6 @@ const ReplicasView: React.FC<ReplicasViewProps> = (props) => {
 
   return (
     <div className="h-full w-full overflow-y-auto space-y-8">
-        {/* Core Replica Section */}
         {coreReplica && (
             <div>
                 <h2 className="text-xl font-bold text-nexus-primary mb-4 flex items-center gap-3">
@@ -165,14 +204,12 @@ const ReplicasView: React.FC<ReplicasViewProps> = (props) => {
             </div>
         )}
 
-        {/* Inter-Replica Dynamics */}
         <DashboardCard title="Inter-Replica Dynamics" icon={<BrainCircuitIcon />}>
             <div className="h-96 w-full">
                  <ReplicaNetwork rootReplica={rootReplica} />
             </div>
         </DashboardCard>
         
-        {/* Child Replicas Section */}
         {childReplicas.length > 0 && (
              <div>
                 <h2 className="text-xl font-bold text-nexus-primary my-4">Sub-Cognition Layer</h2>
@@ -191,7 +228,6 @@ const ReplicasView: React.FC<ReplicasViewProps> = (props) => {
             </div>
         )}
 
-        {/* CSS for buttons, can't be done in Tailwind easily */}
         <style>{`
             .replica-btn {
                 display: flex;

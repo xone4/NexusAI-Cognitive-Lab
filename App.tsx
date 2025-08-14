@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, ActiveView, CognitiveProcess, AppSettings, Toolchain, ChatMessage, PlanStep, QualiaVector } from './types';
+import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, ActiveView, CognitiveProcess, AppSettings, Toolchain, ChatMessage, PlanStep, QualiaVector, CognitiveConstitution, EvolutionState } from './types';
 import { nexusAIService } from './services/nexusAIService';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -15,6 +15,7 @@ import CognitiveProcessVisualizer from './components/CognitiveProcessVisualizer'
 import QualiaVectorVisualizer from './components/QualiaVectorVisualizer';
 import SettingsView from './components/SettingsView';
 import AnalysisLab from './components/AnalysisLab';
+import EvolutionChamber from './components/EvolutionChamber';
 import ErrorBoundary from './components/ErrorBoundary';
 import RawIntrospectionModal from './components/RawIntrospectionModal';
 import { CpuChipIcon, BeakerIcon, DocumentMagnifyingGlassIcon, CircleStackIcon, BrainCircuitIcon } from './components/Icons';
@@ -24,6 +25,8 @@ const App: React.FC = () => {
   const [replicas, setReplicas] = useState<Replica | null>(null);
   const [tools, setTools] = useState<MentalTool[]>([]);
   const [toolchains, setToolchains] = useState<Toolchain[]>([]);
+  const [constitutions, setConstitutions] = useState<CognitiveConstitution[]>([]);
+  const [evolutionState, setEvolutionState] = useState<EvolutionState>(nexusAIService.getInitialData().initialEvolutionState);
   const [performanceData, setPerformanceData] = useState<PerformanceDataPoint[]>([]);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [systemStatus, setSystemStatus] = useState<'Online' | 'Degraded' | 'Initializing'>('Initializing');
@@ -81,6 +84,14 @@ const App: React.FC = () => {
   const handleToolchainsUpdate = useCallback((newToolchains: Toolchain[]) => {
     setToolchains(newToolchains);
   }, []);
+  
+  const handleConstitutionsUpdate = useCallback((newConstitutions: CognitiveConstitution[]) => {
+    setConstitutions(newConstitutions);
+  }, []);
+
+  const handleEvolutionUpdate = useCallback((newState: EvolutionState) => {
+    setEvolutionState(newState);
+  }, []);
 
   const handleCognitiveProcessUpdate = useCallback((process: CognitiveProcess) => {
     setCognitiveProcess(process);
@@ -95,10 +106,12 @@ const App: React.FC = () => {
   useEffect(() => {
     nexusAIService.updateSettings(settings);
 
-    const { initialReplicas, initialTools, initialToolchains, initialLogs, initialPerfData, initialCognitiveProcess } = nexusAIService.getInitialData();
+    const { initialReplicas, initialTools, initialToolchains, initialConstitutions, initialEvolutionState, initialLogs, initialPerfData, initialCognitiveProcess } = nexusAIService.getInitialData();
     setReplicas(initialReplicas);
     setTools(initialTools);
     setToolchains(initialToolchains);
+    setConstitutions(initialConstitutions);
+    setEvolutionState(initialEvolutionState);
     setLogs(initialLogs);
     setPerformanceData(initialPerfData);
     setCognitiveProcess(initialCognitiveProcess);
@@ -109,6 +122,8 @@ const App: React.FC = () => {
     nexusAIService.subscribeToReplicas(handleReplicaUpdate);
     nexusAIService.subscribeToTools(handleToolsUpdate);
     nexusAIService.subscribeToToolchains(handleToolchainsUpdate);
+    nexusAIService.subscribeToConstitutions(handleConstitutionsUpdate);
+    nexusAIService.subscribeToEvolution(handleEvolutionUpdate);
     nexusAIService.subscribeToCognitiveProcess(handleCognitiveProcessUpdate);
 
     const serviceInterval = nexusAIService.start();
@@ -117,7 +132,7 @@ const App: React.FC = () => {
       clearInterval(serviceInterval);
       nexusAIService.unsubscribeFromAll();
     };
-  }, [handleLog, handlePerformanceUpdate, handleReplicaUpdate, handleToolsUpdate, handleToolchainsUpdate, handleCognitiveProcessUpdate, settings]);
+  }, [handleLog, handlePerformanceUpdate, handleReplicaUpdate, handleToolsUpdate, handleToolchainsUpdate, handleConstitutionsUpdate, handleEvolutionUpdate, handleCognitiveProcessUpdate, settings]);
 
   const spawnReplica = useCallback((parentId: string) => {
     nexusAIService.spawnReplica(parentId);
@@ -135,6 +150,14 @@ const App: React.FC = () => {
   
   const recalibrateReplica = useCallback((replicaId: string) => {
     nexusAIService.recalibrateReplica(replicaId);
+  }, []);
+
+  const setReplicaConstitution = useCallback((replicaId: string, constitutionId: string) => {
+    nexusAIService.setReplicaConstitution(replicaId, constitutionId);
+  }, []);
+
+  const broadcastProblem = useCallback((replicaId: string, problem: string) => {
+      nexusAIService.broadcastProblem(replicaId, problem);
   }, []);
 
   const submitQuery = useCallback((query: string) => {
@@ -194,6 +217,7 @@ const App: React.FC = () => {
           <DashboardCard title="Cognitive Dialogue" fullHeight>
               <CognitiveProcessVisualizer
                 process={cognitiveProcess}
+                constitutions={constitutions}
                 onExecutePlan={executePlan}
                 onUpdatePlanStep={updatePlanStep}
                 onReorderPlan={reorderPlan}
@@ -256,6 +280,9 @@ const App: React.FC = () => {
             onPruneReplica={pruneReplica}
             onRecalibrate={recalibrateReplica}
             onAssignPurpose={assignReplicaPurpose}
+            constitutions={constitutions}
+            onSetConstitution={setReplicaConstitution}
+            onBroadcastProblem={broadcastProblem}
         />;
       case 'tools':
         return <MentalToolsLab 
@@ -294,6 +321,12 @@ const App: React.FC = () => {
                />;
       case 'settings':
         return <SettingsView settings={settings} onSettingsChange={handleSettingsChange} />;
+      case 'evolution':
+        return <EvolutionChamber
+                 evolutionState={evolutionState}
+                 allTools={tools}
+                 onCreateToolchain={nexusAIService.createToolchain}
+               />;
       case 'dashboard':
       default:
         return renderDashboard();
