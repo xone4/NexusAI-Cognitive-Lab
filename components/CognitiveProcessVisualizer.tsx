@@ -1,5 +1,5 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
-import type { CognitiveProcess, ChatMessage, PlanStep, CognitiveConstitution, SimulatedImage } from '../types';
+import type { CognitiveProcess, ChatMessage, PlanStep, CognitiveConstitution, GeneratedImage } from '../types';
 import { BrainCircuitIcon, UserIcon, BookOpenIcon, CogIcon, CheckCircleIcon, CubeTransparentIcon, PlayIcon, PencilIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, PlusCircleIcon, CodeBracketIcon, LightBulbIcon, LinkIcon, ArrowRightIcon, PhotographIcon, SparklesIcon, ArchiveBoxIcon } from './Icons';
 
 interface CognitiveProcessVisualizerProps {
@@ -59,29 +59,22 @@ const UserMessage: React.FC<{ message: ChatMessage }> = memo(({ message }) => (
 ));
 UserMessage.displayName = 'UserMessage';
 
-const SimulatedImageViewer: React.FC<{ image: SimulatedImage }> = memo(({ image }) => {
-    const { balance, complexity, harmony, novelty } = image.properties;
-    
-    // Generate a deterministic but visually interesting background
-    const gradientAngle = (harmony * 360).toFixed(0);
-    const colorStop1 = `hsl(${(novelty * 360).toFixed(0)}, 70%, 50%)`;
-    const colorStop2 = `hsl(${(balance * 120 + 240).toFixed(0)}, 60%, 50%)`;
-
+const GeneratedImageViewer: React.FC<{ image: GeneratedImage }> = memo(({ image }) => {
     return (
-        <div className="mt-2 p-2 bg-nexus-dark/50 rounded-md">
+        <div className="mt-2 p-3 bg-nexus-dark/50 rounded-md border border-nexus-surface/50">
             <p className="text-xs text-nexus-text-muted font-mono mb-2">Generated Image: {image.id}</p>
-            <div 
-                className="w-full h-24 rounded border-2 border-nexus-surface"
-                style={{
-                    background: `linear-gradient(${gradientAngle}deg, ${colorStop1}, ${colorStop2})`,
-                    filter: `blur(${(1-complexity) * 3}px)`,
-                    opacity: 0.8
-                }}
-            ></div>
+            <img 
+                src={`data:image/jpeg;base64,${image.base64Image}`} 
+                alt={image.concept}
+                className="w-full rounded border-2 border-nexus-surface shadow-lg"
+            />
+            <p className="text-xs text-nexus-text-muted mt-2 italic">
+                <span className="font-bold">Prompt:</span> "{image.concept}"
+            </p>
         </div>
     );
 });
-SimulatedImageViewer.displayName = 'SimulatedImageViewer';
+GeneratedImageViewer.displayName = 'GeneratedImageViewer';
 
 
 const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: boolean, onUpdate: (newStep: PlanStep) => void, onDelete: () => void, onMove: (direction: 'up' | 'down') => void, isFirst: boolean, isLast: boolean }> = ({ step, isCurrent, isEditable, onUpdate, onDelete, onMove, isFirst, isLast }) => {
@@ -130,7 +123,7 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
         if (!step.result) return null;
 
         if (typeof step.result === 'object' && step.result.id?.startsWith('img-')) {
-            return <SimulatedImageViewer image={step.result as SimulatedImage} />;
+            return <GeneratedImageViewer image={step.result as GeneratedImage} />;
         }
         
         return <p className="text-xs text-green-400/80 font-mono italic">Result: {String(step.result).substring(0, 100)}...</p>;

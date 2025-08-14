@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { ChatMessage, PlanStep, SimulatedImage } from '../types';
+import type { ChatMessage, PlanStep, GeneratedImage } from '../types';
 import { nexusAIService } from '../services/nexusAIService';
 import QualiaVectorVisualizer from './QualiaVectorVisualizer';
 import { DocumentMagnifyingGlassIcon, CheckCircleIcon, CogIcon, CodeBracketIcon, CubeTransparentIcon, LightBulbIcon, PhotographIcon, SparklesIcon, XCircleIcon, BrainCircuitIcon, ChatBubbleLeftRightIcon, UserIcon } from './Icons';
@@ -47,11 +47,17 @@ const DetailedPlanStep: React.FC<{ step: PlanStep }> = ({ step }) => {
         if (!step.result) return <p className="text-xs text-nexus-text-muted italic">No result recorded.</p>;
         
         if (typeof step.result === 'object' && step.result.id?.startsWith('img-')) {
-            const image = step.result as SimulatedImage;
+            const image = step.result as GeneratedImage;
             return (
-                 <div className="mt-2 p-2 bg-nexus-dark/50 rounded-md border border-nexus-surface">
-                    <p className="text-xs text-nexus-text-muted font-mono mb-2">Generated Image: {image.id}</p>
-                    <div className="w-full h-24 rounded" style={{ background: `linear-gradient(45deg, hsl(${(image.properties.novelty * 360).toFixed(0)}, 70%, 50%), hsl(${(image.properties.balance * 120 + 240).toFixed(0)}, 60%, 50%))`}}/>
+                 <div className="mt-2 p-2 bg-nexus-dark/70 rounded-md border border-nexus-surface">
+                    <img 
+                        src={`data:image/jpeg;base64,${image.base64Image}`} 
+                        alt={image.concept}
+                        className="w-full rounded border-2 border-nexus-surface"
+                    />
+                    <p className="text-xs text-nexus-text-muted mt-2 italic">
+                        Prompt: "{image.concept}"
+                    </p>
                 </div>
             )
         }

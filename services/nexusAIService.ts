@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, QualiaVector, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal } from '../types';
+import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, QualiaVector, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage } from '../types';
 
 // IMPORTANT: This would be populated by a secure mechanism in a real app
 const API_KEY = process.env.API_KEY;
@@ -221,8 +221,8 @@ const getSystemInstruction = () => {
     - \`google_search\`: Use for any query that requires up-to-date, real-world information. The 'query' field should be a concise search term.
     - \`code_interpreter\`: Use for calculations, data manipulation, or any logical operations. The 'code' field should contain valid JavaScript that returns a value.
     - \`evoke_qualia\`: Use for queries involving abstract, emotional, or subjective concepts. This sets an internal "cognitive context" or "mood". The 'concept' field should contain the abstract idea (e.g., "melancholic nostalgia"). This step does not produce direct output but influences the final synthesis. Use it sparingly and only when appropriate.
-    - \`generate_image\`: Use to create a simulated image from a concept. The 'concept' field should describe the image. This step's result is a special image object.
-    - \`analyze_image_input\`: Use to analyze a previously generated image. Requires 'inputRef' to be set to the step number of the 'generate_image' step.
+    - \`generate_image\`: Use to create an image from a concept. The 'concept' field should describe the image in detail. This step's result is a special image object.
+    - \`analyze_image_input\`: Use to analyze a previously generated image. Requires 'inputRef' to be set to the step number of the 'generate_image' step. The 'query' field should contain the question about the image.
     - \`synthesize_answer\`: The final step of any plan. This tool takes the results of all previous steps to compose the final answer for the user.
 
     2.  **EXECUTION STAGE**: After the user approves your plan, you will execute it. You will be called upon to perform each step. For the final 'synthesize_answer' step, you will be given the original query, the results of all previous plan steps, and potentially an active "Qualia Vector" representing a cognitive state. Your task is to compose a comprehensive, well-formatted markdown answer that is factually accurate but whose tone, style, and metaphors are subtly influenced by this active cognitive state.`;
@@ -823,34 +823,48 @@ const service = {
                     step.result = `Cognitive state set to "${step.concept}".`;
                     log('AI', `Evoked qualia for "${step.concept}". Internal state updated.`);
                 } else if (step.tool === 'generate_image') {
-                    // This is a simulation, not a real API call
-                    step.result = {
-                        id: `img-${Date.now()}`,
-                        concept: step.concept,
-                        properties: {
-                            balance: Math.random(),
-                            complexity: Math.random(),
-                            harmony: Math.random(),
-                            novelty: Math.random(),
-                        },
-                    };
-                    executionContext.push(`Step ${i+1} (${step.description}) Result: Generated image object for "${step.concept}"`);
-                } else if (step.tool === 'analyze_image_input') {
-                    if (step.inputRef && executionContext[step.inputRef - 1]) {
-                        // In a real scenario, you'd pass the image data to a multimodal model.
-                        // Here, we just simulate analyzing the object from a previous step.
-                        const imageResult = modelMessage.plan[step.inputRef - 1].result;
-                        if (typeof imageResult === 'object' && imageResult.id?.startsWith('img-')) {
-                            step.result = `Analysis of ${imageResult.id}: The image exhibits properties of novelty=${imageResult.properties.novelty.toFixed(2)} and complexity=${imageResult.properties.complexity.toFixed(2)}.`;
-                        } else {
-                            step.result = "Error: Input reference is not a valid image.";
-                            step.status = 'error';
-                        }
-                    } else {
-                        step.result = "Error: Invalid or missing input reference for analysis.";
+                    if (!step.concept) {
                         step.status = 'error';
+                        step.result = 'Error: Image generation requires a concept prompt.';
+                    } else {
+                        const imageResponse = await ai.models.generateImages({
+                            model: 'imagen-3.0-generate-002',
+                            prompt: step.concept,
+                            config: { numberOfImages: 1, outputMimeType: 'image/jpeg' }
+                        });
+                        const base64ImageBytes = imageResponse.generatedImages[0]?.image.imageBytes;
+                        if (base64ImageBytes) {
+                            step.result = {
+                                id: `img-${Date.now()}`,
+                                concept: step.concept,
+                                base64Image: base64ImageBytes
+                            } as GeneratedImage;
+                             executionContext.push(`Step ${i+1} (${step.description}) Result: Generated image object for "${step.concept}"`);
+                        } else {
+                            step.status = 'error';
+                            step.result = 'Error: Failed to generate image from API.';
+                        }
                     }
-                    executionContext.push(`Step ${i+1} (${step.description}) Result: ${step.result}`);
+                } else if (step.tool === 'analyze_image_input') {
+                    const inputStep = step.inputRef ? modelMessage.plan[step.inputRef - 1] : null;
+                    const imageResult: GeneratedImage | null = inputStep?.result;
+
+                    if (imageResult && imageResult.base64Image) {
+                         const imagePart = {
+                            inlineData: { mimeType: 'image/jpeg', data: imageResult.base64Image },
+                        };
+                        const textPart = { text: step.query || "Describe this image." };
+                        
+                        const analysisResponse = await ai.models.generateContent({
+                            model: appSettings.model,
+                            contents: { parts: [imagePart, textPart] }
+                        });
+                        step.result = analysisResponse.text;
+                         executionContext.push(`Step ${i+1} (${step.description}) Result: ${step.result}`);
+                    } else {
+                        step.status = 'error';
+                        step.result = "Error: Input reference is not a valid generated image.";
+                    }
                 }
                 
                 if (step.status !== 'error') step.status = 'complete';

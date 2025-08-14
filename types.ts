@@ -99,7 +99,7 @@ export interface PlanStep {
     concept?: string; // For evoke_qualia & generate_image
     inputRef?: number; // References the step number for input, e.g., for analyze_image_input
     status: 'pending' | 'executing' | 'complete' | 'error';
-    result?: any; // Can be complex objects like images
+    result?: any; // Can be complex objects like images or text
     citations?: any[];
 }
 
@@ -157,17 +157,13 @@ export interface SystemAnalysisResult {
     suggestions: SystemSuggestion[];
 }
 
-// Type for simulated image result
-export interface SimulatedImage {
+// Type for a generated image result
+export interface GeneratedImage {
     id: string;
     concept: string;
-    properties: {
-        balance: number; // 0 to 1
-        complexity: number; // 0 to 1
-        harmony: number; // 0 to 1
-        novelty: number; // 0 to 1
-    };
+    base64Image: string;
 }
+
 
 // Types for The Evolution Chamber
 export type FitnessGoal = 'SHORTEST_CHAIN' | 'LOWEST_COMPLEXITY' | 'HIGHEST_COMPLEXITY' | 'FEWEST_TOOLS' | 'MAXIMIZE_VISUAL_BALANCE';
