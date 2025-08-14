@@ -18,6 +18,8 @@ import AnalysisLab from './components/AnalysisLab';
 import EvolutionChamber from './components/EvolutionChamber';
 import ErrorBoundary from './components/ErrorBoundary';
 import RawIntrospectionModal from './components/RawIntrospectionModal';
+import ArchivesView from './components/ArchivesView';
+import CognitiveTraceInspector from './components/CognitiveTraceInspector';
 import { CpuChipIcon, BeakerIcon, DocumentMagnifyingGlassIcon, CircleStackIcon, BrainCircuitIcon } from './components/Icons';
 
 const App: React.FC = () => {
@@ -27,11 +29,13 @@ const App: React.FC = () => {
   const [toolchains, setToolchains] = useState<Toolchain[]>([]);
   const [constitutions, setConstitutions] = useState<CognitiveConstitution[]>([]);
   const [evolutionState, setEvolutionState] = useState<EvolutionState>(nexusAIService.getInitialData().initialEvolutionState);
+  const [archivedTraces, setArchivedTraces] = useState<ChatMessage[]>([]);
   const [performanceData, setPerformanceData] = useState<PerformanceDataPoint[]>([]);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [systemStatus, setSystemStatus] = useState<'Online' | 'Degraded' | 'Initializing'>('Initializing');
   const [cognitiveProcess, setCognitiveProcess] = useState<CognitiveProcess>(nexusAIService.getInitialData().initialCognitiveProcess);
   const [isRawIntrospectionOpen, setIsRawIntrospectionOpen] = useState(false);
+  const [activeTrace, setActiveTrace] = useState<ChatMessage | null>(null);
 
   const [settings, setSettings] = useState<AppSettings>(() => {
     const defaultSettings: AppSettings = {
@@ -97,6 +101,10 @@ const App: React.FC = () => {
     setCognitiveProcess(process);
   }, []);
 
+  const handleArchivesUpdate = useCallback((archives: ChatMessage[]) => {
+    setArchivedTraces(archives);
+  }, []);
+
   const handleSettingsChange = useCallback((newSettings: AppSettings) => {
     setSettings(newSettings);
     localStorage.setItem('nexusai-settings', JSON.stringify(newSettings));
@@ -106,12 +114,13 @@ const App: React.FC = () => {
   useEffect(() => {
     nexusAIService.updateSettings(settings);
 
-    const { initialReplicas, initialTools, initialToolchains, initialConstitutions, initialEvolutionState, initialLogs, initialPerfData, initialCognitiveProcess } = nexusAIService.getInitialData();
+    const { initialReplicas, initialTools, initialToolchains, initialConstitutions, initialEvolutionState, initialLogs, initialPerfData, initialCognitiveProcess, initialArchives } = nexusAIService.getInitialData();
     setReplicas(initialReplicas);
     setTools(initialTools);
     setToolchains(initialToolchains);
     setConstitutions(initialConstitutions);
     setEvolutionState(initialEvolutionState);
+    setArchivedTraces(initialArchives);
     setLogs(initialLogs);
     setPerformanceData(initialPerfData);
     setCognitiveProcess(initialCognitiveProcess);
@@ -125,6 +134,8 @@ const App: React.FC = () => {
     nexusAIService.subscribeToConstitutions(handleConstitutionsUpdate);
     nexusAIService.subscribeToEvolution(handleEvolutionUpdate);
     nexusAIService.subscribeToCognitiveProcess(handleCognitiveProcessUpdate);
+    nexusAIService.subscribeToArchives(handleArchivesUpdate);
+
 
     const serviceInterval = nexusAIService.start();
 
@@ -132,7 +143,7 @@ const App: React.FC = () => {
       clearInterval(serviceInterval);
       nexusAIService.unsubscribeFromAll();
     };
-  }, [handleLog, handlePerformanceUpdate, handleReplicaUpdate, handleToolsUpdate, handleToolchainsUpdate, handleConstitutionsUpdate, handleEvolutionUpdate, handleCognitiveProcessUpdate, settings]);
+  }, [handleLog, handlePerformanceUpdate, handleReplicaUpdate, handleToolsUpdate, handleToolchainsUpdate, handleConstitutionsUpdate, handleEvolutionUpdate, handleCognitiveProcessUpdate, handleArchivesUpdate, settings]);
 
   const spawnReplica = useCallback((parentId: string) => {
     nexusAIService.spawnReplica(parentId);
@@ -205,6 +216,12 @@ const App: React.FC = () => {
     nexusAIService.updateActiveQualiaVector(vector);
   }, []);
 
+  const handleArchiveTrace = useCallback((messageId: string) => {
+      const archivedTrace = nexusAIService.archiveTrace(messageId);
+      if (archivedTrace) {
+        setActiveTrace(archivedTrace); // Open inspector immediately for the new archive
+      }
+  }, []);
 
   const isThinking = cognitiveProcess?.state !== 'Idle' && cognitiveProcess?.state !== 'Done' && cognitiveProcess?.state !== 'Cancelled' && cognitiveProcess?.state !== 'Error';
 
@@ -224,6 +241,7 @@ const App: React.FC = () => {
                 onAddPlanStep={addPlanStep}
                 onDeletePlanStep={deletePlanStep}
                 onSavePlanAsToolchain={handleSavePlanAsToolchain}
+                onArchiveTrace={handleArchiveTrace}
               />
           </DashboardCard>
       </div>
@@ -327,6 +345,12 @@ const App: React.FC = () => {
                  allTools={tools}
                  onCreateToolchain={nexusAIService.createToolchain}
                />;
+      case 'archives':
+        return <ArchivesView
+                  archivedTraces={archivedTraces}
+                  onViewTrace={setActiveTrace}
+                  onDeleteTrace={nexusAIService.deleteTrace}
+                />;
       case 'dashboard':
       default:
         return renderDashboard();
@@ -345,6 +369,7 @@ const App: React.FC = () => {
         </main>
       </div>
       {isRawIntrospectionOpen && <RawIntrospectionModal onClose={() => setIsRawIntrospectionOpen(false)} />}
+      {activeTrace && <CognitiveTraceInspector trace={activeTrace} onClose={() => setActiveTrace(null)} />}
     </div>
   );
 };

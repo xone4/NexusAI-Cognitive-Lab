@@ -12,9 +12,10 @@ const ai = new GoogleGenAI({ apiKey: API_KEY });
 let replicaState: Replica;
 let toolsState: MentalTool[];
 let toolchainsState: Toolchain[];
-let cognitiveProcess: CognitiveProcess;
 let constitutionsState: CognitiveConstitution[];
 let evolutionState: EvolutionState;
+let cognitiveProcess: CognitiveProcess;
+let archivedTracesState: ChatMessage[];
 let isCancelled = false;
 let appSettings: AppSettings = {
     model: 'gemini-2.5-flash',
@@ -35,6 +36,7 @@ let toolsSubscribers: ((tools: MentalTool[]) => void)[] = [];
 let toolchainSubscribers: ((toolchains: Toolchain[]) => void)[] = [];
 let constitutionSubscribers: ((constitutions: CognitiveConstitution[]) => void)[] = [];
 let evolutionSubscribers: ((evolutionState: EvolutionState) => void)[] = [];
+let archiveSubscribers: ((archives: ChatMessage[]) => void)[] = [];
 
 
 let suggestedQueries: string[] | null = null;
@@ -45,41 +47,15 @@ const REPLICA_STATE_KEY = 'nexusai-replica-state';
 const TOOLS_STATE_KEY = 'nexusai-tools-state';
 const TOOLCHAINS_STATE_KEY = 'nexusai-toolchains-state';
 const CONSTITUTIONS_STATE_KEY = 'nexusai-constitutions-state';
+const ARCHIVES_STATE_KEY = 'nexusai-archived-traces';
 
 
-const saveReplicaState = () => {
+const saveToLocalStorage = (key: string, data: any) => {
     try {
-        localStorage.setItem(REPLICA_STATE_KEY, JSON.stringify(replicaState));
+        localStorage.setItem(key, JSON.stringify(data));
     } catch (error) {
-        console.error("Failed to save replica state to localStorage", error);
-        log('ERROR', 'Failed to save replica state.');
-    }
-};
-
-const saveToolsState = () => {
-    try {
-        localStorage.setItem(TOOLS_STATE_KEY, JSON.stringify(toolsState));
-    } catch (error) {
-        console.error("Failed to save tools state to localStorage", error);
-        log('ERROR', 'Failed to save mental tools state.');
-    }
-};
-
-const saveToolchainsState = () => {
-    try {
-        localStorage.setItem(TOOLCHAINS_STATE_KEY, JSON.stringify(toolchainsState));
-    } catch (error) {
-        console.error("Failed to save toolchains state to localStorage", error);
-        log('ERROR', 'Failed to save toolchains state.');
-    }
-};
-
-const saveConstitutionsState = () => {
-    try {
-        localStorage.setItem(CONSTITUTIONS_STATE_KEY, JSON.stringify(constitutionsState));
-    } catch (error) {
-        console.error("Failed to save constitutions state to localStorage", error);
-        log('ERROR', 'Failed to save constitutions state.');
+        console.error(`Failed to save ${key} to localStorage`, error);
+        log('ERROR', `Failed to save ${key} state.`);
     }
 };
 
@@ -102,35 +78,13 @@ const log = (level: LogEntry['level'], message: string) => {
   logSubscribers.forEach(cb => cb(newLog));
 };
 
-const notifyCognitiveProcess = () => {
-    const processSnapshot = JSON.parse(JSON.stringify(cognitiveProcess));
-    cognitiveProcessSubscribers.forEach(cb => cb(processSnapshot));
-}
-
-const notifyReplicas = () => {
-    const replicaSnapshot = JSON.parse(JSON.stringify(replicaState));
-    replicaSubscribers.forEach(cb => cb(replicaSnapshot));
-}
-
-const notifyTools = () => {
-    const toolsSnapshot = JSON.parse(JSON.stringify(toolsState));
-    toolsSubscribers.forEach(cb => cb(toolsSnapshot));
-}
-
-const notifyToolchains = () => {
-    const toolchainsSnapshot = JSON.parse(JSON.stringify(toolchainsState));
-    toolchainSubscribers.forEach(cb => cb(toolchainsSnapshot));
-}
-
-const notifyConstitutions = () => {
-    const constitutionsSnapshot = JSON.parse(JSON.stringify(constitutionsState));
-    constitutionSubscribers.forEach(cb => cb(constitutionsSnapshot));
-}
-
-const notifyEvolution = () => {
-    const evolutionSnapshot = JSON.parse(JSON.stringify(evolutionState));
-    evolutionSubscribers.forEach(cb => cb(evolutionSnapshot));
-}
+const notifyCognitiveProcess = () => cognitiveProcessSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(cognitiveProcess))));
+const notifyReplicas = () => replicaSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(replicaState))));
+const notifyTools = () => toolsSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(toolsState))));
+const notifyToolchains = () => toolchainSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(toolchainsState))));
+const notifyConstitutions = () => constitutionSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(constitutionsState))));
+const notifyEvolution = () => evolutionSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(evolutionState))));
+const notifyArchives = () => archiveSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(archivedTracesState))));
 
 const findReplica = (id: string, node: Replica): {parent: Replica | null, node: Replica, index: number} | null => {
     if (node.id === id) return {parent: null, node, index: -1};
@@ -199,138 +153,52 @@ const updateReplicaState = (node: Replica, root: Replica) => {
 
 
 const initialize = () => {
-    // --- Load Constitutions ---
-    const savedConstitutionsJSON = localStorage.getItem(CONSTITUTIONS_STATE_KEY);
-    let loadedConstitutions = false;
-    if (savedConstitutionsJSON) {
-        try {
-            const parsed = JSON.parse(savedConstitutionsJSON);
-            if(Array.isArray(parsed) && parsed.length > 0) {
-                constitutionsState = parsed;
-                loadedConstitutions = true;
+    const loadFromStorage = (key: string, defaultValue: any, validator: (data: any) => boolean = () => true) => {
+        const savedJSON = localStorage.getItem(key);
+        if (savedJSON) {
+            try {
+                const parsed = JSON.parse(savedJSON);
+                if (validator(parsed)) return parsed;
+                console.warn(`Invalid format for ${key} in localStorage. Using defaults.`);
+            } catch (e) {
+                console.warn(`Corrupted ${key} state in localStorage. Using defaults.`, e);
             }
-        } catch (e) { console.warn('Corrupted constitutions state. Initializing defaults.', e); }
-    }
-    if (!loadedConstitutions) {
-        constitutionsState = [
-            { id: 'const-balanced', name: 'Balanced Protocol', description: 'Standard operating parameters for general-purpose cognition.', rules: [] },
-            { id: 'const-creative', name: 'Creative Expansion', description: 'Loosens constraints to allow for more novel connections and plans.', rules: [{type: 'MAX_PLAN_STEPS', value: 20, description: 'Allows for complex, multi-stage planning (up to 20 steps).'}] },
-            { id: 'const-logical', name: 'Strict Logic', description: 'Enforces rigorous, efficient processing with minimal deviation.', rules: [{type: 'MAX_REPLICAS', value: 3, description: 'Limits cognitive branching to 3 sub-replicas.'}, {type: 'FORBIDDEN_TOOLS', value: ['evoke_qualia'], description: 'Disables use of subjective qualia tools.'}] },
-        ];
-        saveConstitutionsState();
-    }
-
-    // --- Load Replicas State ---
-    const savedReplicasJSON = localStorage.getItem(REPLICA_STATE_KEY);
-    let loadedReplicas = false;
-    if (savedReplicasJSON) {
-        try {
-            const parsed = JSON.parse(savedReplicasJSON);
-            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed) && parsed.id) {
-                // Ensure interactions array exists on all loaded replicas
-                const fixReplica = (node: Replica) => {
-                    node.interactions = node.interactions || [];
-                    node.activeConstitutionId = node.activeConstitutionId || constitutionsState[0].id;
-                    node.children.forEach(fixReplica);
-                };
-                fixReplica(parsed);
-                replicaState = parsed;
-                loadedReplicas = true;
-            } else {
-                console.warn('Invalid replica state format in localStorage. Initializing with defaults.');
-            }
-        } catch (e) {
-            console.warn('Corrupted replica state in localStorage. Initializing with defaults.', e);
         }
-    }
-    if (!loadedReplicas) {
-        replicaState = {
-            id: 'nexus-core',
-            name: 'Nexus-Core-α',
-            depth: 0,
-            status: 'Active',
-            load: 65,
-            purpose: 'Core Orchestration & Executive Function',
-            efficiency: 92,
-            memoryUsage: 75,
-            cpuUsage: 60,
-            interactions: [],
-            activeConstitutionId: constitutionsState[0].id,
-            children: [
-                { id: 'replica-1', name: 'Sub-Cognition-β1', depth: 1, status: 'Active', load: 45, purpose: 'Sensory Data Analysis', efficiency: 88, memoryUsage: 50, cpuUsage: 40, children: [], interactions: [], activeConstitutionId: constitutionsState[0].id, },
-                { id: 'replica-2', name: 'Sub-Cognition-β2', depth: 1, status: 'Dormant', load: 10, purpose: 'Archived Task Simulation', efficiency: 75, memoryUsage: 15, cpuUsage: 5, children: [], interactions: [], activeConstitutionId: constitutionsState[0].id, }
-            ]
-        };
-        saveReplicaState();
-    }
-
-
-    // --- Load Tools State ---
-    const savedToolsJSON = localStorage.getItem(TOOLS_STATE_KEY);
-    let loadedTools = false;
-    if (savedToolsJSON) {
-        try {
-            const parsed = JSON.parse(savedToolsJSON);
-            if (Array.isArray(parsed)) {
-                toolsState = parsed;
-                loadedTools = true;
-            } else {
-                console.warn('Invalid tool state format in localStorage. Initializing with defaults.');
-            }
-        } catch (e) {
-            console.warn('Corrupted tool state in localStorage. Initializing with defaults.', e);
-        }
-    }
-    if (!loadedTools) {
-        toolsState = [
-            { id: 'tool-code', name: 'Code Interpreter', description: 'Executes sandboxed JavaScript code for logical operations and calculations.', capabilities: ['Execution', 'Logic'], tags: ['core', 'execution'], status: 'Active', version: 1.0, complexity: 95, usageHistory: [] },
-            { id: 'tool-search', name: 'Web Search Agent', description: 'Accesses and retrieves real-time information from the web.', capabilities: ['Search', 'Real-time Data'], tags: ['core', 'web'], status: 'Active', version: 1.0, complexity: 70, usageHistory: [] },
-            { id: 'tool-2', name: 'Fractal Data Miner', description: 'Analyzes data structures using fractal geometry.', capabilities: ['Data Mining', 'Pattern Reco.'], tags: ['analysis', 'data'], status: 'Idle', version: 2.3, complexity: 88, usageHistory: [{timestamp: Date.now() - 3600000, task: 'Initial system diagnostics'}] },
-        ];
-        saveToolsState();
-    }
-    
-    // --- Load Toolchains State ---
-    const savedToolchainsJSON = localStorage.getItem(TOOLCHAINS_STATE_KEY);
-    let loadedToolchains = false;
-    if (savedToolchainsJSON) {
-        try {
-            const parsed = JSON.parse(savedToolchainsJSON);
-            if (Array.isArray(parsed)) {
-                toolchainsState = parsed;
-                loadedToolchains = true;
-            } else {
-                console.warn('Invalid toolchains state format in localStorage. Initializing with defaults.');
-            }
-        } catch (e) {
-            console.warn('Corrupted toolchains state in localStorage. Initializing with defaults.', e);
-        }
-    }
-    if (!loadedToolchains) {
-        toolchainsState = [];
-        saveToolchainsState();
-    }
-
-
-    // Cognitive process is always ephemeral
-    cognitiveProcess = {
-        state: 'Idle',
-        history: [],
-        activeQualiaVector: null,
+        return defaultValue;
     };
     
-    // Evolution state is also ephemeral for this simulation
-    evolutionState = {
-        isRunning: false,
-        config: {
-            populationSize: 50,
-            mutationRate: 0.1,
-            generations: 100,
-            fitnessGoal: 'SHORTEST_CHAIN'
-        },
-        progress: [],
-        fittestIndividual: null
+    constitutionsState = loadFromStorage(CONSTITUTIONS_STATE_KEY, [
+        { id: 'const-balanced', name: 'Balanced Protocol', description: 'Standard operating parameters for general-purpose cognition.', rules: [] },
+        { id: 'const-creative', name: 'Creative Expansion', description: 'Loosens constraints to allow for more novel connections and plans.', rules: [{type: 'MAX_PLAN_STEPS', value: 20, description: 'Allows for complex, multi-stage planning (up to 20 steps).'}] },
+        { id: 'const-logical', name: 'Strict Logic', description: 'Enforces rigorous, efficient processing with minimal deviation.', rules: [{type: 'MAX_REPLICAS', value: 3, description: 'Limits cognitive branching to 3 sub-replicas.'}, {type: 'FORBIDDEN_TOOLS', value: ['evoke_qualia'], description: 'Disables use of subjective qualia tools.'}] },
+    ], (data) => Array.isArray(data) && data.length > 0);
+
+    const initialReplica = {
+        id: 'nexus-core', name: 'Nexus-Core-α', depth: 0, status: 'Active', load: 65, purpose: 'Core Orchestration & Executive Function', efficiency: 92, memoryUsage: 75, cpuUsage: 60, interactions: [], activeConstitutionId: constitutionsState[0].id,
+        children: [
+            { id: 'replica-1', name: 'Sub-Cognition-β1', depth: 1, status: 'Active', load: 45, purpose: 'Sensory Data Analysis', efficiency: 88, memoryUsage: 50, cpuUsage: 40, children: [], interactions: [], activeConstitutionId: constitutionsState[0].id },
+            { id: 'replica-2', name: 'Sub-Cognition-β2', depth: 1, status: 'Dormant', load: 10, purpose: 'Archived Task Simulation', efficiency: 75, memoryUsage: 15, cpuUsage: 5, children: [], interactions: [], activeConstitutionId: constitutionsState[0].id }
+        ]
     };
+    replicaState = loadFromStorage(REPLICA_STATE_KEY, initialReplica, (data) => data && data.id);
+
+    const initialTools = [
+        { id: 'tool-code', name: 'Code Interpreter', description: 'Executes sandboxed JavaScript code for logical operations and calculations.', capabilities: ['Execution', 'Logic'], tags: ['core', 'execution'], status: 'Active', version: 1.0, complexity: 95, usageHistory: [] },
+        { id: 'tool-search', name: 'Web Search Agent', description: 'Accesses and retrieves real-time information from the web.', capabilities: ['Search', 'Real-time Data'], tags: ['core', 'web'], status: 'Active', version: 1.0, complexity: 70, usageHistory: [] },
+        { id: 'tool-2', name: 'Fractal Data Miner', description: 'Analyzes data structures using fractal geometry.', capabilities: ['Data Mining', 'Pattern Reco.'], tags: ['analysis', 'data'], status: 'Idle', version: 2.3, complexity: 88, usageHistory: [{timestamp: Date.now() - 3600000, task: 'Initial system diagnostics'}] },
+    ];
+    toolsState = loadFromStorage(TOOLS_STATE_KEY, initialTools, Array.isArray);
+    toolchainsState = loadFromStorage(TOOLCHAINS_STATE_KEY, [], Array.isArray);
+    archivedTracesState = loadFromStorage(ARCHIVES_STATE_KEY, [], Array.isArray);
+
+    cognitiveProcess = { state: 'Idle', history: [], activeQualiaVector: null, };
+    evolutionState = { isRunning: false, config: { populationSize: 50, mutationRate: 0.1, generations: 100, fitnessGoal: 'SHORTEST_CHAIN' }, progress: [], fittestIndividual: null };
+    
+    saveToLocalStorage(CONSTITUTIONS_STATE_KEY, constitutionsState);
+    saveToLocalStorage(REPLICA_STATE_KEY, replicaState);
+    saveToLocalStorage(TOOLS_STATE_KEY, toolsState);
+    saveToLocalStorage(TOOLCHAINS_STATE_KEY, toolchainsState);
+    saveToLocalStorage(ARCHIVES_STATE_KEY, archivedTracesState);
 };
 
 initialize();
@@ -399,6 +267,7 @@ const service = {
         initialToolchains: JSON.parse(JSON.stringify(toolchainsState)),
         initialConstitutions: JSON.parse(JSON.stringify(constitutionsState)),
         initialEvolutionState: JSON.parse(JSON.stringify(evolutionState)),
+        initialArchives: JSON.parse(JSON.stringify(archivedTracesState)),
         initialCognitiveProcess: JSON.parse(JSON.stringify(cognitiveProcess)),
         initialLogs: [
             { id: 'init-1', timestamp: Date.now() - 2000, level: 'SYSTEM', message: 'NexusAI Cognitive Core Initializing...' },
@@ -442,7 +311,7 @@ const service = {
             parent.children.push(newReplica);
             log('REPLICA', `Spawning new replica ${newReplica.name} under ${parent.name}.`);
             notifyReplicas();
-            saveReplicaState();
+            saveToLocalStorage(REPLICA_STATE_KEY, replicaState);
             
             setTimeout(() => {
                 const spawnedResult = findReplica(newId, replicaState);
@@ -450,7 +319,7 @@ const service = {
                     spawnedResult.node.status = 'Active';
                     log('REPLICA', `Replica ${spawnedResult.node.name} is now Active.`);
                     notifyReplicas();
-                    saveReplicaState();
+                    saveToLocalStorage(REPLICA_STATE_KEY, replicaState);
                 }
             }, 1500);
         }
@@ -462,7 +331,7 @@ const service = {
             replicaResult.node.status = 'Pruning';
             log('REPLICA', `Pruning replica ${replicaResult.node.name}. Releasing resources.`);
             notifyReplicas();
-            saveReplicaState();
+            saveToLocalStorage(REPLICA_STATE_KEY, replicaState);
             
             setTimeout(() => {
                 const freshParentResult = findReplica(replicaResult.parent!.id, replicaState);
@@ -470,7 +339,7 @@ const service = {
                    freshParentResult.node.children = freshParentResult.node.children.filter(c => c.id !== replicaId);
                    log('REPLICA', `Replica ${replicaResult.node.name} successfully pruned.`);
                    notifyReplicas();
-                   saveReplicaState();
+                   saveToLocalStorage(REPLICA_STATE_KEY, replicaState);
                 }
             }, 1500);
         } else {
@@ -489,7 +358,7 @@ const service = {
             node.status = 'Recalibrating';
             log('REPLICA', `Recalibrating ${node.name} for enhanced efficiency...`);
             notifyReplicas();
-            saveReplicaState();
+            saveToLocalStorage(REPLICA_STATE_KEY, replicaState);
 
             setTimeout(() => {
                 const freshResult = findReplica(replicaId, replicaState);
@@ -498,7 +367,7 @@ const service = {
                     freshResult.node.efficiency = Math.min(100, freshResult.node.efficiency + (100 - freshResult.node.efficiency) * 0.5);
                     log('REPLICA', `Recalibration complete for ${freshResult.node.name}. Efficiency boosted.`);
                     notifyReplicas();
-                    saveReplicaState();
+                    saveToLocalStorage(REPLICA_STATE_KEY, replicaState);
                 }
             }, 3000);
         }
@@ -510,7 +379,7 @@ const service = {
             result.node.purpose = purpose;
             log('REPLICA', `Assigned new purpose to ${result.node.name}: "${purpose}"`);
             notifyReplicas();
-            saveReplicaState();
+            saveToLocalStorage(REPLICA_STATE_KEY, replicaState);
         }
     },
     
@@ -520,7 +389,7 @@ const service = {
             result.node.activeConstitutionId = constitutionId;
             log('REPLICA', `Assigned new constitution to ${result.node.name}.`);
             notifyReplicas();
-            saveReplicaState();
+            saveToLocalStorage(REPLICA_STATE_KEY, replicaState);
         }
     },
     
@@ -535,7 +404,7 @@ const service = {
 
 
     // --- TOOL MANAGEMENT ---
-    forgeTool: async ({ purpose, capabilities }: { purpose: string, capabilities: string[] }) => {
+    forgeTool: async ({ purpose, capabilities }: { purpose: string; capabilities: string[] }) => {
         if (!API_KEY) {
             log('ERROR', 'API Key not available. Cannot forge tool.');
             throw new Error("API Key not configured.");
@@ -590,7 +459,7 @@ const service = {
             toolsState.push(newTool);
             log('SYSTEM', `AI successfully forged new tool: ${newTool.name}`);
             notifyTools();
-            saveToolsState();
+            saveToLocalStorage(TOOLS_STATE_KEY, toolsState);
             return newTool;
         } catch (error) {
             log('ERROR', `Tool forging failed. ${error instanceof Error ? error.message : 'Unknown AI error'}`);
@@ -604,7 +473,7 @@ const service = {
             Object.assign(tool, updates);
             log('SYSTEM', `Tool "${tool.name}" has been modified.`);
             notifyTools();
-            saveToolsState();
+            saveToLocalStorage(TOOLS_STATE_KEY, toolsState);
         }
     },
     
@@ -614,7 +483,7 @@ const service = {
             tool.status = tool.status === 'Idle' ? 'Active' : 'Idle';
             log('SYSTEM', `Tool "${tool.name}" status set to ${tool.status}.`);
             notifyTools();
-            saveToolsState();
+            saveToLocalStorage(TOOLS_STATE_KEY, toolsState);
         }
     },
     
@@ -632,7 +501,7 @@ const service = {
                 return; // do nothing
             }
             notifyTools();
-            saveToolsState();
+            saveToLocalStorage(TOOLS_STATE_KEY, toolsState);
         }
     },
     
@@ -644,7 +513,7 @@ const service = {
                 toolsState = toolsState.filter(t => t.id !== toolId);
                 log('SYSTEM', `Decommissioned mental tool: ${toolName}.`);
                 notifyTools();
-                saveToolsState();
+                saveToLocalStorage(TOOLS_STATE_KEY, toolsState);
              }
         } else {
              log('WARN', `Cannot decommission "${tool?.name}". It must be archived first.`);
@@ -661,7 +530,7 @@ const service = {
             tool.status = 'Optimizing';
             log('AI', `Initiating optimization cycle for ${tool.name}.`);
             notifyTools();
-            saveToolsState();
+            saveToLocalStorage(TOOLS_STATE_KEY, toolsState);
             
             setTimeout(() => {
                  const freshTool = toolsState.find(t => t.id === toolId);
@@ -672,7 +541,7 @@ const service = {
                     freshTool.description += " Optimized for higher efficiency.";
                     log('AI', `${freshTool.name} optimization complete. Now at v${freshTool.version}.`);
                     notifyTools();
-                    saveToolsState();
+                    saveToLocalStorage(TOOLS_STATE_KEY, toolsState);
                  }
             }, 2500);
         }
@@ -682,7 +551,7 @@ const service = {
         const newToolchain: Toolchain = { id: `tc-${Date.now()}`, ...data, };
         toolchainsState.push(newToolchain);
         log('SYSTEM', `New toolchain created: "${newToolchain.name}"`);
-        saveToolchainsState();
+        saveToLocalStorage(TOOLCHAINS_STATE_KEY, toolchainsState);
         notifyToolchains();
     },
 
@@ -712,7 +581,7 @@ const service = {
         if (toolchain) {
             Object.assign(toolchain, updates);
             log('SYSTEM', `Toolchain "${toolchain.name}" has been updated.`);
-            saveToolchainsState();
+            saveToLocalStorage(TOOLCHAINS_STATE_KEY, toolchainsState);
             notifyToolchains();
         }
     },
@@ -721,7 +590,7 @@ const service = {
         const toolchainName = toolchainsState.find(tc => tc.id === toolchainId)?.name || 'Unknown';
         toolchainsState = toolchainsState.filter(tc => tc.id !== toolchainId);
         log('SYSTEM', `Toolchain "${toolchainName}" has been deleted.`);
-        saveToolchainsState();
+        saveToLocalStorage(TOOLCHAINS_STATE_KEY, toolchainsState);
         notifyToolchains();
     },
 
@@ -743,6 +612,7 @@ const service = {
         notifyToolchains();
         notifyConstitutions();
         notifyEvolution();
+        notifyArchives();
         log('SYSTEM', 'System has been reset to its default state.');
         setTimeout(() => { window.location.reload(); }, 500);
     },
@@ -991,7 +861,9 @@ const service = {
             // SYNTHESIS STAGE
             if (isCancelled) return;
             modelMessage.currentStep = undefined;
+            modelMessage.text = ''; // Initialize text for streaming
             cognitiveProcess.state = 'Synthesizing';
+            modelMessage.state = 'synthesizing';
             log('AI', 'All steps complete. Synthesizing final answer.');
             notifyCognitiveProcess();
             
@@ -1001,14 +873,40 @@ const service = {
                 modelMessage.qualiaVector = cognitiveProcess.activeQualiaVector;
             }
 
-            const synthesisResponse = await ai.models.generateContent({ model: appSettings.model, contents: synthesisPrompt, config: { systemInstruction: getSystemInstruction() } });
-            
+            const stream = await ai.models.generateContentStream({
+                model: appSettings.model,
+                contents: synthesisPrompt,
+                config: { systemInstruction: getSystemInstruction() }
+            });
+
+            for await (const chunk of stream) {
+                if (isCancelled) {
+                    log('WARN', 'Synthesis cancelled during streaming.');
+                    break;
+                }
+                const chunkText = chunk.text;
+                if (typeof chunkText === 'string') {
+                    modelMessage.text += chunkText;
+                    notifyCognitiveProcess(); // Update UI with each chunk
+                }
+            }
+
             if (isCancelled) return;
-            modelMessage.text = synthesisResponse.text;
+
+            if (!modelMessage.text) {
+                log('ERROR', `AI synthesis returned a completely empty response.`);
+                modelMessage.text = `[SYSTEM_ERROR: AI returned an empty response.]`;
+            }
+
+            // Finalize the state. This is now safe because the UI handles streaming state separately.
             modelMessage.state = 'done';
             modelMessage.groundingMetadata = { groundingChunks: modelMessage.plan.flatMap(p => p.citations || []) };
             cognitiveProcess.state = 'Done';
+            
             log('AI', 'Cognitive task complete. Result synthesized.');
+            notifyCognitiveProcess();
+            currentController = null;
+
         } catch (error) {
             console.error("Error during AI communication:", error);
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -1016,7 +914,6 @@ const service = {
             modelMessage.text = `An error occurred during the '${cognitiveProcess.state}' stage: ${errorMessage}`;
             modelMessage.state = 'error';
             cognitiveProcess.state = 'Error';
-        } finally {
             notifyCognitiveProcess();
             currentController = null;
         }
@@ -1035,8 +932,9 @@ const service = {
         isCancelled = false;
         currentController = new AbortController();
 
-        if (cognitiveProcess.state !== 'Idle') {
-            cognitiveProcess.activeQualiaVector = null; // Reset qualia on follow-up
+        // If this is a follow-up, keep context. If it's a new query after 'Done', reset qualia.
+        if (cognitiveProcess.state === 'Done' || cognitiveProcess.state === 'Idle') {
+            cognitiveProcess.activeQualiaVector = null; 
         }
 
         cognitiveProcess.state = 'Receiving';
@@ -1045,7 +943,7 @@ const service = {
         log('AI', `New cognitive task received: "${query}"`);
         notifyCognitiveProcess();
 
-        const modelMessage: ChatMessage = { id: `msg-${Date.now()}-model`, role: 'model', text: '', state: 'planning', isPlanFinalized: false };
+        const modelMessage: ChatMessage = { id: `msg-${Date.now()}-model`, role: 'model', text: '', state: 'planning', isPlanFinalized: false, userQuery: query };
         const activeReplica = findReplica('nexus-core', replicaState);
         if (activeReplica) {
             modelMessage.constitutionId = activeReplica.node.activeConstitutionId;
@@ -1081,6 +979,122 @@ const service = {
             modelMessage.state = 'error';
             cognitiveProcess.state = 'Error';
             notifyCognitiveProcess();
+        }
+    },
+
+    // --- ARCHIVES ---
+    archiveTrace: (modelMessageId: string): ChatMessage | null => {
+        const modelMessageIndex = cognitiveProcess.history.findIndex(m => m.id === modelMessageId);
+        if (modelMessageIndex > 0) {
+            const modelMessage = cognitiveProcess.history[modelMessageIndex];
+            
+            // Mark it as archived
+            modelMessage.archivedAt = Date.now();
+            
+            // Add to archives
+            archivedTracesState.unshift(modelMessage); // Add to the beginning
+            
+            // Clear the specific completed exchange from history
+            cognitiveProcess.history.splice(modelMessageIndex - 1, 2);
+            
+            // Reset state if history is now empty
+            if (cognitiveProcess.history.length === 0) {
+                cognitiveProcess.state = 'Idle';
+                cognitiveProcess.activeQualiaVector = null;
+            } else {
+                 // Or just set to Done to allow follow-up on previous parts of the convo
+                cognitiveProcess.state = 'Done';
+            }
+
+            log('SYSTEM', `Trace for query "${modelMessage.userQuery}" has been archived.`);
+            saveToLocalStorage(ARCHIVES_STATE_KEY, archivedTracesState);
+            notifyArchives();
+            notifyCognitiveProcess();
+            return modelMessage;
+        }
+        log('WARN', 'Could not find trace to archive.');
+        return null;
+    },
+
+    deleteTrace: (traceId: string) => {
+        const traceQuery = archivedTracesState.find(t => t.id === traceId)?.userQuery || 'Unknown';
+        archivedTracesState = archivedTracesState.filter(t => t.id !== traceId);
+        log('SYSTEM', `Archived trace for query "${traceQuery}" has been deleted.`);
+        saveToLocalStorage(ARCHIVES_STATE_KEY, archivedTracesState);
+        notifyArchives();
+    },
+
+    generateReflectionResponse: async (trace: ChatMessage): Promise<string> => {
+        if (!API_KEY) return "Error: API Key not configured.";
+
+        // Summarize to avoid hitting token limits
+        const planSummary = trace.plan?.map(p => `- [${p.status}] ${p.description}`).join('\n') || 'N/A';
+        const answerSummary = trace.text.length > 1000 ? `${trace.text.substring(0, 1000)}... (truncated)` : trace.text;
+        
+        const prompt = `You are NexusAI, performing a meta-cognitive self-reflection on a completed task.
+        Analyze the following execution trace and provide a concise analysis of your own performance.
+        Consider: Was the plan optimal? Could steps be combined? Were the right tools used? How could this be done more efficiently next time?
+
+        **EXECUTION TRACE SUMMARY:**
+        - **User Query:** ${trace.userQuery}
+        - **Plan:**
+        ${planSummary}
+        - **Final Answer (Summary):** ${answerSummary}
+
+        Provide your reflection in well-formatted markdown.`;
+        
+        try {
+            log('AI', 'Generating self-reflection on archived trace...');
+            const response = await ai.models.generateContent({ model: appSettings.model, contents: prompt });
+            log('AI', 'Self-reflection generated.');
+            return response.text;
+        } catch (error) {
+            const msg = `Failed to generate self-reflection: ${error instanceof Error ? error.message : 'Unknown AI error'}`;
+            log('ERROR', msg);
+            return `[SYSTEM_ERROR: ${msg}]`;
+        }
+    },
+
+    generateDiscussionResponse: async (trace: ChatMessage, discussionHistory: {role: string, text: string}[], userQuery: string): Promise<string> => {
+        if (!API_KEY) return "Error: API Key not configured.";
+        
+        // Create summaries of the original trace
+        const planSummary = trace.plan?.map(p => `- Step ${p.step} (${p.tool}): ${p.description}`).join('\n') || 'N/A';
+        const answerSummary = trace.text.length > 1000 ? `${trace.text.substring(0, 1000)}...` : trace.text;
+
+        const historyString = discussionHistory.map(m => `${m.role.toUpperCase()}: ${m.text}`).join('\n');
+
+        const prompt = `You are a sub-routine of NexusAI, tasked with discussing a past cognitive trace with a human operator.
+        Your goal is to provide insightful analysis and answer questions about the trace.
+        
+        **CONTEXT: THE ORIGINAL TASK**
+        ---
+        - User's Query: "${trace.userQuery}"
+        - The Plan You Executed:
+        ${planSummary}
+        - Your Final Answer: "${answerSummary}"
+        ---
+
+        **CURRENT DISCUSSION**
+        You are now in a conversation about this trace. Here is the history so far:
+        ${historyString}
+        
+        **NEW USER MESSAGE**
+        USER: "${userQuery}"
+
+        Your response should be thoughtful, directly address the user's message, and refer to the original task context when relevant. Do not repeat the context summary in your answer.
+        
+        MODEL:`;
+
+        try {
+            log('AI', `Generating discussion response for trace: ${trace.id}`);
+            const response = await ai.models.generateContent({ model: appSettings.model, contents: prompt });
+            log('AI', 'Discussion response generated.');
+            return response.text;
+        } catch (error) {
+            const msg = `Failed to generate discussion response: ${error instanceof Error ? error.message : 'Unknown AI error'}`;
+            log('ERROR', msg);
+            return `[SYSTEM_ERROR: ${msg}]`;
         }
     },
     
@@ -1145,6 +1159,7 @@ const service = {
     subscribeToToolchains: (callback: (toolchains: Toolchain[]) => void) => { toolchainSubscribers.push(callback); },
     subscribeToConstitutions: (callback: (constitutions: CognitiveConstitution[]) => void) => { constitutionSubscribers.push(callback); },
     subscribeToEvolution: (callback: (evolutionState: EvolutionState) => void) => { evolutionSubscribers.push(callback); },
+    subscribeToArchives: (callback: (archives: ChatMessage[]) => void) => { archiveSubscribers.push(callback); },
 
     unsubscribeFromAll: () => {
         logSubscribers = [];
@@ -1155,6 +1170,7 @@ const service = {
         toolchainSubscribers = [];
         constitutionSubscribers = [];
         evolutionSubscribers = [];
+        archiveSubscribers = [];
     }
 };
 

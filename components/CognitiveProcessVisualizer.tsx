@@ -1,7 +1,6 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
 import type { CognitiveProcess, ChatMessage, PlanStep, CognitiveConstitution, SimulatedImage } from '../types';
-import { BrainCircuitIcon, UserIcon, BookOpenIcon, CogIcon, CheckCircleIcon, CubeTransparentIcon, PlayIcon, PencilIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, PlusCircleIcon, CodeBracketIcon, LightBulbIcon, LinkIcon, ArrowRightIcon, PhotographIcon, SparklesIcon } from './Icons';
-import Markdown from 'react-markdown';
+import { BrainCircuitIcon, UserIcon, BookOpenIcon, CogIcon, CheckCircleIcon, CubeTransparentIcon, PlayIcon, PencilIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, PlusCircleIcon, CodeBracketIcon, LightBulbIcon, LinkIcon, ArrowRightIcon, PhotographIcon, SparklesIcon, ArchiveBoxIcon } from './Icons';
 
 interface CognitiveProcessVisualizerProps {
   process: CognitiveProcess;
@@ -11,6 +10,7 @@ interface CognitiveProcessVisualizerProps {
   onAddPlanStep: (messageId: string) => void;
   onDeletePlanStep: (messageId: string, stepIndex: number) => void;
   onSavePlanAsToolchain: (plan: PlanStep[]) => void;
+  onArchiveTrace: (messageId: string) => void;
   constitutions: CognitiveConstitution[];
 }
 
@@ -38,7 +38,7 @@ const GroundingCitations: React.FC<{ metadata: any }> = memo(({ metadata }) => {
                             className="text-nexus-secondary hover:underline break-all"
                             title={chunk.web.uri}
                          >
-                             {chunk.web.title || chunk.web.uri}
+                             {String(chunk.web.title || chunk.web.uri || '')}
                          </a>
                     </li>
                 ))}
@@ -52,7 +52,7 @@ GroundingCitations.displayName = 'GroundingCitations';
 const UserMessage: React.FC<{ message: ChatMessage }> = memo(({ message }) => (
     <div className="flex justify-end my-2 animate-spawn-in">
         <div className="bg-nexus-primary/80 text-nexus-dark rounded-xl rounded-br-none max-w-lg p-3 shadow-md">
-            <p className="text-sm">{message.text}</p>
+            <p className="text-sm">{String(message.text || '')}</p>
         </div>
         <UserIcon className="w-8 h-8 text-nexus-primary ml-3 flex-shrink-0" />
     </div>
@@ -186,7 +186,7 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
 };
 
 const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMessage }> = memo((props) => {
-    const { message, onExecutePlan, onUpdatePlanStep, onReorderPlan, onAddPlanStep, onDeletePlanStep, onSavePlanAsToolchain, constitutions } = props;
+    const { message, onExecutePlan, onUpdatePlanStep, onReorderPlan, onAddPlanStep, onDeletePlanStep, onSavePlanAsToolchain, onArchiveTrace, constitutions } = props;
     const isPlanEditable = message.state === 'awaiting_execution' && !message.isPlanFinalized;
     const [isPlanOpen, setIsPlanOpen] = useState(true);
     const activeConstitution = constitutions.find(c => c.id === message.constitutionId);
@@ -268,6 +268,27 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
                          <p className="text-nexus-accent italic animate-pulse text-sm text-center pt-2">Executing plan...</p>
                     )}
 
+                    {message.state === 'synthesizing' && (
+                        <div className="pt-4 border-t border-nexus-surface/50 animate-spawn-in">
+                            <div className="flex justify-between items-center mb-2">
+                                <h4 className="font-bold text-nexus-primary uppercase tracking-wider text-sm">Synthesizing Answer</h4>
+                                {message.qualiaVector && (
+                                     <div className="relative group">
+                                         <LightBulbIcon className="w-5 h-5 text-yellow-400" />
+                                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-nexus-dark text-white text-xs rounded-md p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">
+                                             Influenced by active Qualia state.
+                                             <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-nexus-dark"></div>
+                                         </div>
+                                     </div>
+                                )}
+                             </div>
+                            <div className="text-nexus-text">
+                                <pre className="text-sm whitespace-pre-wrap font-sans">{message.text}</pre>
+                                <span className="inline-block w-2 h-4 bg-nexus-primary animate-pulse ml-1 align-bottom"></span>
+                            </div>
+                        </div>
+                    )}
+
                     {message.state === 'done' && (
                         <div className="pt-4 border-t border-nexus-surface/50">
                              <div className="flex justify-between items-center mb-2">
@@ -282,8 +303,15 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
                                      </div>
                                 )}
                              </div>
-                            <div className="prose prose-invert prose-sm max-w-none text-nexus-text">
-                                <Markdown>{message.text || "..."}</Markdown>
+                             <pre className="text-sm whitespace-pre-wrap font-sans text-nexus-text">{String(message.text || "...")}</pre>
+                            <div className="flex justify-center mt-4">
+                                <button 
+                                    onClick={() => onArchiveTrace(message.id)}
+                                    className="flex items-center gap-2 bg-blue-500/20 text-blue-400 font-bold py-2 px-4 rounded-md border border-blue-500/50 hover:bg-blue-500/40 hover:text-white transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                >
+                                    <ArchiveBoxIcon className="w-5 h-5" />
+                                    Archive & Analyze
+                                </button>
                             </div>
                         </div>
                     )}
@@ -292,9 +320,7 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
         }
         
         return (
-            <div className="prose prose-invert prose-sm max-w-none text-nexus-text">
-                <Markdown>{message.text || "..."}</Markdown>
-            </div>
+            <pre className="text-sm whitespace-pre-wrap font-sans text-nexus-text">{String(message.text || "...")}</pre>
         );
     }
 
@@ -302,7 +328,9 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
         switch(message.state) {
             case 'planning': return <CogIcon className="w-8 h-8 text-nexus-accent animate-spin"/>;
             case 'awaiting_execution': return <PencilIcon className="w-8 h-8 text-yellow-400 animate-pulse-slow"/>;
-            case 'executing': return <CogIcon className="w-8 h-8 text-nexus-accent animate-spin"/>;
+            case 'executing':
+            case 'synthesizing': 
+                return <CogIcon className="w-8 h-8 text-nexus-accent animate-spin"/>;
             case 'done': return <BrainCircuitIcon className="w-8 h-8 text-nexus-secondary animate-glow-pulse" />;
             case 'error': return <BrainCircuitIcon className="w-8 h-8 text-red-500" />;
             default: return <BrainCircuitIcon className="w-8 h-8 text-nexus-text-muted" />;

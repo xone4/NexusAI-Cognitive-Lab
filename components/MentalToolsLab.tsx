@@ -84,7 +84,7 @@ const ToolCard: React.FC<Omit<MentalToolsLabProps, 'tools' | 'toolchains' | 'onF
                                 {({ active, disabled }) => {
                                     const isActivate = tool.status !== 'Active';
                                     return (
-                                        <button onClick={() => onToggleStatus(tool.id)} className={`${active ? 'bg-nexus-surface text-white' : 'text-nexus-text-muted'} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} group flex w-full items-center rounded-md px-2 py-2 text-sm`}>
+                                        <button onClick={() => onToggleStatus(tool.id)} disabled={disabled} className={`${active ? 'bg-nexus-surface text-white' : 'text-nexus-text-muted'} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} group flex w-full items-center rounded-md px-2 py-2 text-sm`}>
                                             {isActivate ? <CheckCircleIcon className="mr-2 h-5 w-5 text-green-400" /> : <XCircleIcon className="mr-2 h-5 w-5 text-yellow-400" />}
                                             {isActivate ? 'Activate' : 'Deactivate'}
                                         </button>
@@ -101,7 +101,7 @@ const ToolCard: React.FC<Omit<MentalToolsLabProps, 'tools' | 'toolchains' | 'onF
                                 </Menu.Item>
                                  <Menu.Item disabled={tool.status !== 'Idle'}>
                                 {({ active, disabled }) => (
-                                    <button onClick={() => onOptimizeTool(tool.id)} className={`${active ? 'bg-nexus-surface text-white' : 'text-nexus-text-muted'} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} group flex w-full items-center rounded-md px-2 py-2 text-sm`}>
+                                    <button onClick={() => onOptimizeTool(tool.id)} disabled={disabled} className={`${active ? 'bg-nexus-surface text-white' : 'text-nexus-text-muted'} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} group flex w-full items-center rounded-md px-2 py-2 text-sm`}>
                                         <CogIcon className="mr-2 h-5 w-5 text-blue-400" />
                                         Optimize
                                     </button>
@@ -110,7 +110,7 @@ const ToolCard: React.FC<Omit<MentalToolsLabProps, 'tools' | 'toolchains' | 'onF
                                  <div className="my-1 h-px bg-nexus-surface/50" />
                                  <Menu.Item disabled={tool.status === 'Active' || tool.status === 'Optimizing'}>
                                 {({ active, disabled }) => (
-                                    <button onClick={() => onArchiveTool(tool.id)} className={`${active ? 'bg-nexus-surface text-white' : 'text-nexus-text-muted'} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} group flex w-full items-center rounded-md px-2 py-2 text-sm`}>
+                                    <button onClick={() => onArchiveTool(tool.id)} disabled={disabled} className={`${active ? 'bg-nexus-surface text-white' : 'text-nexus-text-muted'} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} group flex w-full items-center rounded-md px-2 py-2 text-sm`}>
                                         <ArchiveBoxIcon className="mr-2 h-5 w-5 text-gray-400" />
                                         {tool.status === 'Archived' ? 'Unarchive' : 'Archive'}
                                     </button>
@@ -118,7 +118,7 @@ const ToolCard: React.FC<Omit<MentalToolsLabProps, 'tools' | 'toolchains' | 'onF
                                 </Menu.Item>
                                  <Menu.Item disabled={tool.status !== 'Archived'}>
                                 {({ active, disabled }) => (
-                                    <button onClick={() => onDecommissionTool(tool.id)} className={`${active ? 'bg-red-500/20 text-red-400' : 'text-red-500'} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} group flex w-full items-center rounded-md px-2 py-2 text-sm`}>
+                                    <button onClick={() => onDecommissionTool(tool.id)} disabled={disabled} className={`${active ? 'bg-red-500/20 text-red-400' : 'text-red-500'} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} group flex w-full items-center rounded-md px-2 py-2 text-sm`}>
                                        <TrashIcon className="mr-2 h-5 w-5" />
                                        Decommission
                                     </button>

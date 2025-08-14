@@ -72,7 +72,7 @@ export interface LogEntry {
   source?: string; // Optional Replica ID
 }
 
-export type ActiveView = 'dashboard' | 'replicas' | 'tools' | 'architecture' | 'analysis' | 'settings' | 'evolution';
+export type ActiveView = 'dashboard' | 'replicas' | 'tools' | 'architecture' | 'analysis' | 'settings' | 'evolution' | 'archives';
 
 export type LogVerbosity = 'STANDARD' | 'VERBOSE';
 export type SystemPersonality = 'BALANCED' | 'CREATIVE' | 'LOGICAL';
@@ -117,13 +117,15 @@ export interface ChatMessage {
     id: string;
     role: 'user' | 'model';
     text: string;
-    state?: 'planning' | 'awaiting_execution' | 'executing' | 'done' | 'error';
+    state?: 'planning' | 'awaiting_execution' | 'executing' | 'synthesizing' | 'done' | 'error';
     plan?: PlanStep[];
     currentStep?: number;
     groundingMetadata?: any; // For final answer citations
     isPlanFinalized?: boolean;
     qualiaVector?: QualiaVector; // Snapshot of the active qualia vector when this message was synthesized
     constitutionId?: string; // Track which constitution was active for this plan
+    userQuery?: string; // On model messages, store the user query that prompted it
+    archivedAt?: number; // Timestamp for when it was archived
 }
 
 export interface CognitiveProcess {
