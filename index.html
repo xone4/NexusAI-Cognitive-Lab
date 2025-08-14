@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NexusAI Cognitive Lab</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'nexus-dark': '#0a0f1f',
+              'nexus-bg': '#10182c',
+              'nexus-surface': '#18213a',
+              'nexus-primary': '#00aaff',
+              'nexus-secondary': '#00e5ff',
+              'nexus-accent': '#ff00aa',
+              'nexus-text': '#e0e0e0',
+              'nexus-text-muted': '#a0a0a0',
+            },
+            fontFamily: {
+              'sans': ['Inter', 'sans-serif'],
+              'mono': ['Fira Code', 'monospace'],
+            },
+            animation: {
+              'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'text-focus-in': 'text-focus-in 1s cubic-bezier(0.550, 0.085, 0.680, 0.530) both',
+              'fade-out': 'fadeOut 1.5s ease-out forwards',
+              'spawn-in': 'spawn-in 0.5s ease-out forwards',
+              'glow-pulse': 'glow-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'data-flow-x': 'data-flow-x 3s linear infinite',
+              'data-flow-y': 'data-flow-y 2s linear infinite',
+              'load-pulse': 'load-pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            },
+            keyframes: {
+              'text-focus-in': {
+                '0%': { filter: 'blur(12px)', opacity: '0' },
+                '100%': { filter: 'blur(0px)', opacity: '1' },
+              },
+              'fadeOut': {
+                '0%': { opacity: '1' },
+                '100%': { opacity: '0.3' },
+              },
+              'spawn-in': {
+                '0%': { opacity: '0', transform: 'scale(0.9) translateX(-20px)' },
+                '100%': { opacity: '1', transform: 'scale(1) translateX(0)' },
+              },
+              'glow-pulse': {
+                '0%, 100%': { boxShadow: '0 0 0px 0px rgba(0, 170, 255, 0.4)' },
+                '50%': { boxShadow: '0 0 8px 3px rgba(0, 170, 255, 0.7)' },
+              },
+              'data-flow-x': {
+                'from': { backgroundPosition: '100% 0' },
+                'to': { backgroundPosition: '-100% 0' },
+              },
+              'data-flow-y': {
+                'from': { backgroundPosition: '0 100%' },
+                'to': { backgroundPosition: '0 -100%' },
+              },
+              'load-pulse': {
+                '0%': { transform: 'scale(1)', boxShadow: '0 0 5px rgba(255, 0, 170, 0.4)' },
+                '50%': { transform: 'scale(1.03)', boxShadow: '0 0 15px rgba(255, 0, 170, 0.8)' },
+                '100%': { transform: 'scale(1)', boxShadow: '0 0 5px rgba(255, 0, 170, 0.4)' },
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      .animations-minimal * {
+        transition-duration: 0.1s !important;
+        animation-duration: 0.1s !important;
+        animation-iteration-count: 1 !important;
+      }
+      .animations-none * {
+        transition: none !important;
+        animation: none !important;
+      }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom": "https://esm.sh/react-dom@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "react-dom/": "https://esm.sh/react-dom@18.2.0/",
+    "react/": "https://esm.sh/react@18.2.0/",
+    "recharts": "https://esm.sh/recharts@2.12.7?deps=react@18.2.0",
+    "@google/genai": "https://esm.sh/@google/genai",
+    "@headlessui/react": "https://esm.sh/@headlessui/react@1.7.17?deps=react@18.2.0",
+    "react-markdown": "https://esm.sh/react-markdown@9"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-nexus-dark text-nexus-text font-sans">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
