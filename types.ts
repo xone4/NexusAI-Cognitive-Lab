@@ -85,6 +85,7 @@ export interface AppSettings {
   systemPersonality: SystemPersonality;
   logVerbosity: LogVerbosity;
   animationLevel: AnimationLevel;
+  language: string;
 }
 
 // Types for Autonomous Cognitive Processing
@@ -93,7 +94,7 @@ export type ThinkingState = 'Idle' | 'Receiving' | 'Planning' | 'AwaitingExecuti
 export interface PlanStep {
     step: number;
     description: string;
-    tool: 'google_search' | 'synthesize_answer' | 'code_interpreter' | 'evoke_qualia' | 'generate_image' | 'analyze_image_input';
+    tool: 'google_search' | 'synthesize_answer' | 'code_interpreter' | 'evoke_qualia' | 'generate_image' | 'analyze_image_input' | 'forge_tool' | 'spawn_replica' | 'translate_text';
     query?: string;
     code?: string;
     concept?: string; // For evoke_qualia & generate_image
@@ -117,6 +118,7 @@ export interface ChatMessage {
     id: string;
     role: 'user' | 'model';
     text: string;
+    image?: { mimeType: string; data: string; };
     state?: 'planning' | 'awaiting_execution' | 'executing' | 'synthesizing' | 'done' | 'error';
     plan?: PlanStep[];
     currentStep?: number;

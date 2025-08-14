@@ -1,9 +1,10 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
 import type { CognitiveProcess, ChatMessage, PlanStep, CognitiveConstitution, GeneratedImage } from '../types';
-import { BrainCircuitIcon, UserIcon, BookOpenIcon, CogIcon, CheckCircleIcon, CubeTransparentIcon, PlayIcon, PencilIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, PlusCircleIcon, CodeBracketIcon, LightBulbIcon, LinkIcon, ArrowRightIcon, PhotographIcon, SparklesIcon, ArchiveBoxIcon } from './Icons';
+import { BrainCircuitIcon, UserIcon, BookOpenIcon, CogIcon, CheckCircleIcon, CubeTransparentIcon, PlayIcon, PencilIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, PlusCircleIcon, CodeBracketIcon, LightBulbIcon, LinkIcon, ArrowRightIcon, PhotographIcon, SparklesIcon, ArchiveBoxArrowDownIcon, RefreshIcon, GlobeAltIcon } from './Icons';
 
 interface CognitiveProcessVisualizerProps {
   process: CognitiveProcess;
+  constitutions: CognitiveConstitution[];
   onExecutePlan: (messageId: string) => void;
   onUpdatePlanStep: (messageId: string, stepIndex: number, newStep: PlanStep) => void;
   onReorderPlan: (messageId: string, fromIndex: number, toIndex: number) => void;
@@ -11,7 +12,9 @@ interface CognitiveProcessVisualizerProps {
   onDeletePlanStep: (messageId: string, stepIndex: number) => void;
   onSavePlanAsToolchain: (plan: PlanStep[]) => void;
   onArchiveTrace: (messageId: string) => void;
-  constitutions: CognitiveConstitution[];
+  onRerunTrace: (trace: ChatMessage) => void;
+  onTranslate: (text: string, language: string) => Promise<string>;
+  language: string;
 }
 
 const GroundingCitations: React.FC<{ metadata: any }> = memo(({ metadata }) => {
@@ -52,6 +55,13 @@ GroundingCitations.displayName = 'GroundingCitations';
 const UserMessage: React.FC<{ message: ChatMessage }> = memo(({ message }) => (
     <div className="flex justify-end my-2 animate-spawn-in">
         <div className="bg-nexus-primary/80 text-nexus-dark rounded-xl rounded-br-none max-w-lg p-3 shadow-md">
+            {message.image && (
+                 <img 
+                    src={`data:${message.image.mimeType};base64,${message.image.data}`} 
+                    alt="User upload"
+                    className="w-full rounded-lg mb-2 border-2 border-white/50"
+                 />
+            )}
             <p className="text-sm">{String(message.text || '')}</p>
         </div>
         <UserIcon className="w-8 h-8 text-nexus-primary ml-3 flex-shrink-0" />
@@ -80,20 +90,16 @@ GeneratedImageViewer.displayName = 'GeneratedImageViewer';
 const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: boolean, onUpdate: (newStep: PlanStep) => void, onDelete: () => void, onMove: (direction: 'up' | 'down') => void, isFirst: boolean, isLast: boolean }> = ({ step, isCurrent, isEditable, onUpdate, onDelete, onMove, isFirst, isLast }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
-    const [editContent, setEditContent] = useState(step.tool === 'code_interpreter' ? step.code || '' : step.tool === 'evoke_qualia' ? step.concept || '' : step.query || '');
+    const [editContent, setEditContent] = useState(step.description);
+    const [editCode, setEditCode] = useState(step.code || step.query || step.concept || '');
+
 
     const handleSave = () => {
-        const newStep = { ...step };
-        if (step.tool === 'code_interpreter') {
-            newStep.code = editContent;
-            newStep.description = `Execute code: ${editContent.slice(0, 30)}...`;
-        } else if (step.tool === 'google_search') {
-            newStep.query = editContent;
-            newStep.description = `Search web for: "${editContent}"`;
-        } else if (step.tool === 'evoke_qualia') {
-            newStep.concept = editContent;
-            newStep.description = `Evoke qualia for: "${editContent}"`;
-        }
+        const newStep = { ...step, description: editContent };
+        if (step.tool === 'code_interpreter') newStep.code = editCode;
+        else if (step.tool === 'evoke_qualia' || step.tool === 'generate_image') newStep.concept = editCode;
+        else newStep.query = editCode;
+
         onUpdate(newStep);
         setIsEditing(false);
     };
@@ -115,6 +121,8 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
             case 'evoke_qualia': return <LightBulbIcon className="w-4 h-4 text-yellow-400" />;
             case 'generate_image': return <PhotographIcon className="w-4 h-4 text-green-400" />;
             case 'analyze_image_input': return <SparklesIcon className="w-4 h-4 text-pink-400" />;
+            case 'forge_tool': return <SparklesIcon className="w-4 h-4 text-yellow-500" />;
+            case 'spawn_replica': return <CubeTransparentIcon className="w-4 h-4 text-teal-400" />;
             default: return <CogIcon className="w-4 h-4 text-gray-400" />;
         }
     }
@@ -126,16 +134,17 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
             return <GeneratedImageViewer image={step.result as GeneratedImage} />;
         }
         
-        return <p className="text-xs text-green-400/80 font-mono italic">Result: {String(step.result).substring(0, 100)}...</p>;
+        return <pre className="text-xs text-green-400/80 font-mono italic whitespace-pre-wrap">Result: {String(step.result)}</pre>;
     };
 
+    const isCodeEditable = ['code_interpreter', 'google_search', 'evoke_qualia', 'generate_image', 'analyze_image_input'].includes(step.tool);
 
     return (
         <li className={`p-2 rounded-md transition-all duration-300 ${isCurrent ? 'bg-nexus-primary/10' : ''} ${isEditable ? 'hover:bg-nexus-surface/50' : ''}`}>
              <div className="flex items-center gap-3 cursor-pointer" onClick={() => setIsOpen(!isOpen)}>
                  <div className="pt-0.5">{statusIcon()}</div>
                  <div className="flex-grow">
-                     <p className={`font-semibold flex items-center gap-2 ${isCurrent ? 'text-nexus-primary' : 'text-nexus-text'}`}>
+                     <p className={`font-semibold flex items-center gap-2 truncate ${isCurrent ? 'text-nexus-primary' : 'text-nexus-text'}`} title={step.description}>
                         {getStepIcon()}
                         {step.description}
                         {step.inputRef && <span className="text-xs text-nexus-text-muted font-mono">(Input: Step {step.inputRef})</span>}
@@ -146,25 +155,34 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
                  </span>
             </div>
             {isOpen && (
-                <div className="pl-8 pt-2 animate-spawn-in">
+                <div className="pl-8 pt-2 animate-spawn-in space-y-2">
                     {isEditing ? (
-                        <div>
+                        <div className="space-y-2">
                             <textarea
                                 value={editContent}
                                 onChange={(e) => setEditContent(e.target.value)}
-                                className="w-full h-20 p-2 bg-nexus-dark/70 border border-nexus-surface rounded-md focus:outline-none focus:ring-2 focus:ring-nexus-primary text-nexus-text font-mono text-sm"
+                                className="w-full p-2 bg-nexus-dark/70 border border-nexus-surface rounded-md focus:outline-none focus:ring-2 focus:ring-nexus-primary text-nexus-text font-mono text-sm"
+                                placeholder="Edit step description..."
                             />
-                            <div className="flex justify-end gap-2 mt-2">
+                            {isCodeEditable && (
+                                <textarea
+                                    value={editCode}
+                                    onChange={(e) => setEditCode(e.target.value)}
+                                    className="w-full h-20 p-2 bg-nexus-dark/70 border border-nexus-surface rounded-md focus:outline-none focus:ring-2 focus:ring-nexus-primary text-nexus-text font-mono text-sm"
+                                    placeholder="Edit query, code, or concept..."
+                                />
+                            )}
+                            <div className="flex justify-end gap-2">
                                 <button onClick={() => setIsEditing(false)} className="text-xs px-2 py-1 rounded bg-nexus-surface">Cancel</button>
                                 <button onClick={handleSave} className="text-xs px-2 py-1 rounded bg-nexus-primary text-nexus-dark">Save</button>
                             </div>
                         </div>
                     ) : (
-                        <div className="flex items-center justify-between mt-1">
+                        <div className="flex items-center justify-between">
                             <div className="flex-grow">{renderResult()}</div>
                             {isEditable && (
                                 <div className="flex-shrink-0 flex items-center gap-1">
-                                    { (step.tool !== 'synthesize_answer') && <button onClick={() => setIsEditing(true)} className="p-1 text-nexus-text-muted hover:text-nexus-primary" title="Edit Step"><PencilIcon className="w-4 h-4"/></button> }
+                                    <button onClick={() => setIsEditing(true)} className="p-1 text-nexus-text-muted hover:text-nexus-primary" title="Edit Step"><PencilIcon className="w-4 h-4"/></button>
                                     <button onClick={() => onMove('up')} disabled={isFirst} className="p-1 text-nexus-text-muted hover:text-nexus-primary disabled:opacity-30" title="Move Up"><ArrowUpIcon className="w-4 h-4"/></button>
                                     <button onClick={() => onMove('down')} disabled={isLast} className="p-1 text-nexus-text-muted hover:text-nexus-primary disabled:opacity-30" title="Move Down"><ArrowDownIcon className="w-4 h-4"/></button>
                                     <button onClick={onDelete} className="p-1 text-nexus-text-muted hover:text-red-500" title="Delete Step"><TrashIcon className="w-4 h-4"/></button>
@@ -179,10 +197,28 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
 };
 
 const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMessage }> = memo((props) => {
-    const { message, onExecutePlan, onUpdatePlanStep, onReorderPlan, onAddPlanStep, onDeletePlanStep, onSavePlanAsToolchain, onArchiveTrace, constitutions } = props;
+    const { message, onExecutePlan, onUpdatePlanStep, onReorderPlan, onAddPlanStep, onDeletePlanStep, onSavePlanAsToolchain, onArchiveTrace, onRerunTrace, onTranslate, constitutions } = props;
     const isPlanEditable = message.state === 'awaiting_execution' && !message.isPlanFinalized;
     const [isPlanOpen, setIsPlanOpen] = useState(true);
+    const [isResponseCollapsed, setIsResponseCollapsed] = useState(true);
+    const [translatedText, setTranslatedText] = useState<string | null>(null);
+    const [isTranslating, setIsTranslating] = useState(false);
+
     const activeConstitution = constitutions.find(c => c.id === message.constitutionId);
+
+    const handleTranslate = async () => {
+        if (!message.text) return;
+        setIsTranslating(true);
+        setTranslatedText(null);
+        try {
+            const translation = await onTranslate(message.text, props.language === 'English' ? 'Arabic' : 'English');
+            setTranslatedText(translation);
+        } catch (e) {
+            setTranslatedText("Translation failed.");
+        } finally {
+            setIsTranslating(false);
+        }
+    };
 
     const renderContent = () => {
         if (message.state === 'planning') {
@@ -286,24 +322,53 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
                         <div className="pt-4 border-t border-nexus-surface/50">
                              <div className="flex justify-between items-center mb-2">
                                 <h4 className="font-bold text-nexus-primary uppercase tracking-wider text-sm">Synthesized Answer</h4>
+                                <div className="flex items-center gap-2">
                                 {message.qualiaVector && (
                                      <div className="relative group">
                                          <LightBulbIcon className="w-5 h-5 text-yellow-400" />
-                                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-nexus-dark text-white text-xs rounded-md p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">
+                                         <div className="absolute bottom-full right-0 mb-2 w-48 bg-nexus-dark text-white text-xs rounded-md p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">
                                              Influenced by active Qualia state.
-                                             <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-nexus-dark"></div>
+                                             <div className="absolute top-full right-3 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-nexus-dark"></div>
                                          </div>
                                      </div>
                                 )}
+                                <button onClick={() => setIsResponseCollapsed(!isResponseCollapsed)} className="text-xs text-nexus-text-muted hover:text-white">
+                                    {isResponseCollapsed ? 'Expand' : 'Collapse'}
+                                </button>
+                                </div>
                              </div>
-                             <pre className="text-sm whitespace-pre-wrap font-sans text-nexus-text">{String(message.text || "...")}</pre>
-                            <div className="flex justify-center mt-4">
+                             <div className={`${isResponseCollapsed ? 'max-h-32 overflow-hidden relative' : ''}`}>
+                                 <pre className="text-sm whitespace-pre-wrap font-sans text-nexus-text">{String(message.text || "...")}</pre>
+                                 {isResponseCollapsed && <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-nexus-surface/80 to-transparent"></div>}
+                             </div>
+                             {translatedText && (
+                                <div className="mt-3 pt-3 border-t border-dashed border-nexus-surface/50">
+                                    <h5 className="text-xs font-semibold text-nexus-secondary">Translation:</h5>
+                                    <pre className="text-sm whitespace-pre-wrap font-sans text-nexus-text-muted">{translatedText}</pre>
+                                </div>
+                             )}
+                            <div className="flex justify-center items-center gap-4 mt-4">
                                 <button 
                                     onClick={() => onArchiveTrace(message.id)}
                                     className="flex items-center gap-2 bg-blue-500/20 text-blue-400 font-bold py-2 px-4 rounded-md border border-blue-500/50 hover:bg-blue-500/40 hover:text-white transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
                                 >
-                                    <ArchiveBoxIcon className="w-5 h-5" />
-                                    Archive & Analyze
+                                    <ArchiveBoxArrowDownIcon className="w-5 h-5" />
+                                    Archive
+                                </button>
+                                <button 
+                                    onClick={() => onRerunTrace(message)}
+                                    className="flex items-center gap-2 bg-green-500/20 text-green-400 font-bold py-2 px-4 rounded-md border border-green-500/50 hover:bg-green-500/40 hover:text-white transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-green-400"
+                                >
+                                    <RefreshIcon className="w-5 h-5" />
+                                    Rerun
+                                </button>
+                                <button 
+                                    onClick={handleTranslate}
+                                    disabled={isTranslating}
+                                    className="flex items-center gap-2 bg-purple-500/20 text-purple-400 font-bold py-2 px-4 rounded-md border border-purple-500/50 hover:bg-purple-500/40 hover:text-white transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-purple-400 disabled:opacity-50"
+                                >
+                                    <GlobeAltIcon className="w-5 h-5" />
+                                    {isTranslating ? 'Translating...' : 'Translate'}
                                 </button>
                             </div>
                         </div>

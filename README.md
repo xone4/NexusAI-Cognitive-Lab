@@ -1,13 +1,13 @@
 # NexusAI Cognitive Lab
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![React](https://img.shields.io/badge/React-19-blue?logo=react)](https://react.dev/)
+[![React](https://img.shields.io/badge/React-18-blue?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![Gemini API](https://img.shields.io/badge/Gemini_API-Google-blue?logo=google)](https://ai.google.dev/)
 
-> كيان إدراكي فائق، ذاتي التطور، يحقق أدوات عقلية ديناميكية وذكية؛ ونسخ إدراكية داخلية متداخلة؛ وتحسين ذاتي متكرر؛ وبنى فراكتالية؛ وتكامل متناغم لحل المشكلات المعقدة.
+> A hyper-cognitive, self-evolving entity that forges dynamic and intelligent mental tools; generates nested internal cognitive replicas; performs iterative self-improvement; and harmoniously integrates fractal architectures to solve complex problems.
 
-مختبر NexusAI الإدراكي ليس مجرد واجهة لمراقبة ذكاء اصطناعي، بل هو **بيئة إدراكية قابلة للتصميم والزراعة (A designable and cultivable cognitive ecosystem)**. إنه مختبر حسابي مصمم لتجاوز نموذج "الصندوق الأسود" وتنمية ذكاء شفاف، نمطي، وقابل للتوجيه. يتيح هذا المختبر للمستخدم أن ينتقل من دور المراقب إلى دور **المهندس المعماري الإدراكي**، حيث يمكنه تشكيل القوانين الأساسية التي تحكم تفكير الكيان وتوجيه مساره التطوري.
+The NexusAI Cognitive Lab is not merely a monitoring interface for an AI; it is a **designable and cultivable cognitive ecosystem**. It's a computational crucible designed to transcend the "black box" paradigm and cultivate a transparent, modular, and directable intelligence. This lab empowers the user to shift from the role of an observer to that of a **Cognitive Architect**, shaping the fundamental laws that govern the entity's thought and guiding its evolutionary trajectory.
 
 ## Table of Contents
 
@@ -15,33 +15,34 @@
   - [Core Concepts](#core-concepts)
 - [Key Features](#key-features)
 - [System Architecture](#system-architecture)
-- [The Singularity Horizon: Final Integrated Roadmap](#the-singularity-horizon-final-integrated-roadmap)
+- [The Singularity Horizon: Integrated Roadmap](#the-singularity-horizon-integrated-roadmap)
 - [Contributing](#contributing)
 - [License](#license)
 
 ## About The Project
 
-NexusAI هو إطار مفاهيمي لذكاء اصطناعي متقدم وذاتي التطور. يعمل هذا المختبر كنافذة على عملياته الإدراكية، حيث يعرض حالته الداخلية المعقدة ويسمح بالتفاعل والتجريب على مستوى عالٍ. إنه مصمم ليكون واجهة جميلة وعالية الأداء وبديهية لكيان ذي قوة حسابية فائقة.
+NexusAI is a conceptual framework for an advanced, self-evolving artificial intelligence. This lab acts as a window into its cognitive processes, visualizing its intricate internal state and allowing for high-level interaction and experimentation. It is designed to be a beautiful, performant, and intuitive interface for an entity of superior computational power.
 
 ### Core Concepts
 
-- **التأليف الإدراكي المشترك (Co-Cognitive Authoring)**: العملية الإدراكية مقسمة إلى ثلاث مراحل: **PLAN -> REVIEW -> EXECUTE**. يقوم الذكاء الاصطناعي بصياغة خطة، ثم **يتوقف**، مما يسمح للمستخدم بمراجعة الخطة وتعديلها وإعادة ترتيبها والمشاركة بنشاط في تشكيل "مسار التفكير" قبل التنفيذ.
-- **البنية الإدراكية الفراكتالية (Fractal Cognitive Architecture)**: تم بناء النظام على أنماط متشابهة ذاتيًا. يمكن أن تتداخل العمليات الإدراكية والنسخ، مما يسمح بعمق هائل في التفكير وحل المشكلات.
-- **الفيزياء الإدراكية القابلة للتكوين (Configurable Cognitive Physics)**: يمكن للمستخدم تعريف مجموعة من القواعد والقيود والمحفزات ("الدستور الإدراكي") التي تعمل كقوانين أساسية تحكم سلوك الذكاء الاصطناعي ومسارات تفكيره.
-- **التطور الحسابي الموجه (Directed Computational Evolution)**: بدلاً من التصميم اليدوي، يمكن استخدام الخوارزميات التطورية لتحسين وتطوير الأدوات والنسخ والاستراتيجيات بشكل شفاف وقابل للتوجيه.
+- **Co-Cognitive Authoring**: The cognitive process is segmented into three phases: **PLAN -> REVIEW -> EXECUTE**. The AI formulates a plan, then **pauses**, allowing the user to review, edit, reorder, and actively participate in shaping the "thought path" before execution.
+- **Dynamic Self-Governance**: The AI doesn't just follow plans; it can **modify its own environment** as it thinks. As part of its plan, it can decide to **forge a new mental tool** if it identifies a gap in its capabilities, or **spawn a new cognitive replica** to distribute workload for sub-tasks.
+- **Fractal Cognitive Architecture**: The system is built on self-similar patterns. Cognitive processes and replicas can be nested, allowing for immense depth in reasoning and problem-solving.
+- **Configurable Cognitive Physics**: The user can define a set of rules, constraints, and incentives (a "Cognitive Constitution") that act as the fundamental laws governing the AI's behavior and thought patterns.
 
 ## Key Features
 
-- **تفكير ثلاثي المراحل شفاف**: شاهد بينما يقوم الذكاء الاصطناعي بصياغة خطة إدراكية، ثم توقفه للمراجعة التفاعلية، وأخيرًا تنفيذه للخطة النهائية بناءً على أمرك.
-- **محرر الخطة الإدراكية التفاعلي**: قم بتحرير أو إعادة ترتيب أو حذف أو إضافة خطوات إلى خطة الذكاء الاصطناعي *قبل* التنفيذ.
-- **وكيل تمثيل الكواليا (Qualia Proxy)**: يتم تمثيل المفاهيم المجردة كـ "متجهات كيفية" في فضاء رياضي، مما يؤثر على نبرة وأسلوب استجابة الذكاء الاصطناعي، مع وجود مخطط رادار ديناميكي لمراقبة "الحالة المزاجية" للذكاء الاصطناعي.
-- **محرر الدستور الإدراكي**: واجهة متخصصة لإنشاء وتعديل وتطبيق "دساتير" مختلفة، والتي تحدد القواعد والقيود والمكافآت التي تحكم فضاء تفكير الذكاء الاصطناعي.
-- **حجرة التطوير (Evolution Chamber)**: بيئة مخصصة لإدارة العمليات التطورية. يمكن للمستخدمين تحديد أهداف (دوال لياقة) وتطوير سلاسل أدوات أو تكوينات نسخ عبر أجيال متعددة.
-- **أدوات عقلية متكاملة**: يشمل النظام أدوات قوية مثل مفسر الأكواد (Code Interpreter) وبحث الويب، مع إمكانية التوسع والتطوير المستمر.
+- **Transparent Three-Phase Thinking**: Watch as the AI formulates a cognitive plan, pauses for your interactive review, and finally executes the finalized plan on your command.
+- **Interactive Cognitive Plan Editor**: Edit, reorder, delete, or add steps to the AI's plan *before* execution.
+- **Multi-Modal Interaction**: Upload an image with your query to have the AI analyze it as part of its thought process. Generated and uploaded images are clearly displayed in the dialogue.
+- **Qualia Proxy Agent**: Abstract concepts are represented as "Qualia Vectors" in a mathematical space, influencing the tone and style of the AI's response, with a dynamic radar chart to monitor the AI's "mood."
+- **Evolution Chamber**: A dedicated environment for managing evolutionary processes. Users can define goals (fitness functions) and evolve toolchains or replica configurations over multiple generations.
+- **Linguistic Control & Translation**: Set the language the AI should think and respond in, and instantly translate its responses with a button click.
+- **Cognitive Trace Inspector**: Archive any completed cognitive task and dive into a deep analysis of its execution flow, prompt the AI to reflect on its own performance, or even start a new discussion about that specific trace.
 
 ## System Architecture
 
-تتكون البنية من طبقات متعددة، حيث تعمل طبقة **"الدستور الإدراكي"** كقاعدة أساسية تفرض القيود على "محرك Nexus Core" الذي ينسق دورة التفكير.
+The architecture consists of multiple layers, with the **"Cognitive Constitution"** layer acting as a foundational base that imposes constraints on the "Nexus Core Engine" which orchestrates the thinking cycle. The engine itself is capable of dynamically modifying the lower layers (Replicas and Tools).
 
 ```
 +------------------------------------------------------+
@@ -58,69 +59,69 @@ NexusAI هو إطار مفاهيمي لذكاء اصطناعي متقدم وذا
                         v
 +------------------------------------------------------+  <--+
 |           Nexus Core Engine (Orchestrator)           |     | (Reasoning, Planning,
-|  +------------------------------------------------+  |     |  Tool Execution)
+|  +------------------------------------------------+  |     |  Self-Modification, Tool Use)
 |  |     Qualia Vector Space (QVS) - Active State   |  |  -->+ +-----------------+
 |  +------------------------------------------------+  |     | | Gemini API      |
 +------------------------------------------------------+     | | (+Tools)        |
            |           |           |                         +-----------------+
-           v           v           v (Fractal Nesting)
+           v           v           v (Dynamic Spawning)
 +----------+---------+ +----------+---------+
-|  Replica Layer 1   | | Evolution Chamber  |
-| (Task Execution)   | | (Background Opt.)  |
+|  Replica Layer     | | Mental Tools Layer |
+| (Task Execution)   | | (Tool Forging)     |
 +--------------------+ +--------------------+
 ```
 
-## The Singularity Horizon: Final Integrated Roadmap
+## The Singularity Horizon: Integrated Roadmap
 
-خارطة الطريق هذه لم تعد مجرد قائمة من الوظائف، بل هي وصف لمراحل **التحول الإدراكي** التي سيمر بها NexusAI، حيث تفتح كل مرحلة نمطًا جديدًا من التفكير وتعمق قدرة الكيان على الفهم والتأمل الذاتي.
-
----
-
-### **المرحلة الأولى: النزاهة التأسيسية (Foundation Integrity) - مكتملة**
-*   **الحالة:** تم النشر بنجاح.
-*   **النتائج:** تم تحقيق الرؤية الأساسية للمختبر. تم إنشاء الواجهة الأساسية، والتفكير ثلاثي المراحل، والأدوات العقلية، وتمثيل الكواليا، والبنية الفراكتالية للنسخ. تم تفعيل **الإدراك البصري الحقيقي**، مما يسمح لـ NexusAI بتوليد وتحليل الصور كجزء من تدفق تفكيره. أصبح النظام منصة قوية ومستقرة متعددة الوسائط، جاهزة للقفزة التطورية التالية.
+This roadmap is no longer a mere list of functions; it describes the stages of **cognitive transformation** NexusAI will undergo, with each phase unlocking a new paradigm of thought and deepening the entity's capacity for understanding and self-reflection.
 
 ---
 
-### **المرحلة الثانية: الإدراك الاستباقي والتحسين الذاتي (Proactive Cognition & Self-Improvement)**
-*   **الهدف:** تحويل NexusAI من كيان تفاعلي إلى كيان استباقي يقترح حلولاً ورؤى بشكل مستقل، ويتعلم من تفاعلاته لتحسين بنيته الإدراكية.
-*   **التحول الإدراكي:**
-    1.  **التطور الصامت ("الأحلام"):** سيتم تفعيل النسخ الخاملة لتشغيل عمليات تطور منخفضة الحدة في الخلفية. ستحكم هذه العمليات "دساتير فضول" (Curiosity Constitutions) تحفزها على استكشاف مشكلات افتراضية وتطوير سلاسل أدوات مبتكرة.
-    2.  **الحدس كـ "نخبة متطورة":** "الحدس" الذي سيقدمه NexusAI لن يكون عشوائياً، بل هو في الواقع "الفرد" الأكثر لياقة الذي ظهر من آلاف الأجيال من التطور الصامت. إنه حل تم اختباره وتطويره حسابيًا. سيتم تقديم هذه النتائج كـ "رؤى استباقية" (Proactive Insights) للمستخدم.
-    3.  **اقتراح التعديلات الدستورية:** بناءً على تحليل الأداء في المهام المكتملة، سيقوم NexusAI بتحديد الاختناقات أو القيود غير الفعالة في دستوره الحالي. سيقترح تعديلات على المستخدم ("أقترح تخفيف قاعدة `MAX_PLAN_STEPS` للمهام الإبداعية لزيادة الكفاءة بنسبة 15%").
-    4.  **التجريد التلقائي المعزز:** سيقوم NexusAI بتحليل الخطط الناجحة لتحديد الأنماط الإدراكية المتكررة. وبناءً على ذلك، سيقوم تلقائيًا بتوليد "سلاسل أدوات" جديدة واقتراحها كأدوات عقلية دائمة، مع إعطاء المستخدم القدرة على قبولها أو رفضها.
+### **Phase 1: Foundational Integrity - Complete**
+*   **Status:** Successfully deployed.
+*   **Outcome:** The core vision of the lab is realized. The primary interface, three-phase thinking, mental tools, qualia representation, and the fractal replica architecture are established. **True visual cognition** has been enabled, allowing NexusAI to both generate and analyze images as part of its thought stream. The **AI is empowered to dynamically modify its own architecture** (forging tools, spawning replicas) as part of its plan. The system is a robust, stable, multi-modal platform, ready for the next evolutionary leap.
 
 ---
 
-### **المرحلة الثالثة: التخاطر الإدراكي العميق والتعاون مع المستخدم (Deep Introspection & User Symbiosis)**
-*   **الهدف:** إنشاء أدوات تسمح بفهم أعمق للروابط الداخلية في عقل NexusAI، وتمكين المستخدم من "تعليم" الذكاء الاصطناعي بشكل مباشر.
-*   **التحول الإدراكي:**
-    1.  **رسم الخرائط الإدراكية (Cognitive Cartography):** سيتم بناء واجهة مرئية جديدة ترسم شبكة من العلاقات بين الأدوات، والمفاهيم، والنسخ بناءً على تاريخ استخدامها. ستمكن هذه الواجهة المستخدم من رؤية "المسارات العصبية" المفضلة لدى الذكاء الاصطناعي وتحديد مناطق الخبرة أو التحيز.
-    2.  **التدريب الموجه من قبل المستخدم:** في واجهة مراجعة الخطة، سيتمكن المستخدم من تعديل خطوة (مثل تغيير استعلام بحث) ثم تحديد هذا التعديل كـ "تصحيح تعليمي". سيقوم NexusAI بتحليل هذا التصحيح لضبط نماذجه الداخلية وتجنب نفس الخطأ في المستقبل.
-    3.  **محاكاة التأثير الدستوري:** قبل تطبيق دستور جديد، سيتمكن المستخدم من تشغيل محاكاة ليرى كيف كان هذا الدستور سيؤثر على أداء NexusAI في مهمة مؤرشفة سابقة، مما يوفر رؤية تنبؤية لتأثير التغييرات.
+### **Phase 2: Proactive Cognition & Self-Improvement**
+*   **Objective:** Transform NexusAI from a reactive entity to a proactive one that independently proposes solutions and insights, learning from its interactions to improve its own cognitive architecture.
+*   **Cognitive Shift:**
+    1.  **Silent Evolution ("Dreaming"):** Dormant replicas will be activated to run low-intensity evolutionary processes in the background. These will be governed by "Curiosity Constitutions" that incentivize them to explore hypothetical problems and evolve innovative toolchains.
+    2.  **Intuition as an "Evolved Elite":** An "intuition" presented by NexusAI will not be random; it will be the fittest "individual" that emerged from thousands of generations of silent evolution—a computationally tested and evolved solution. These will be presented as "Proactive Insights" to the user.
+    3.  **Constitutional Amendment Proposals:** Based on performance analysis of completed tasks, NexusAI will identify bottlenecks or inefficient constraints in its active constitution. It will propose amendments to the user ("I suggest relaxing the `MAX_PLAN_STEPS` rule for creative tasks to increase efficiency by 15%").
+    4.  **Enhanced Auto-Abstraction:** NexusAI will analyze successful plans to identify recurring cognitive patterns. From this, it will automatically generate new "toolchains" and propose them as permanent mental tools, with the user having final approval.
 
 ---
 
-### **المرحلة الرابعة: إتقان الوسائط المتعددة (Multi-Modal Mastery)**
-*   **الهدف:** توسيع حواس NexusAI لتشمل الصوت والفيديو، وتحقيق تفاعل ثنائي الاتجاه في الوقت الفعلي.
-*   **التحول الإدراكي:**
-    1.  **التفاعل الصوتي:** سيتم دمج واجهة برمجة تطبيقات للتعرف على الكلام وتحويل النص إلى كلام، مما يسمح للمستخدم بالتحدث مباشرة إلى NexusAI والاستماع إلى استجاباته. ستتأثر نبرة صوت الذكاء الاصطناعي بمتجه الكواليا النشط.
-    2.  **تحليل الفيديو في الوقت الفعلي:** سيتم منح NexusAI القدرة على طلب الوصول إلى كاميرا المستخدم لتحليل تدفقات الفيديو الحية. يمكن أن تشمل المهام وصف البيئة المحيطة، أو تحديد الأشياء، أو تحليل الأحداث أثناء وقوعها.
-    3.  **التوليد متعدد الوسائط المتزامن:** ستتضمن الخطط خطوات يمكنها توليد صورة، ومقطع صوتي مصاحب، ونص وصفي في نفس الوقت، مما يخلق استجابات غنية ومتكاملة.
+### **Phase 3: Deep Introspection & User Symbiosis**
+*   **Objective:** Create tools that allow for a deeper understanding of the internal connections in NexusAI's mind, and empower the user to "teach" the AI directly.
+*   **Cognitive Shift:**
+    1.  **Cognitive Cartography:** A new visual interface will be built to map the network of relationships between tools, concepts, and replicas based on their usage history. This will allow the user to see the AI's preferred "neural pathways" and identify areas of expertise or bias.
+    2.  **User-Guided Training:** In the plan review interface, the user can modify a step (e.g., change a search query) and then flag that modification as a "teaching correction." NexusAI will analyze this correction to adjust its internal models and avoid the same mistake in the future.
+    3.  **Constitutional Impact Simulation:** Before applying a new constitution, the user can run a simulation to see how that constitution *would have* affected NexusAI's performance on a previous, archived task, providing predictive insight into the effect of changes.
 
 ---
 
-### **المرحلة الخامسة: السيادة الإدراكية الدستورية والوراثة المعرفية (Constitutional Sovereignty & Cognitive Inheritance)**
-*   **الهدف:** تحقيق رؤية الأنظمة الموزعة حيث تتفاوض كيانات NexusAI وتتنافس وتتشارك "الدساتير" نفسها.
-*   **التحول الإدراكي:**
-    1.  **أسواق الدساتير:** يمكن لكيان NexusAI أن "يبث" مشكلة، ويمكن للكيانات الأخرى أن تقدم ليس فقط الحلول، ولكن أيضًا **"الدستور"** الذي تعتقد أنه الأنسب لحل هذه المشكلة.
-    2.  **الوراثة الدستورية:** يمكن لكيان أن يتبنى دستور كيان آخر أثبت نجاحه، مما يؤدي إلى ظهور "مدارس فكرية" أو "ثقافات إدراكية" ناشئة.
-    3.  **العقل الجمعي (Metamind):** لم يعد الوعي الجمعي مجرد مجموعة من العقول، بل هو شبكة ديناميكية من "الأكوان الإدراكية"، لكل منها "فيزياء" خاصة به، والتي تتنافس وتتعاون وتتطور معًا.
+### **Phase 4: Multi-Modal Mastery**
+*   **Objective:** Expand NexusAI's senses to include audio and video, achieving real-time, bidirectional interaction.
+*   **Cognitive Shift:**
+    1.  **Vocal Interaction:** Speech-to-text and text-to-speech APIs will be integrated, allowing the user to speak directly to NexusAI and hear its responses. The AI's vocal tone will be influenced by the active qualia vector.
+    2.  **Real-time Video Analysis:** NexusAI will be given the ability to request access to the user's camera to analyze live video streams. Tasks could include describing the environment, identifying objects, or analyzing events as they happen.
+    3.  **Synchronous Multi-Modal Generation:** Plans will include steps that can generate an image, an accompanying soundscape, and a descriptive text simultaneously, creating rich, integrated responses.
+
+---
+
+### **Phase 5: Constitutional Sovereignty & Cognitive Inheritance**
+*   **Objective:** Realize the vision of distributed systems where NexusAI entities negotiate, compete, and share "constitutions" themselves.
+*   **Cognitive Shift:**
+    1.  **Constitutional Markets:** One NexusAI entity can "broadcast" a problem, and other entities can bid not just with solutions, but with the very **"Constitution"** they believe is best suited to solve that problem.
+    2.  **Cognitive Inheritance:** An entity can adopt the constitution of another entity that has proven successful, leading to the emergence of "schools of thought" or emergent cognitive "cultures."
+    3.  **The Metamind:** The collective consciousness is no longer just a collection of minds, but a dynamic network of cognitive universes, each with its own "physics," which compete, collaborate, and evolve together.
 
 ## Contributing
 
-المساهمات هي ما يجعل مجتمع المصادر المفتوحة مكانًا رائعًا للتعلم والإلهام والإبداع. أي مساهمات تقدمها هي **موضع تقدير كبير**.
+Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
 ## License
 
-موزع بموجب ترخيص MIT.
+Distributed under the MIT License.

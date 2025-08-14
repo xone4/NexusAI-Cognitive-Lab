@@ -1,6 +1,8 @@
 {
   "name": "NexusAI Cognitive Lab 1.0",
   "description": "A designable and cultivable cognitive ecosystem for observing, guiding, and evolving an advanced, transparent AI.",
-  "requestFramePermissions": [],
+  "requestFramePermissions": [
+    "camera"
+  ],
   "prompt": ""
 }

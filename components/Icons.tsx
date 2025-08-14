@@ -322,3 +322,10 @@ export const ChatBubbleLeftRightIcon: React.FC<IconProps> = ({ title, ...props }
         <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193l-3.72.372a2.25 2.25 0 01-2.04-2.193v-4.286c0-.97.616-1.813 1.5-2.097m4.22 0a2.25 2.25 0 00-4.22 0M3.75 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193l-3.72.372a2.25 2.25 0 01-2.04-2.193v-4.286c0-.97.616-1.813 1.5-2.097M11.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193l-3.72.372a2.25 2.25 0 01-2.04-2.193v-4.286c0-.97.616-1.813 1.5-2.097m4.22 0a2.25 2.25 0 00-4.22 0" />
     </svg>
 );
+
+export const ChevronDownIcon: React.FC<IconProps> = ({ title, ...props }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+      {title && <title>{title}</title>}
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+    </svg>
+);

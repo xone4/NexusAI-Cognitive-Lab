@@ -23,7 +23,7 @@ type FilterStatus = MentalTool['status'] | 'All';
 interface MentalToolsLabProps {
   tools: MentalTool[];
   toolchains: Toolchain[];
-  isThinking: boolean;
+  isInteractionDisabled: boolean;
   onForgeTool: (details: { purpose: string; capabilities: string[] }) => Promise<MentalTool>;
   onModifyTool: (toolId: string, updates: Partial<Pick<MentalTool, 'name' | 'description' | 'tags'>>) => void;
   onToggleStatus: (toolId: string) => void;
@@ -35,7 +35,7 @@ interface MentalToolsLabProps {
   onDeleteToolchain: (id: string) => void;
 }
 
-const ToolCard: React.FC<Omit<MentalToolsLabProps, 'tools' | 'toolchains' | 'onForgeTool' | 'onCreateToolchain' | 'onUpdateToolchain' | 'onDeleteToolchain'> & { tool: MentalTool; onSelectModify: (tool: MentalTool) => void; }> = memo(({ tool, isThinking, onToggleStatus, onOptimizeTool, onArchiveTool, onDecommissionTool, onSelectModify }) => {
+const ToolCard: React.FC<Omit<MentalToolsLabProps, 'tools' | 'toolchains' | 'onForgeTool' | 'onCreateToolchain' | 'onUpdateToolchain' | 'onDeleteToolchain'> & { tool: MentalTool; onSelectModify: (tool: MentalTool) => void; }> = memo(({ tool, isInteractionDisabled, onToggleStatus, onOptimizeTool, onArchiveTool, onDecommissionTool, onSelectModify }) => {
     
     const statusStyles: Record<MentalTool['status'], { border: string; text: string; bg: string; anim?: string }> = {
         Idle: { border: 'border-nexus-surface', text: 'text-nexus-text-muted', bg: 'bg-nexus-surface/50' },
@@ -73,7 +73,7 @@ const ToolCard: React.FC<Omit<MentalToolsLabProps, 'tools' | 'toolchains' | 'onF
             <div className="mt-4 pt-3 border-t border-nexus-surface/30">
                  <Menu as="div" className="relative inline-block text-left w-full">
                     <div>
-                        <Menu.Button className="inline-flex w-full justify-center gap-x-1.5 rounded-md bg-nexus-surface px-3 py-2 text-sm font-semibold text-nexus-text shadow-sm ring-1 ring-inset ring-nexus-primary/50 hover:bg-nexus-dark disabled:opacity-50" disabled={isThinking || tool.status === 'Optimizing'}>
+                        <Menu.Button className="inline-flex w-full justify-center gap-x-1.5 rounded-md bg-nexus-surface px-3 py-2 text-sm font-semibold text-nexus-text shadow-sm ring-1 ring-inset ring-nexus-primary/50 hover:bg-nexus-dark disabled:opacity-50" disabled={isInteractionDisabled || tool.status === 'Optimizing'}>
                             Actions
                         </Menu.Button>
                     </div>
@@ -140,7 +140,7 @@ const MentalToolsLab: React.FC<MentalToolsLabProps> = (props) => {
   const [isForgeModalOpen, setIsForgeModalOpen] = useState(false);
   const [toolToModify, setToolToModify] = useState<MentalTool | null>(null);
   
-  const { tools, toolchains, isThinking, ...toolchainHandlers } = props;
+  const { tools, toolchains, ...toolchainHandlers } = props;
 
   const filteredAndSortedTools = useMemo(() => {
     return props.tools
@@ -188,7 +188,7 @@ const MentalToolsLab: React.FC<MentalToolsLabProps> = (props) => {
             <div className="w-full md:w-auto">
                 <button
                     onClick={() => setIsForgeModalOpen(true)}
-                    disabled={props.isThinking}
+                    disabled={props.isInteractionDisabled}
                     className="w-full flex items-center justify-center gap-2 bg-nexus-primary/90 text-nexus-dark font-bold py-3 px-4 rounded-md border border-nexus-primary/80 hover:bg-nexus-secondary transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-nexus-secondary disabled:bg-nexus-surface/50 disabled:text-nexus-text-muted disabled:cursor-not-allowed"
                 >
                     <FireIcon className="w-5 h-5"/> Forge New Tool
@@ -215,7 +215,7 @@ const MentalToolsLab: React.FC<MentalToolsLabProps> = (props) => {
        <ToolchainsManager 
         allTools={props.tools}
         toolchains={props.toolchains}
-        isThinking={props.isThinking}
+        isThinking={props.isInteractionDisabled}
         onCreate={props.onCreateToolchain}
         onUpdate={props.onUpdateToolchain}
         onDelete={props.onDeleteToolchain}

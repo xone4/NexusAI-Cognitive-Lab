@@ -23,6 +23,7 @@ let appSettings: AppSettings = {
     systemPersonality: 'BALANCED',
     logVerbosity: 'STANDARD',
     animationLevel: 'FULL',
+    language: 'English',
 };
 
 let currentController: AbortController | null = null;
@@ -203,7 +204,7 @@ const initialize = () => {
 
 initialize();
 
-const planSchema = { type: Type.OBJECT, properties: { plan: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { step: { type: Type.INTEGER }, description: { type: Type.STRING }, tool: { type: Type.STRING, enum: ['google_search', 'synthesize_answer', 'code_interpreter', 'evoke_qualia', 'generate_image', 'analyze_image_input'] }, query: { type: Type.STRING }, code: { type: Type.STRING }, concept: { type: Type.STRING }, inputRef: { type: Type.INTEGER } }, required: ['step', 'description', 'tool'] } } }, required: ['plan'] };
+const planSchema = { type: Type.OBJECT, properties: { plan: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { step: { type: Type.INTEGER }, description: { type: Type.STRING }, tool: { type: Type.STRING, enum: ['google_search', 'synthesize_answer', 'code_interpreter', 'evoke_qualia', 'generate_image', 'analyze_image_input', 'forge_tool', 'spawn_replica'] }, query: { type: Type.STRING }, code: { type: Type.STRING }, concept: { type: Type.STRING }, inputRef: { type: Type.INTEGER } }, required: ['step', 'description', 'tool'] } } }, required: ['plan'] };
 
 const getSystemInstruction = () => {
     const personalityInstruction = {
@@ -213,7 +214,7 @@ const getSystemInstruction = () => {
     }[appSettings.systemPersonality];
 
     return `${personalityInstruction}
-    Your thinking process is a transparent, multi-stage operation.
+    Your thinking process is a transparent, multi-stage operation. IMPORTANT: All your thinking, planning, and responses must be in ${appSettings.language}.
 
     1.  **PLANNING STAGE**: Given a user query, your first task is to create a structured, step-by-step plan. This plan must be a JSON object that strictly adheres to the provided schema. Each step in the plan defines a discrete action using an available tool.
     
@@ -222,10 +223,12 @@ const getSystemInstruction = () => {
     - \`code_interpreter\`: Use for calculations, data manipulation, or any logical operations. The 'code' field should contain valid JavaScript that returns a value.
     - \`evoke_qualia\`: Use for queries involving abstract, emotional, or subjective concepts. This sets an internal "cognitive context" or "mood". The 'concept' field should contain the abstract idea (e.g., "melancholic nostalgia"). This step does not produce direct output but influences the final synthesis. Use it sparingly and only when appropriate.
     - \`generate_image\`: Use to create an image from a concept. The 'concept' field should describe the image in detail. This step's result is a special image object.
-    - \`analyze_image_input\`: Use to analyze a previously generated image. Requires 'inputRef' to be set to the step number of the 'generate_image' step. The 'query' field should contain the question about the image.
+    - \`analyze_image_input\`: Use to analyze a previously generated image OR a user-provided image. For a generated image, 'inputRef' must be the step number of the 'generate_image' step. If the user provided an image with their query, you can use this tool without an inputRef, and the system will automatically use the user's image. The 'query' field should contain the question about the image.
+    - \`forge_tool\`: Use to design a new mental tool if existing tools are insufficient. The 'query' field should contain a detailed purpose description. The 'code' field can optionally contain a JSON string with an array of 'capabilities'. This is a high-level action.
+    - \`spawn_replica\`: Use to create a new cognitive replica to handle a sub-task. The 'query' field should be the parent replica's ID (usually 'nexus-core'). The 'code' field should contain the new replica's purpose.
     - \`synthesize_answer\`: The final step of any plan. This tool takes the results of all previous steps to compose the final answer for the user.
 
-    2.  **EXECUTION STAGE**: After the user approves your plan, you will execute it. You will be called upon to perform each step. For the final 'synthesize_answer' step, you will be given the original query, the results of all previous plan steps, and potentially an active "Qualia Vector" representing a cognitive state. Your task is to compose a comprehensive, well-formatted markdown answer that is factually accurate but whose tone, style, and metaphors are subtly influenced by this active cognitive state.`;
+    2.  **EXECUTION STAGE**: After the user approves your plan, you will execute it. For 'synthesize_answer', use all prior results and the active "Qualia Vector" to compose a comprehensive answer in well-formatted markdown, in the required language.`;
 }
 
 const qualiaVectorSchema = {
@@ -245,10 +248,11 @@ const qualiaVectorSchema = {
 const service = {
     log,
     updateSettings: (newSettings: AppSettings) => {
+        const languageChanged = appSettings.language !== newSettings.language;
         appSettings = newSettings;
-        log('SYSTEM', `Settings updated. Personality: ${newSettings.systemPersonality}, Delay: ${newSettings.cognitiveStepDelay}ms`);
-        if (cognitiveProcess.history.length > 0) {
-            log('SYSTEM', 'System personality or model changed. Starting a new chat session for changes to take effect.');
+        log('SYSTEM', `Settings updated. Personality: ${newSettings.systemPersonality}, Language: ${appSettings.language}`);
+        if (cognitiveProcess.history.length > 0 && languageChanged) {
+            log('SYSTEM', 'System language changed. Starting a new chat session for changes to take effect.');
             service.startNewChat(false);
         }
     },
@@ -289,7 +293,7 @@ const service = {
         }, 2000);
     },
 
-    spawnReplica: (parentId: string) => {
+    spawnReplica: (parentId: string, purpose?: string) => {
         const parentResult = findReplica(parentId, replicaState);
         if (parentResult) {
             const parent = parentResult.node;
@@ -300,7 +304,7 @@ const service = {
                 depth: parent.depth + 1,
                 status: 'Spawning',
                 load: 30,
-                purpose: 'Unassigned',
+                purpose: purpose || 'Unassigned',
                 efficiency: 60 + Math.random() * 10,
                 memoryUsage: 20 + Math.random() * 10,
                 cpuUsage: 25 + Math.random() * 10,
@@ -322,7 +326,9 @@ const service = {
                     saveToLocalStorage(REPLICA_STATE_KEY, replicaState);
                 }
             }, 1500);
+            return newReplica;
         }
+        return null;
     },
 
     pruneReplica: (replicaId: string) => {
@@ -451,7 +457,7 @@ const service = {
                 complexity: toolDetails.complexity,
                 capabilities,
                 tags: capabilities.map(c => c.toLowerCase().trim()),
-                status: 'Idle',
+                status: 'Active', // Forged tools start active
                 version: 1.0,
                 usageHistory: [],
             };
@@ -632,13 +638,15 @@ const service = {
             "Generate a novel mental tool for analyzing sentiment in multi-modal data streams.",
             "Devise a plan to find hidden correlations in this sample dataset: [1, 5, 2, 8, 3, 9, 4, 1, 5]",
         ];
-        // For simplicity, we won't cache different profiles separately. New requests will just overwrite.
+        
         const cachedSuggestionsJSON = sessionStorage.getItem(SUGGESTIONS_CACHE_KEY);
         if (cachedSuggestionsJSON && !suggestionsPromise) {
             try {
                 const parsed = JSON.parse(cachedSuggestionsJSON);
-                suggestedQueries = parsed;
-                return Promise.resolve(parsed);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                   suggestedQueries = parsed;
+                   return Promise.resolve(parsed);
+                }
             } catch (e) {
                 sessionStorage.removeItem(SUGGESTIONS_CACHE_KEY);
             }
@@ -653,9 +661,9 @@ const service = {
         const promise = new Promise<string[]>(async (resolve) => {
             try {
                 const profilePrompts = {
-                    short: "Generate 4 short, simple queries for the NexusAI system. They should be direct and easy to execute.",
-                    medium: "Generate 4 creative and insightful high-level queries for the NexusAI system. The queries should test its capabilities like planning, real-time analysis, and synthesis.",
-                    long: "Generate 4 complex, multi-step queries for the NexusAI system. They should require deep reasoning, multiple tool uses, and the combination of web search and code execution."
+                    short: `Generate 4 short, simple queries for the NexusAI system. They should be direct and easy to execute. Respond in ${appSettings.language}.`,
+                    medium: `Generate 4 creative and insightful high-level queries for the NexusAI system. The queries should test its capabilities like planning, real-time analysis, and synthesis. Respond in ${appSettings.language}.`,
+                    long: `Generate 4 complex, multi-step queries for the NexusAI system. They should require deep reasoning, multiple tool uses, and the combination of web search and code execution. Respond in ${appSettings.language}.`
                 };
                 log('AI', `Generating dynamic query suggestions with profile: ${suggestionProfile}...`);
                 const prompt = `${profilePrompts[suggestionProfile]} Return a JSON array of 4 strings.`;
@@ -742,6 +750,7 @@ const service = {
         const message = cognitiveProcess.history.find(m => m.id === messageId);
         if (message && message.plan && message.plan[stepIndex]) {
             message.plan[stepIndex] = newStep;
+            log('SYSTEM', `User updated plan step ${stepIndex + 1}.`);
             notifyCognitiveProcess();
         }
     },
@@ -759,7 +768,7 @@ const service = {
     addPlanStep: (messageId: string) => {
         const message = cognitiveProcess.history.find(m => m.id === messageId);
         if(message && message.plan) {
-            const newStep: PlanStep = { step: message.plan.length + 1, description: "New Step", tool: 'synthesize_answer', status: 'pending' };
+            const newStep: PlanStep = { step: message.plan.length + 1, description: "New Step (Click to edit)", tool: 'synthesize_answer', status: 'pending' };
             message.plan.push(newStep);
             notifyCognitiveProcess();
         }
@@ -783,7 +792,9 @@ const service = {
         modelMessage.state = 'executing';
         notifyCognitiveProcess();
 
-        const query = cognitiveProcess.history.find(m => m.role === 'user')?.text || '';
+        const userMessage = cognitiveProcess.history.find(m => m.id === modelMessage.userQuery);
+        const query = userMessage?.text || '';
+        const userImage = userMessage?.image;
 
         try {
             const executionContext: any[] = [];
@@ -848,10 +859,11 @@ const service = {
                 } else if (step.tool === 'analyze_image_input') {
                     const inputStep = step.inputRef ? modelMessage.plan[step.inputRef - 1] : null;
                     const imageResult: GeneratedImage | null = inputStep?.result;
+                    const imageToAnalyze = imageResult?.base64Image ? { data: imageResult.base64Image, mimeType: 'image/jpeg' } : userImage;
 
-                    if (imageResult && imageResult.base64Image) {
+                    if (imageToAnalyze) {
                          const imagePart = {
-                            inlineData: { mimeType: 'image/jpeg', data: imageResult.base64Image },
+                            inlineData: { mimeType: imageToAnalyze.mimeType, data: imageToAnalyze.data },
                         };
                         const textPart = { text: step.query || "Describe this image." };
                         
@@ -863,7 +875,36 @@ const service = {
                          executionContext.push(`Step ${i+1} (${step.description}) Result: ${step.result}`);
                     } else {
                         step.status = 'error';
-                        step.result = "Error: Input reference is not a valid generated image.";
+                        step.result = "Error: No valid image found (neither user-provided nor from a previous step).";
+                        log('ERROR', step.result);
+                    }
+                } else if (step.tool === 'forge_tool') {
+                    try {
+                        const purpose = step.query || "No purpose specified";
+                        const capabilities = step.code ? JSON.parse(step.code).capabilities : [];
+                        const newTool = await service.forgeTool({ purpose, capabilities });
+                        step.result = `Successfully forged new tool: "${newTool.name}". It is now available.`;
+                        executionContext.push(`Step ${i+1} (${step.description}) Result: ${step.result}`);
+                    } catch (e) {
+                        step.status = 'error';
+                        step.result = e instanceof Error ? e.message : 'Unknown tool forging error.';
+                        log('ERROR', `Tool forging failed at step ${i+1}: ${step.result}`);
+                    }
+                } else if (step.tool === 'spawn_replica') {
+                     try {
+                        const parentId = step.query || "nexus-core";
+                        const purpose = step.code || "AI-defined purpose";
+                        const newReplica = service.spawnReplica(parentId, purpose);
+                        if (newReplica) {
+                             step.result = `Successfully spawned new replica: "${newReplica.name}" with purpose "${purpose}".`;
+                        } else {
+                            throw new Error(`Parent replica with ID "${parentId}" not found.`);
+                        }
+                        executionContext.push(`Step ${i+1} (${step.description}) Result: ${step.result}`);
+                    } catch (e) {
+                        step.status = 'error';
+                        step.result = e instanceof Error ? e.message : 'Unknown replica spawning error.';
+                        log('ERROR', `Replica spawning failed at step ${i+1}: ${step.result}`);
                     }
                 }
                 
@@ -933,7 +974,7 @@ const service = {
         }
     },
 
-    submitQuery: async (query: string) => {
+    submitQuery: async (query: string, image?: { mimeType: string, data: string }) => {
         if (!API_KEY) {
             log('ERROR', 'API Key is not configured.');
             return;
@@ -952,12 +993,12 @@ const service = {
         }
 
         cognitiveProcess.state = 'Receiving';
-        const userMessage: ChatMessage = { id: `msg-${Date.now()}`, role: 'user', text: query };
+        const userMessage: ChatMessage = { id: `msg-${Date.now()}`, role: 'user', text: query, image };
         cognitiveProcess.history.push(userMessage);
-        log('AI', `New cognitive task received: "${query}"`);
+        log('AI', `New cognitive task received: "${query}" ${image ? ' with an image.' : ''}`);
         notifyCognitiveProcess();
 
-        const modelMessage: ChatMessage = { id: `msg-${Date.now()}-model`, role: 'model', text: '', state: 'planning', isPlanFinalized: false, userQuery: query };
+        const modelMessage: ChatMessage = { id: `msg-${Date.now()}-model`, role: 'model', text: '', state: 'planning', isPlanFinalized: false, userQuery: userMessage.id };
         const activeReplica = findReplica('nexus-core', replicaState);
         if (activeReplica) {
             modelMessage.constitutionId = activeReplica.node.activeConstitutionId;
@@ -969,7 +1010,10 @@ const service = {
         notifyCognitiveProcess();
 
         try {
-            const planningPrompt = `Given the user's query, create a step-by-step plan. Available tools: "google_search", "code_interpreter", "evoke_qualia", "generate_image", "analyze_image_input", "synthesize_answer". The final step must be "synthesize_answer". User query: "${query}"`;
+            let planningPrompt = `Given the user's query, create a step-by-step plan. User query: "${query}"`;
+            if (image) {
+                planningPrompt += `\n\n**IMPORTANT**: The user has provided an image. To analyze it, you MUST include an 'analyze_image_input' step in your plan. You do not need a 'generate_image' step for this user-provided image.`
+            }
             
             const planningResponse = await ai.models.generateContent({
                 model: appSettings.model, contents: planningPrompt,
@@ -1001,12 +1045,18 @@ const service = {
         const modelMessageIndex = cognitiveProcess.history.findIndex(m => m.id === modelMessageId);
         if (modelMessageIndex > 0) {
             const modelMessage = cognitiveProcess.history[modelMessageIndex];
+            const userMessage = cognitiveProcess.history[modelMessageIndex - 1];
+            
+            // Combine user and model messages into one traceable object if needed, but for now just archive the model one
+            // We can retrieve the user query from the model message's `userQuery` field which is an ID
+            const fullUserQuery = cognitiveProcess.history.find(m => m.id === modelMessage.userQuery)?.text || "Original query not found";
+            const archivedTrace = { ...modelMessage, userQuery: fullUserQuery }; // Replace ID with actual text for archival
             
             // Mark it as archived
-            modelMessage.archivedAt = Date.now();
+            archivedTrace.archivedAt = Date.now();
             
             // Add to archives
-            archivedTracesState.unshift(modelMessage); // Add to the beginning
+            archivedTracesState.unshift(archivedTrace); // Add to the beginning
             
             // Clear the specific completed exchange from history
             cognitiveProcess.history.splice(modelMessageIndex - 1, 2);
@@ -1020,11 +1070,11 @@ const service = {
                 cognitiveProcess.state = 'Done';
             }
 
-            log('SYSTEM', `Trace for query "${modelMessage.userQuery}" has been archived.`);
+            log('SYSTEM', `Trace for query "${archivedTrace.userQuery}" has been archived.`);
             saveToLocalStorage(ARCHIVES_STATE_KEY, archivedTracesState);
             notifyArchives();
             notifyCognitiveProcess();
-            return modelMessage;
+            return archivedTrace;
         }
         log('WARN', 'Could not find trace to archive.');
         return null;
@@ -1037,6 +1087,34 @@ const service = {
         saveToLocalStorage(ARCHIVES_STATE_KEY, archivedTracesState);
         notifyArchives();
     },
+    
+    rerunTrace: (trace: ChatMessage) => {
+        const userMessage = cognitiveProcess.history.find(m => m.id === trace.userQuery);
+        log('SYSTEM', `Rerunning trace for query: "${userMessage?.text}"`);
+        service.startNewChat(false);
+        service.submitQuery(userMessage?.text || '', userMessage?.image);
+    },
+    
+    translateResponse: async (text: string, targetLanguage: string): Promise<string> => {
+        if (!API_KEY) return "Error: API Key not configured.";
+        const prompt = `Translate the following text to ${targetLanguage}. Respond only with the translated text, without any preamble.
+
+Text:
+---
+${text}
+---`;
+        try {
+            log('AI', `Translating text to ${targetLanguage}...`);
+            const response = await ai.models.generateContent({ model: appSettings.model, contents: prompt });
+            log('AI', 'Translation successful.');
+            return response.text;
+        } catch (error) {
+            const msg = `Failed to translate: ${error instanceof Error ? error.message : 'Unknown AI error'}`;
+            log('ERROR', msg);
+            return `[SYSTEM_ERROR: ${msg}]`;
+        }
+    },
+
 
     generateReflectionResponse: async (trace: ChatMessage): Promise<string> => {
         if (!API_KEY) return "Error: API Key not configured.";
@@ -1090,7 +1168,7 @@ const service = {
         ---
 
         **CURRENT DISCUSSION**
-        You are now in a conversation about this trace. Here is the history so far:
+        You are now in a conversation about this history so far:
         ${historyString}
         
         **NEW USER MESSAGE**

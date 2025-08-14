@@ -6,7 +6,7 @@ import ReplicaNetwork from './ReplicaNetwork';
 
 interface ReplicasViewProps {
     rootReplica: Replica;
-    isThinking: boolean;
+    isInteractionDisabled: boolean;
     onSpawnReplica: (parentId: string) => void;
     onPruneReplica: (replicaId: string) => void;
     onRecalibrate: (replicaId: string) => void;
@@ -87,7 +87,7 @@ const BroadcastModal: React.FC<{ onBroadcast: (problem: string) => void; onClose
     );
 };
 
-const ReplicaCard: React.FC<Omit<ReplicasViewProps, 'rootReplica'> & { replica: Replica; path: string; }> = memo(({ replica, path, isThinking, onSpawnReplica, onPruneReplica, onRecalibrate, onAssignPurpose, constitutions, onSetConstitution, onBroadcastProblem }) => {
+const ReplicaCard: React.FC<Omit<ReplicasViewProps, 'rootReplica'> & { replica: Replica; path: string; }> = memo(({ replica, path, isInteractionDisabled, onSpawnReplica, onPruneReplica, onRecalibrate, onAssignPurpose, constitutions, onSetConstitution, onBroadcastProblem }) => {
     const [isPurposeModalOpen, setPurposeModalOpen] = useState(false);
     const [isBroadcastModalOpen, setBroadcastModalOpen] = useState(false);
     
@@ -132,7 +132,7 @@ const ReplicaCard: React.FC<Omit<ReplicasViewProps, 'rootReplica'> & { replica: 
                             <select 
                                 value={replica.activeConstitutionId}
                                 onChange={(e) => onSetConstitution(replica.id, e.target.value)}
-                                disabled={isThinking}
+                                disabled={isInteractionDisabled}
                                 className="w-full mt-1 text-sm bg-nexus-dark/50 border-none rounded p-1 focus:ring-1 focus:ring-nexus-secondary"
                             >
                                 {constitutions.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -148,19 +148,19 @@ const ReplicaCard: React.FC<Omit<ReplicasViewProps, 'rootReplica'> & { replica: 
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 pt-2 border-t border-nexus-surface/30">
-                        <button onClick={() => onRecalibrate(replica.id)} disabled={isThinking || replica.status !== 'Active'} className="replica-btn bg-blue-500/10 text-blue-400 border-blue-500/50 hover:bg-blue-500/20">
+                        <button onClick={() => onRecalibrate(replica.id)} disabled={isInteractionDisabled || replica.status !== 'Active'} className="replica-btn bg-blue-500/10 text-blue-400 border-blue-500/50 hover:bg-blue-500/20">
                             <CogIcon className="w-4 h-4" /> Recalibrate
                         </button>
-                         <button onClick={() => setPurposeModalOpen(true)} disabled={isThinking} className="replica-btn bg-purple-500/10 text-purple-400 border-purple-500/50 hover:bg-purple-500/20">
+                         <button onClick={() => setPurposeModalOpen(true)} disabled={isInteractionDisabled} className="replica-btn bg-purple-500/10 text-purple-400 border-purple-500/50 hover:bg-purple-500/20">
                             <PencilIcon className="w-4 h-4" /> Assign
                         </button>
-                         <button onClick={() => onSpawnReplica(replica.id)} disabled={isThinking || replica.depth > 3} className="replica-btn bg-green-500/10 text-green-400 border-green-500/50 hover:bg-green-500/20">
+                         <button onClick={() => onSpawnReplica(replica.id)} disabled={isInteractionDisabled || replica.depth > 3} className="replica-btn bg-green-500/10 text-green-400 border-green-500/50 hover:bg-green-500/20">
                             <ReplicaIcon className="w-4 h-4" /> Spawn Child
                         </button>
-                         <button onClick={() => onPruneReplica(replica.id)} disabled={isThinking || isCore} className="replica-btn bg-red-500/10 text-red-400 border-red-500/50 hover:bg-red-500/20">
+                         <button onClick={() => onPruneReplica(replica.id)} disabled={isInteractionDisabled || isCore} className="replica-btn bg-red-500/10 text-red-400 border-red-500/50 hover:bg-red-500/20">
                             <TrashIcon className="w-4 h-4" /> Prune
                         </button>
-                        <button onClick={() => setBroadcastModalOpen(true)} disabled={isThinking || replica.status !== 'Active'} className="replica-btn bg-purple-500/10 text-purple-400 border-purple-500/50 hover:bg-purple-500/20 col-span-2">
+                        <button onClick={() => setBroadcastModalOpen(true)} disabled={isInteractionDisabled || replica.status !== 'Active'} className="replica-btn bg-purple-500/10 text-purple-400 border-purple-500/50 hover:bg-purple-500/20 col-span-2">
                             <ShareIcon className="w-4 h-4" /> Broadcast Problem
                         </button>
                     </div>
@@ -172,7 +172,7 @@ const ReplicaCard: React.FC<Omit<ReplicasViewProps, 'rootReplica'> & { replica: 
 ReplicaCard.displayName = 'ReplicaCard';
 
 
-const ReplicasView: React.FC<ReplicasViewProps> = (props) => {
+const ReplicasView: React.FC<Omit<ReplicasViewProps, 'isThinking'> & { isInteractionDisabled: boolean }> = (props) => {
     const { rootReplica } = props;
 
     const allReplicas = useMemo(() => {

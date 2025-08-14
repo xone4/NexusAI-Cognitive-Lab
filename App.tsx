@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, ActiveView, CognitiveProcess, AppSettings, Toolchain, ChatMessage, PlanStep, QualiaVector, CognitiveConstitution, EvolutionState } from './types';
+import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, ActiveView, CognitiveProcess, AppSettings, Toolchain, ChatMessage, PlanStep, QualiaVector, CognitiveConstitution, EvolutionState, ThinkingState } from './types';
 import { nexusAIService } from './services/nexusAIService';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -20,7 +20,10 @@ import ErrorBoundary from './components/ErrorBoundary';
 import RawIntrospectionModal from './components/RawIntrospectionModal';
 import ArchivesView from './components/ArchivesView';
 import CognitiveTraceInspector from './components/CognitiveTraceInspector';
+import SystemStatusControl from './components/SystemStatusControl';
 import { CpuChipIcon, BeakerIcon, DocumentMagnifyingGlassIcon, CircleStackIcon, BrainCircuitIcon } from './components/Icons';
+
+type SystemStatus = 'Online' | 'Degraded' | 'Offline' | 'Initializing';
 
 const App: React.FC = () => {
   const [activeView, setActiveView] = useState<ActiveView>('dashboard');
@@ -32,10 +35,11 @@ const App: React.FC = () => {
   const [archivedTraces, setArchivedTraces] = useState<ChatMessage[]>([]);
   const [performanceData, setPerformanceData] = useState<PerformanceDataPoint[]>([]);
   const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [systemStatus, setSystemStatus] = useState<'Online' | 'Degraded' | 'Initializing'>('Initializing');
+  const [systemStatus, setSystemStatus] = useState<SystemStatus>('Initializing');
   const [cognitiveProcess, setCognitiveProcess] = useState<CognitiveProcess>(nexusAIService.getInitialData().initialCognitiveProcess);
   const [isRawIntrospectionOpen, setIsRawIntrospectionOpen] = useState(false);
   const [activeTrace, setActiveTrace] = useState<ChatMessage | null>(null);
+  const [isAutonomousMode, setIsAutonomousMode] = useState<boolean>(false);
 
   const [settings, setSettings] = useState<AppSettings>(() => {
     const defaultSettings: AppSettings = {
@@ -44,6 +48,7 @@ const App: React.FC = () => {
       systemPersonality: 'BALANCED',
       logVerbosity: 'STANDARD',
       animationLevel: 'FULL',
+      language: 'English',
     };
 
     try {
@@ -171,9 +176,9 @@ const App: React.FC = () => {
       nexusAIService.broadcastProblem(replicaId, problem);
   }, []);
 
-  const submitQuery = useCallback((query: string) => {
+  const submitQuery = useCallback((query: string, image?: { mimeType: string, data: string }) => {
     setActiveView('dashboard');
-    nexusAIService.submitQuery(query);
+    nexusAIService.submitQuery(query, image);
   }, []);
 
   const cancelQuery = useCallback(() => {
@@ -223,13 +228,31 @@ const App: React.FC = () => {
       }
   }, []);
 
-  const isThinking = cognitiveProcess?.state !== 'Idle' && cognitiveProcess?.state !== 'Done' && cognitiveProcess?.state !== 'Cancelled' && cognitiveProcess?.state !== 'Error';
+  const handleRerunTrace = useCallback((trace: ChatMessage) => {
+    nexusAIService.rerunTrace(trace);
+    setActiveView('dashboard');
+  }, []);
+  
+  const isThinking = useMemo(() => {
+    if (!cognitiveProcess?.state) return false;
+    const thinkingStates: ThinkingState[] = ['Receiving', 'Planning', 'AwaitingExecution', 'Executing', 'Synthesizing'];
+    return thinkingStates.includes(cognitiveProcess.state);
+  }, [cognitiveProcess?.state]);
+
+  const isInteractionDisabled = isThinking || isAutonomousMode;
 
   const renderDashboard = () => (
     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full">
       <div className="lg:col-span-2 grid grid-rows-[auto_minmax(0,1fr)_minmax(0,1fr)] gap-6">
           <DashboardCard title="Cognitive Command" icon={<BrainCircuitIcon />}>
-              <QueryConsole onSubmit={submitQuery} onCancel={cancelQuery} onNewChat={startNewChat} process={cognitiveProcess} />
+              <QueryConsole
+                onSubmit={submitQuery}
+                onCancel={cancelQuery}
+                onNewChat={startNewChat}
+                process={cognitiveProcess}
+                isInteractionDisabled={isInteractionDisabled}
+                isThinking={isThinking}
+              />
           </DashboardCard>
           <DashboardCard title="Cognitive Dialogue" fullHeight>
               <CognitiveProcessVisualizer
@@ -242,6 +265,9 @@ const App: React.FC = () => {
                 onDeletePlanStep={deletePlanStep}
                 onSavePlanAsToolchain={handleSavePlanAsToolchain}
                 onArchiveTrace={handleArchiveTrace}
+                onRerunTrace={handleRerunTrace}
+                onTranslate={nexusAIService.translateResponse}
+                language={settings.language}
               />
           </DashboardCard>
       </div>
@@ -249,7 +275,11 @@ const App: React.FC = () => {
       <div className="lg:col-span-3 grid grid-rows-[auto_minmax(0,1fr)_minmax(0,1fr)] gap-6">
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
           <DashboardCard title="System Status" icon={<CpuChipIcon />}>
-              <p className={`text-2xl font-bold ${systemStatus === 'Online' ? 'text-nexus-secondary' : 'text-nexus-accent'}`}>{systemStatus}</p>
+              <SystemStatusControl
+                status={systemStatus}
+                onSetStatus={(s: SystemStatus) => setSystemStatus(s)}
+                isInteractionDisabled={isInteractionDisabled}
+               />
           </DashboardCard>
            <DashboardCard title="Active Replicas" icon={<CircleStackIcon />}>
               <p className="text-2xl font-bold text-nexus-primary">{replicaCount}</p>
@@ -262,7 +292,9 @@ const App: React.FC = () => {
                 onSpawnReplica={() => spawnReplica(replicas?.id || 'nexus-core')} 
                 onGoToForge={() => setActiveView('tools')}
                 onOpenIntrospection={() => setIsRawIntrospectionOpen(true)}
-                isThinking={isThinking} 
+                isInteractionDisabled={isInteractionDisabled} 
+                isAutonomousMode={isAutonomousMode}
+                onToggleAutonomousMode={() => setIsAutonomousMode(prev => !prev)}
               />
           </DashboardCard>
         </div>
@@ -270,7 +302,7 @@ const App: React.FC = () => {
           <QualiaVectorVisualizer 
               activeVector={cognitiveProcess.activeQualiaVector || null} 
               onUpdate={updateActiveQualiaVector}
-              isThinking={isThinking}
+              isInteractionDisabled={isInteractionDisabled}
           />
         </DashboardCard>
          <DashboardCard title="System Log Stream" fullHeight>
@@ -293,7 +325,7 @@ const App: React.FC = () => {
       case 'replicas':
         return replicas && <ReplicasView 
             rootReplica={replicas} 
-            isThinking={isThinking}
+            isInteractionDisabled={isInteractionDisabled}
             onSpawnReplica={spawnReplica}
             onPruneReplica={pruneReplica}
             onRecalibrate={recalibrateReplica}
@@ -306,7 +338,7 @@ const App: React.FC = () => {
         return <MentalToolsLab 
                   tools={tools} 
                   toolchains={toolchains}
-                  isThinking={isThinking}
+                  isInteractionDisabled={isInteractionDisabled}
                   onForgeTool={nexusAIService.forgeTool}
                   onModifyTool={nexusAIService.modifyTool}
                   onToggleStatus={nexusAIService.toggleToolStatus}
@@ -332,7 +364,7 @@ const App: React.FC = () => {
                  tools={tools}
                  logs={logs}
                  isThinking={isThinking}
-                 onSubmitQuery={submitQuery}
+                 onSubmitQuery={(q) => submitQuery(q)}
                  onPruneReplica={pruneReplica}
                  onRecalibrate={recalibrateReplica}
                  onOptimizeTool={nexusAIService.optimizeTool}

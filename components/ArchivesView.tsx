@@ -63,7 +63,7 @@ const ArchivesView: React.FC<ArchivesViewProps> = ({ archivedTraces, onViewTrace
                     <div className="flex flex-col items-center justify-center h-full text-center text-nexus-text-muted">
                         <ArchiveBoxIcon className="w-16 h-16" />
                         <p className="mt-4 font-semibold text-lg">No Archived Traces</p>
-                        <p className="text-sm">Complete a task in the Cognitive Dialogue and use the "Archive & Analyze" button to save it here for future review.</p>
+                        <p className="text-sm">Complete a task in the Cognitive Dialogue and use the "Archive" button to save it here for future review.</p>
                     </div>
                 )}
             </div>

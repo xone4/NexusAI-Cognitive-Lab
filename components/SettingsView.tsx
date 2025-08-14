@@ -11,10 +11,16 @@ interface SettingsViewProps {
 }
 
 const modelOptions = [
-    { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', description: 'Enhanced thinking and reasoning, multimodal understanding, advanced coding, and more.' },
-    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', description: 'Adaptive thinking, cost efficiency.' },
-    { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash-Lite', description: 'Most cost-efficient model supporting high throughput.' },
-    { id: 'gemini-live-2.5-flash-preview', name: 'Gemini 2.5 Flash Live', description: 'Low-latency bidirectional voice and video interactions. Note: May have compatibility issues.' }
+    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', description: 'The recommended model for most use cases, balancing speed, and intelligence.' },
+];
+
+const languageOptions = [
+    { id: 'English', name: 'English' },
+    { id: 'Arabic', name: 'العربية (Arabic)' },
+    { id: 'Spanish', name: 'Español (Spanish)' },
+    { id: 'French', name: 'Français (French)' },
+    { id: 'German', name: 'Deutsch (German)' },
+    { id: 'Mandarin', name: '中文 (Mandarin)' },
 ];
 
 const SettingsRadioGroup = <T extends string>({ label, description, options, selected, onChange }: { label: string, description: string, options: {value: T, label: string}[], selected: T, onChange: (value: T) => void }) => (
@@ -150,6 +156,26 @@ const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSettingsChange 
                 selected={localSettings.logVerbosity}
                 onChange={(v) => setLocalSettings(p => ({...p, logVerbosity: v}))}
             />
+             <div>
+              <label htmlFor="language-select" className="block text-sm font-medium text-nexus-text-muted">
+                Response Language
+              </label>
+              <select
+                id="language-select"
+                value={localSettings.language}
+                onChange={(e) => setLocalSettings(p => ({ ...p, language: e.target.value }))}
+                className="mt-2 block w-full rounded-md border-0 py-2 pl-3 pr-10 bg-nexus-bg text-nexus-text ring-1 ring-inset ring-nexus-surface focus:ring-2 focus:ring-nexus-primary sm:text-sm sm:leading-6"
+              >
+                {languageOptions.map(option => (
+                  <option key={option.id} value={option.id}>
+                    {option.name}
+                  </option>
+                ))}
+              </select>
+               <p className="text-xs text-nexus-text-muted mt-2">
+                Sets the language for AI responses and thinking processes. Changing this will start a new chat session.
+              </p>
+            </div>
         </div>
       </DashboardCard>
       

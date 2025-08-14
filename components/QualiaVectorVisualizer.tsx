@@ -6,10 +6,10 @@ import { BrainCircuitIcon } from './Icons';
 interface QualiaVectorVisualizerProps {
   activeVector: QualiaVector | null;
   onUpdate: (vector: QualiaVector) => void;
-  isThinking: boolean;
+  isInteractionDisabled: boolean;
 }
 
-const QualiaVectorVisualizer: React.FC<QualiaVectorVisualizerProps> = ({ activeVector, onUpdate, isThinking }) => {
+const QualiaVectorVisualizer: React.FC<QualiaVectorVisualizerProps> = ({ activeVector, onUpdate, isInteractionDisabled }) => {
 
   const defaultVector: QualiaVector = {
     valence: 0,

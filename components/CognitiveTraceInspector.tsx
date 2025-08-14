@@ -155,7 +155,7 @@ const CognitiveTraceInspector: React.FC<CognitiveTraceInspectorProps> = ({ trace
                          </DetailCard>
                          <DetailCard label="Qualia State">
                              <div className="h-48">
-                                <QualiaVectorVisualizer activeVector={trace.qualiaVector || null} onUpdate={() => {}} isThinking={true} />
+                                <QualiaVectorVisualizer activeVector={trace.qualiaVector || null} onUpdate={() => {}} isInteractionDisabled={true} />
                             </div>
                          </DetailCard>
                     </div>
