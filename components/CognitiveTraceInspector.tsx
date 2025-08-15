@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { ChatMessage, PlanStep, GeneratedImage } from '../types';
 import { nexusAIService } from '../services/nexusAIService';
-import QualiaVectorVisualizer from './QualiaVectorVisualizer';
+import AffectiveStateVisualizer from './QualiaVectorVisualizer';
 import { DocumentMagnifyingGlassIcon, CheckCircleIcon, CogIcon, CodeBracketIcon, CubeTransparentIcon, LightBulbIcon, PhotographIcon, SparklesIcon, XCircleIcon, BrainCircuitIcon, ChatBubbleLeftRightIcon, UserIcon } from './Icons';
 
 interface CognitiveTraceInspectorProps {
@@ -153,9 +153,9 @@ const CognitiveTraceInspector: React.FC<CognitiveTraceInspectorProps> = ({ trace
                             <p>Plan Steps: {trace.plan?.length || 0}</p>
                             <p>Constitution: {trace.constitutionId || 'Default'}</p>
                          </DetailCard>
-                         <DetailCard label="Qualia State">
+                         <DetailCard label="Affective State Snapshot">
                              <div className="h-48">
-                                <QualiaVectorVisualizer activeVector={trace.qualiaVector || null} onUpdate={() => {}} isInteractionDisabled={true} />
+                                <AffectiveStateVisualizer activeState={trace.affectiveStateSnapshot || null} />
                             </div>
                          </DetailCard>
                     </div>

@@ -14,14 +14,15 @@ interface ErrorBoundaryState {
 }
 
 class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-    constructor(props: ErrorBoundaryProps) {
-        super(props);
-        this.state = { hasError: false, error: null, errorInfo: null };
-    }
+    state: ErrorBoundaryState = {
+        hasError: false,
+        error: null,
+        errorInfo: null,
+    };
 
-    static getDerivedStateFromError(error: Error): Pick<ErrorBoundaryState, 'hasError' | 'error'> {
+    static getDerivedStateFromError(error: Error): ErrorBoundaryState {
         // Update state so the next render will show the fallback UI.
-        return { hasError: true, error };
+        return { hasError: true, error, errorInfo: null };
     }
 
     componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {

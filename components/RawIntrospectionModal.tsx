@@ -9,7 +9,7 @@ interface RawIntrospectionModalProps {
 interface RawContext {
     systemInstruction: string;
     planSchema: string;
-    qualiaVectorSchema: string;
+    affectiveStateSchema: string;
 }
 
 const useCopyToClipboard = () => {
@@ -52,7 +52,7 @@ const RawIntrospectionModal: React.FC<RawIntrospectionModalProps> = ({ onClose }
     const [context, setContext] = useState<RawContext | null>(null);
 
     useEffect(() => {
-        const rawContext = nexusAIService.getRawSystemContext();
+        const rawContext = nexusAIService.getRawSystemContext() as RawContext;
         setContext(rawContext);
     }, []);
 
@@ -71,7 +71,7 @@ const RawIntrospectionModal: React.FC<RawIntrospectionModalProps> = ({ onClose }
                         <>
                            <CodeBlock title="System Instruction" content={context.systemInstruction} />
                            <CodeBlock title="Plan Generation Schema" content={context.planSchema} />
-                           <CodeBlock title="Qualia Vector Schema" content={context.qualiaVectorSchema} />
+                           <CodeBlock title="Affective State Schema" content={context.affectiveStateSchema} />
                         </>
                     ) : (
                         <p className="text-nexus-text-muted">Loading context...</p>

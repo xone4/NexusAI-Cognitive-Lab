@@ -115,6 +115,7 @@ const ReplicaCard: React.FC<Omit<ReplicasViewProps, 'rootReplica'> & { replica: 
                 title={replica.name} 
                 icon={<ReplicaIcon className={color.text} />} 
                 className={`border-l-4 ${color.border} ${animationClass} transition-all duration-300`}
+                isCollapsible={false}
             >
                 <div className="space-y-4">
                     <div>
@@ -172,7 +173,7 @@ const ReplicaCard: React.FC<Omit<ReplicasViewProps, 'rootReplica'> & { replica: 
 ReplicaCard.displayName = 'ReplicaCard';
 
 
-const ReplicasView: React.FC<Omit<ReplicasViewProps, 'isThinking'> & { isInteractionDisabled: boolean }> = (props) => {
+const ReplicasView: React.FC<ReplicasViewProps> = (props) => {
     const { rootReplica } = props;
 
     const allReplicas = useMemo(() => {
@@ -194,7 +195,7 @@ const ReplicasView: React.FC<Omit<ReplicasViewProps, 'isThinking'> & { isInterac
   const childReplicas = allReplicas.filter(r => r.replica.depth > 0);
 
   return (
-    <div className="h-full w-full overflow-y-auto space-y-8">
+    <div className="w-full space-y-8">
         {coreReplica && (
             <div>
                 <h2 className="text-xl font-bold text-nexus-primary mb-4 flex items-center gap-3">

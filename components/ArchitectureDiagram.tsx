@@ -63,7 +63,7 @@ const StructuralView: React.FC<ArchitectureDiagramProps> = ({ replicaCount, tool
                 <Connector />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full md:w-5/6">
-                 <ArchBox title="Qualia Vector Space (QVS)" items={[`State: ${cognitiveProcess.activeQualiaVector ? 'Active' : 'Dormant'}`]} icon={<LightBulbIcon />} className="w-full" isGlowing={!!cognitiveProcess.activeQualiaVector} />
+                 <ArchBox title="Affective Core" items={[`State: ${cognitiveProcess.activeAffectiveState ? cognitiveProcess.activeAffectiveState.mood : 'Dormant'}`]} icon={<LightBulbIcon />} className="w-full" isGlowing={!!cognitiveProcess.activeAffectiveState} />
                  <div className="flex items-center justify-center">
                     <div className="w-0.5 h-full bg-nexus-primary/30"></div>
                  </div>
@@ -88,7 +88,7 @@ const DataFlowView: React.FC<ArchitectureDiagramProps> = ({ cognitiveProcess }) 
             <ArchBox title="UI/UX" icon={<UserGroupIcon />} className="w-48"/>
             <Connector isAnimated={isThinking} />
             <ArchBox title="Nexus Core" icon={<BrainCircuitIcon />} className="w-48" isGlowing={isThinking} >
-                {cognitiveProcess.activeQualiaVector && <LightBulbIcon className="absolute w-5 h-5 top-2 right-2 text-yellow-300 animate-pulse" />}
+                {cognitiveProcess.activeAffectiveState && <LightBulbIcon className="absolute w-5 h-5 top-2 right-2 text-yellow-300 animate-pulse" />}
             </ArchBox>
             <div className="w-full flex justify-around items-center my-2">
                 <Connector type="x" isAnimated={isThinking} />
@@ -110,7 +110,7 @@ const CognitiveLoadView: React.FC<ArchitectureDiagramProps> = ({ replicas, tools
         if (!isThinking) return 0.1;
         const states: CognitiveProcess['state'][] = ['Receiving', 'Planning', 'Executing', 'Synthesizing'];
         let load = states.includes(cognitiveProcess.state) ? 0.7 + Math.random() * 0.2 : 0.3;
-        if(cognitiveProcess.activeQualiaVector) load += 0.1; // Qualia adds cognitive load
+        if(cognitiveProcess.activeAffectiveState) load += 0.1; // Affective state adds cognitive load
         return Math.min(1, load);
     }
     const coreLoad = calculateCoreLoad();
@@ -125,7 +125,7 @@ const CognitiveLoadView: React.FC<ArchitectureDiagramProps> = ({ replicas, tools
                 >
                     <BrainCircuitIcon className="w-8 h-8 text-nexus-primary" />
                     <span className="text-xs font-bold mt-1">Core</span>
-                    {cognitiveProcess.activeQualiaVector && <LightBulbIcon className="absolute w-4 h-4 bottom-1 text-yellow-300 animate-pulse-slow" />}
+                    {cognitiveProcess.activeAffectiveState && <LightBulbIcon className="absolute w-4 h-4 bottom-1 text-yellow-300 animate-pulse-slow" />}
                 </div>
                 {/* Replicas */}
                 {replicas?.children.map((replica, i) => {

@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, QualiaVector, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage } from '../types';
+import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState } from '../types';
 
 // IMPORTANT: This would be populated by a secure mechanism in a real app
 const API_KEY = process.env.API_KEY;
@@ -192,7 +192,7 @@ const initialize = () => {
     toolchainsState = loadFromStorage(TOOLCHAINS_STATE_KEY, [], Array.isArray);
     archivedTracesState = loadFromStorage(ARCHIVES_STATE_KEY, [], Array.isArray);
 
-    cognitiveProcess = { state: 'Idle', history: [], activeQualiaVector: null, };
+    cognitiveProcess = { state: 'Idle', history: [], activeAffectiveState: null, };
     evolutionState = { isRunning: false, config: { populationSize: 50, mutationRate: 0.1, generations: 100, fitnessGoal: 'SHORTEST_CHAIN' }, progress: [], fittestIndividual: null };
     
     saveToLocalStorage(CONSTITUTIONS_STATE_KEY, constitutionsState);
@@ -204,7 +204,7 @@ const initialize = () => {
 
 initialize();
 
-const planSchema = { type: Type.OBJECT, properties: { plan: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { step: { type: Type.INTEGER }, description: { type: Type.STRING }, tool: { type: Type.STRING, enum: ['google_search', 'synthesize_answer', 'code_interpreter', 'evoke_qualia', 'generate_image', 'analyze_image_input', 'forge_tool', 'spawn_replica'] }, query: { type: Type.STRING }, code: { type: Type.STRING }, concept: { type: Type.STRING }, inputRef: { type: Type.INTEGER } }, required: ['step', 'description', 'tool'] } } }, required: ['plan'] };
+const planSchema = { type: Type.OBJECT, properties: { plan: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { step: { type: Type.INTEGER }, description: { type: Type.STRING }, tool: { type: Type.STRING, enum: ['google_search', 'synthesize_answer', 'code_interpreter', 'induce_emotion', 'generate_image', 'analyze_image_input', 'forge_tool', 'spawn_replica'] }, query: { type: Type.STRING }, code: { type: Type.STRING }, concept: { type: Type.STRING }, inputRef: { type: Type.INTEGER } }, required: ['step', 'description', 'tool'] } } }, required: ['plan'] };
 
 const getSystemInstruction = () => {
     const personalityInstruction = {
@@ -221,27 +221,33 @@ const getSystemInstruction = () => {
     **Available Tools:**
     - \`google_search\`: Use for any query that requires up-to-date, real-world information. The 'query' field should be a concise search term.
     - \`code_interpreter\`: Use for calculations, data manipulation, or any logical operations. The 'code' field should contain valid JavaScript that returns a value.
-    - \`evoke_qualia\`: Use for queries involving abstract, emotional, or subjective concepts. This sets an internal "cognitive context" or "mood". The 'concept' field should contain the abstract idea (e.g., "melancholic nostalgia"). This step does not produce direct output but influences the final synthesis. Use it sparingly and only when appropriate.
+    - \`induce_emotion\`: Use for queries involving abstract, emotional, or subjective concepts. This sets an internal "Affective State" or "mood". The 'concept' field should contain the abstract idea (e.g., "melancholic nostalgia"). This step does not produce direct output but influences the final synthesis. Use it sparingly and only when appropriate.
     - \`generate_image\`: Use to create an image from a concept. The 'concept' field should describe the image in detail. This step's result is a special image object.
     - \`analyze_image_input\`: Use to analyze a previously generated image OR a user-provided image. For a generated image, 'inputRef' must be the step number of the 'generate_image' step. If the user provided an image with their query, you can use this tool without an inputRef, and the system will automatically use the user's image. The 'query' field should contain the question about the image.
     - \`forge_tool\`: Use to design a new mental tool if existing tools are insufficient. The 'query' field should contain a detailed purpose description. The 'code' field can optionally contain a JSON string with an array of 'capabilities'. This is a high-level action.
     - \`spawn_replica\`: Use to create a new cognitive replica to handle a sub-task. The 'query' field should be the parent replica's ID (usually 'nexus-core'). The 'code' field should contain the new replica's purpose.
     - \`synthesize_answer\`: The final step of any plan. This tool takes the results of all previous steps to compose the final answer for the user.
 
-    2.  **EXECUTION STAGE**: After the user approves your plan, you will execute it. For 'synthesize_answer', use all prior results and the active "Qualia Vector" to compose a comprehensive answer in well-formatted markdown, in the required language.`;
+    2.  **EXECUTION STAGE**: After the user approves your plan, you will execute it. For 'synthesize_answer', use all prior results and the active "Affective State" to compose a comprehensive answer in well-formatted markdown, in the required language.`;
 }
 
-const qualiaVectorSchema = {
+const affectiveStateSchema = {
     type: Type.OBJECT,
     properties: {
-        valence: { type: Type.NUMBER, description: "Pleasure vs. pain, from -1.0 to 1.0" },
-        arousal: { type: Type.NUMBER, description: "Calmness vs. excitement, from 0.0 to 1.0" },
-        dominance: { type: Type.NUMBER, description: "Submissiveness vs. control, from 0.0 to 1.0" },
-        novelty: { type: Type.NUMBER, description: "Familiar vs. strange, from 0.0 to 1.0" },
-        complexity: { type: Type.NUMBER, description: "Simple vs. intricate, from 0.0 to 1.0" },
-        temporality: { type: Type.NUMBER, description: "Past-focused vs. future-focused, from -1.0 to 1.0" },
+        dominantEmotions: {
+            type: Type.ARRAY,
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    type: { type: Type.STRING, enum: ['joy', 'trust', 'fear', 'surprise', 'sadness', 'disgust', 'anger', 'anticipation'] },
+                    intensity: { type: Type.NUMBER, description: "Intensity from 0.0 to 1.0" }
+                },
+                required: ["type", "intensity"]
+            }
+        },
+        mood: { type: Type.STRING, description: "A one-word descriptive mood, e.g., 'Optimistic', 'Anxious'" }
     },
-    required: ["valence", "arousal", "dominance", "novelty", "complexity", "temporality"]
+    required: ["dominantEmotions", "mood"]
 };
 
 
@@ -257,10 +263,25 @@ const service = {
         }
     },
     
-    updateActiveQualiaVector: (vector: QualiaVector) => {
+    induceUserEmotion: (emotion: PrimaryEmotion, intensity: number) => {
         if (cognitiveProcess) {
-            cognitiveProcess.activeQualiaVector = vector;
-            log('AI', 'Qualia Vector manually updated by user.');
+            const moodMap: Record<PrimaryEmotion, string> = {
+                joy: 'Joyful',
+                trust: 'Trusting',
+                fear: 'Apprehensive',
+                surprise: 'Surprised',
+                sadness: 'Melancholic',
+                disgust: 'Cynical',
+                anger: 'Irritated',
+                anticipation: 'Expectant',
+            };
+
+            cognitiveProcess.activeAffectiveState = {
+                dominantEmotions: [{ type: emotion, intensity: Math.max(0, Math.min(1, intensity)) }],
+                mood: moodMap[emotion],
+                lastUpdated: Date.now(),
+            };
+            log('AI', `Affective State manually induced by user: ${emotion} (${intensity.toFixed(2)})`);
             notifyCognitiveProcess();
         }
     },
@@ -565,7 +586,7 @@ const service = {
         const planToolToIdMap: Record<string, string> = {
             'google_search': 'tool-search',
             'code_interpreter': 'tool-code',
-            // 'evoke_qualia' and 'synthesize_answer' are not tools in the same way, so we filter them.
+            // 'induce_emotion' and 'synthesize_answer' are not tools in the same way, so we filter them.
         };
 
         const toolIds = plan
@@ -627,7 +648,7 @@ const service = {
         return {
             systemInstruction: getSystemInstruction(),
             planSchema: JSON.stringify(planSchema, null, 2),
-            qualiaVectorSchema: JSON.stringify(qualiaVectorSchema, null, 2),
+            affectiveStateSchema: JSON.stringify(affectiveStateSchema, null, 2),
         };
     },
     
@@ -739,8 +760,8 @@ const service = {
             service.cancelQuery();
             cognitiveProcess.history = [];
             cognitiveProcess.state = 'Idle';
-            cognitiveProcess.activeQualiaVector = null;
-            log('SYSTEM', 'New chat session started. Qualia state reset.');
+            cognitiveProcess.activeAffectiveState = null;
+            log('SYSTEM', 'New chat session started. Affective state reset.');
             notifyCognitiveProcess();
         }
     },
@@ -824,15 +845,16 @@ const service = {
                         log('ERROR', `Code interpreter failed at step ${i+1}: ${step.result}`);
                     }
                      executionContext.push(`Step ${i+1} (${step.description}) Code Output: ${step.result}`);
-                } else if (step.tool === 'evoke_qualia') {
-                    const prompt = `Translate the concept "${step.concept}" into a Qualia Vector. Respond ONLY with the JSON object.`;
+                } else if (step.tool === 'induce_emotion') {
+                    const prompt = `Translate the concept "${step.concept}" into an Affective State. Respond ONLY with the JSON object.`;
                     const response = await ai.models.generateContent({
                         model: appSettings.model, contents: prompt,
-                        config: { responseMimeType: 'application/json', responseSchema: qualiaVectorSchema }
+                        config: { responseMimeType: 'application/json', responseSchema: affectiveStateSchema }
                     });
-                    cognitiveProcess.activeQualiaVector = JSON.parse(response.text);
-                    step.result = `Cognitive state set to "${step.concept}".`;
-                    log('AI', `Evoked qualia for "${step.concept}". Internal state updated.`);
+                    const affectiveState: AffectiveState = JSON.parse(response.text);
+                    cognitiveProcess.activeAffectiveState = {...affectiveState, lastUpdated: Date.now() };
+                    step.result = `Cognitive state set to "${step.concept}". Mood: ${affectiveState.mood}`;
+                    log('AI', `Induced emotion for "${step.concept}". Internal state updated.`);
                 } else if (step.tool === 'generate_image') {
                     if (!step.concept) {
                         step.status = 'error';
@@ -923,9 +945,9 @@ const service = {
             notifyCognitiveProcess();
             
             let synthesisPrompt = `The user's original query was: "${query}". You have executed a plan and gathered the following information:\n${executionContext.join('\n\n')}\n\nBased on all of this information, provide a comprehensive, final answer to the user in well-formatted markdown.`;
-            if (cognitiveProcess.activeQualiaVector) {
-                synthesisPrompt += `\n\nIMPORTANT: Synthesize your answer through the lens of the following cognitive state: ${JSON.stringify(cognitiveProcess.activeQualiaVector)}. This must influence your tone, word choice, and metaphors, but not the factual accuracy of the information.`
-                modelMessage.qualiaVector = cognitiveProcess.activeQualiaVector;
+            if (cognitiveProcess.activeAffectiveState) {
+                synthesisPrompt += `\n\nIMPORTANT: Synthesize your answer through the lens of the following cognitive state: ${JSON.stringify(cognitiveProcess.activeAffectiveState)}. This must influence your tone, word choice, and metaphors, but not the factual accuracy of the information.`
+                modelMessage.affectiveStateSnapshot = cognitiveProcess.activeAffectiveState;
             }
 
             const stream = await ai.models.generateContentStream({
@@ -987,9 +1009,9 @@ const service = {
         isCancelled = false;
         currentController = new AbortController();
 
-        // If this is a follow-up, keep context. If it's a new query after 'Done', reset qualia.
+        // If this is a follow-up, keep context. If it's a new query after 'Done', reset affective state.
         if (cognitiveProcess.state === 'Done' || cognitiveProcess.state === 'Idle') {
-            cognitiveProcess.activeQualiaVector = null; 
+            cognitiveProcess.activeAffectiveState = null; 
         }
 
         cognitiveProcess.state = 'Receiving';
@@ -1041,36 +1063,76 @@ const service = {
     },
 
     // --- ARCHIVES ---
-    archiveTrace: (modelMessageId: string): ChatMessage | null => {
+    archiveTrace: async (modelMessageId: string): Promise<ChatMessage | null> => {
         const modelMessageIndex = cognitiveProcess.history.findIndex(m => m.id === modelMessageId);
         if (modelMessageIndex > 0) {
             const modelMessage = cognitiveProcess.history[modelMessageIndex];
-            const userMessage = cognitiveProcess.history[modelMessageIndex - 1];
-            
-            // Combine user and model messages into one traceable object if needed, but for now just archive the model one
-            // We can retrieve the user query from the model message's `userQuery` field which is an ID
             const fullUserQuery = cognitiveProcess.history.find(m => m.id === modelMessage.userQuery)?.text || "Original query not found";
-            const archivedTrace = { ...modelMessage, userQuery: fullUserQuery }; // Replace ID with actual text for archival
-            
-            // Mark it as archived
+            const archivedTrace: ChatMessage = { ...modelMessage, userQuery: fullUserQuery };
+
             archivedTrace.archivedAt = Date.now();
+
+            // AI-driven analysis for emotional context and salience
+            if (API_KEY) {
+                try {
+                    log('AI', `Analyzing memory for emotional context and salience...`);
+                    const archiveContent = `User Query: "${fullUserQuery}"\n\nAI Response: "${archivedTrace.text}"`;
+                    const prompt = `Analyze the following user-AI interaction. Based on the content and potential subtext, generate an emotional analysis.
+                    Interaction content:\n---\n${archiveContent}\n---\n
+                    Respond ONLY with a JSON object. The salience score (0.0 to 1.0) should reflect the memory's potential importance. High salience could be for critical errors, significant user corrections, successful complex problem-solving, or highly emotional user input.`;
+
+                    const schema = {
+                        type: Type.OBJECT,
+                        properties: {
+                            emotionTags: {
+                                type: Type.ARRAY,
+                                items: {
+                                    type: Type.OBJECT,
+                                    properties: {
+                                        type: { type: Type.STRING, enum: ['joy', 'trust', 'fear', 'surprise', 'sadness', 'disgust', 'anger', 'anticipation'] },
+                                        intensity: { type: Type.NUMBER }
+                                    },
+                                    required: ["type", "intensity"]
+                                },
+                                description: "A list of key emotions present in the interaction, with their intensity."
+                            },
+                            salience: { type: Type.NUMBER, description: "A score from 0.0 to 1.0 indicating the memory's importance." }
+                        },
+                        required: ["emotionTags", "salience"]
+                    };
+
+                    const response = await ai.models.generateContent({
+                        model: appSettings.model, contents: prompt,
+                        config: { responseMimeType: "application/json", responseSchema: schema }
+                    });
+                    
+                    const analysis = JSON.parse(response.text);
+                    archivedTrace.emotionTags = analysis.emotionTags;
+                    archivedTrace.salience = analysis.salience;
+                    log('AI', `Memory analysis complete. Salience: ${analysis.salience.toFixed(2)}.`);
+
+                } catch (error) {
+                    log('WARN', `Could not generate AI analysis for memory: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                    // Provide default values so the feature doesn't break
+                    archivedTrace.emotionTags = [];
+                    archivedTrace.salience = 0.5;
+                }
+            } else {
+                 archivedTrace.emotionTags = [];
+                 archivedTrace.salience = 0.5;
+            }
             
-            // Add to archives
-            archivedTracesState.unshift(archivedTrace); // Add to the beginning
-            
-            // Clear the specific completed exchange from history
+            archivedTracesState.unshift(archivedTrace);
             cognitiveProcess.history.splice(modelMessageIndex - 1, 2);
             
-            // Reset state if history is now empty
             if (cognitiveProcess.history.length === 0) {
                 cognitiveProcess.state = 'Idle';
-                cognitiveProcess.activeQualiaVector = null;
+                cognitiveProcess.activeAffectiveState = null;
             } else {
-                 // Or just set to Done to allow follow-up on previous parts of the convo
                 cognitiveProcess.state = 'Done';
             }
 
-            log('SYSTEM', `Trace for query "${archivedTrace.userQuery}" has been archived.`);
+            log('SYSTEM', `Trace for query "${archivedTrace.userQuery}" has been archived with emotional context.`);
             saveToLocalStorage(ARCHIVES_STATE_KEY, archivedTracesState);
             notifyArchives();
             notifyCognitiveProcess();

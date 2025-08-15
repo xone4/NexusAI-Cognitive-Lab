@@ -88,15 +88,21 @@ GeneratedImageViewer.displayName = 'GeneratedImageViewer';
 
 
 const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: boolean, onUpdate: (newStep: PlanStep) => void, onDelete: () => void, onMove: (direction: 'up' | 'down') => void, isFirst: boolean, isLast: boolean }> = ({ step, isCurrent, isEditable, onUpdate, onDelete, onMove, isFirst, isLast }) => {
-    const [isOpen, setIsOpen] = useState(false);
+    const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
+    const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
     const [editContent, setEditContent] = useState(step.description);
     const [editCode, setEditCode] = useState(step.code || step.query || step.concept || '');
+    
+    const words = step.description.split(' ');
+    const isTruncatable = words.length > 7;
+    const truncatedText = isTruncatable ? words.slice(0, 7).join(' ') + '...' : step.description;
+    const displayedDescription = isDescriptionExpanded ? step.description : truncatedText;
 
 
     const handleSave = () => {
         const newStep = { ...step, description: editContent };
-        if (step.tool === 'code_interpreter') newStep.code = editCode;
+        if (step.tool === 'code_interpreter' || step.tool === 'induce_emotion') newStep.code = editCode;
         else if (step.tool === 'evoke_qualia' || step.tool === 'generate_image') newStep.concept = editCode;
         else newStep.query = editCode;
 
@@ -119,6 +125,7 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
             case 'google_search': return <CubeTransparentIcon className="w-4 h-4 text-blue-400" />;
             case 'code_interpreter': return <CodeBracketIcon className="w-4 h-4 text-purple-400" />;
             case 'evoke_qualia': return <LightBulbIcon className="w-4 h-4 text-yellow-400" />;
+            case 'induce_emotion': return <LightBulbIcon className="w-4 h-4 text-orange-400" />;
             case 'generate_image': return <PhotographIcon className="w-4 h-4 text-green-400" />;
             case 'analyze_image_input': return <SparklesIcon className="w-4 h-4 text-pink-400" />;
             case 'forge_tool': return <SparklesIcon className="w-4 h-4 text-yellow-500" />;
@@ -137,24 +144,30 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
         return <pre className="text-xs text-green-400/80 font-mono italic whitespace-pre-wrap">Result: {String(step.result)}</pre>;
     };
 
-    const isCodeEditable = ['code_interpreter', 'google_search', 'evoke_qualia', 'generate_image', 'analyze_image_input'].includes(step.tool);
+    const isCodeEditable = ['code_interpreter', 'google_search', 'evoke_qualia', 'generate_image', 'analyze_image_input', 'induce_emotion'].includes(step.tool);
 
     return (
         <li className={`p-2 rounded-md transition-all duration-300 ${isCurrent ? 'bg-nexus-primary/10' : ''} ${isEditable ? 'hover:bg-nexus-surface/50' : ''}`}>
-             <div className="flex items-center gap-3 cursor-pointer" onClick={() => setIsOpen(!isOpen)}>
+             <div className="flex items-center gap-3">
                  <div className="pt-0.5">{statusIcon()}</div>
-                 <div className="flex-grow">
-                     <p className={`font-semibold flex items-center gap-2 truncate ${isCurrent ? 'text-nexus-primary' : 'text-nexus-text'}`} title={step.description}>
+                 <div className="flex-grow min-w-0">
+                     <p className={`font-semibold flex items-center gap-2 ${isCurrent ? 'text-nexus-primary' : 'text-nexus-text'}`} >
                         {getStepIcon()}
-                        {step.description}
-                        {step.inputRef && <span className="text-xs text-nexus-text-muted font-mono">(Input: Step {step.inputRef})</span>}
+                        <span 
+                            className={`${isTruncatable ? 'cursor-pointer' : ''} flex-grow truncate`}
+                            title={isTruncatable ? `Click to expand: "${step.description}"` : step.description}
+                            onClick={() => isTruncatable && setIsDescriptionExpanded(!isDescriptionExpanded)}
+                        >
+                            {displayedDescription}
+                        </span>
+                        {step.inputRef && <span className="text-xs text-nexus-text-muted font-mono flex-shrink-0">(Input: Step {step.inputRef})</span>}
                      </p>
                  </div>
-                 <span className={`transform transition-transform duration-200 ${isOpen ? 'rotate-90' : 'rotate-0'}`}>
+                 <button onClick={() => setIsDetailsOpen(!isDetailsOpen)} className={`transform transition-transform duration-200 ${isDetailsOpen ? 'rotate-90' : 'rotate-0'}`}>
                      <ArrowRightIcon className="w-4 h-4 text-nexus-text-muted" />
-                 </span>
+                 </button>
             </div>
-            {isOpen && (
+            {isDetailsOpen && (
                 <div className="pl-8 pt-2 animate-spawn-in space-y-2">
                     {isEditing ? (
                         <div className="space-y-2">
@@ -197,7 +210,7 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
 };
 
 const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMessage }> = memo((props) => {
-    const { message, onExecutePlan, onUpdatePlanStep, onReorderPlan, onAddPlanStep, onDeletePlanStep, onSavePlanAsToolchain, onArchiveTrace, onRerunTrace, onTranslate, constitutions } = props;
+    const { message, onExecutePlan, onUpdatePlanStep, onReorderPlan, onAddPlanStep, onDeletePlanStep, onSavePlanAsToolchain, onArchiveTrace, onRerunTrace, onTranslate, constitutions, process } = props;
     const isPlanEditable = message.state === 'awaiting_execution' && !message.isPlanFinalized;
     const [isPlanOpen, setIsPlanOpen] = useState(true);
     const [isResponseCollapsed, setIsResponseCollapsed] = useState(true);
@@ -301,11 +314,11 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
                         <div className="pt-4 border-t border-nexus-surface/50 animate-spawn-in">
                             <div className="flex justify-between items-center mb-2">
                                 <h4 className="font-bold text-nexus-primary uppercase tracking-wider text-sm">Synthesizing Answer</h4>
-                                {message.qualiaVector && (
+                                {process.activeAffectiveState && (
                                      <div className="relative group">
-                                         <LightBulbIcon className="w-5 h-5 text-yellow-400" />
+                                         <LightBulbIcon className="w-5 h-5 text-yellow-400" title={`Influenced by mood: ${process.activeAffectiveState.mood}`} />
                                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-nexus-dark text-white text-xs rounded-md p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">
-                                             Influenced by active Qualia state.
+                                             Influenced by active Affective State.
                                              <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-nexus-dark"></div>
                                          </div>
                                      </div>
@@ -323,11 +336,11 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
                              <div className="flex justify-between items-center mb-2">
                                 <h4 className="font-bold text-nexus-primary uppercase tracking-wider text-sm">Synthesized Answer</h4>
                                 <div className="flex items-center gap-2">
-                                {message.qualiaVector && (
+                                {message.affectiveStateSnapshot && (
                                      <div className="relative group">
-                                         <LightBulbIcon className="w-5 h-5 text-yellow-400" />
+                                         <LightBulbIcon className="w-5 h-5 text-yellow-400" title={`Influenced by mood: ${message.affectiveStateSnapshot.mood}`} />
                                          <div className="absolute bottom-full right-0 mb-2 w-48 bg-nexus-dark text-white text-xs rounded-md p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">
-                                             Influenced by active Qualia state.
+                                             Influenced by Affective State at time of synthesis.
                                              <div className="absolute top-full right-3 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-nexus-dark"></div>
                                          </div>
                                      </div>
@@ -437,7 +450,7 @@ const CognitiveProcessVisualizer: React.FC<CognitiveProcessVisualizerProps> = (p
   }
 
   return (
-    <div ref={scrollRef} className="h-full w-full overflow-y-auto p-2 space-y-4">
+    <div ref={scrollRef} className="h-full w-full overflow-y-auto p-4 space-y-4 pb-48">
       {process.history.map(message => 
           message.role === 'user'
             ? <UserMessage key={message.id} message={message} />

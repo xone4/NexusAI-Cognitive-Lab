@@ -24,19 +24,19 @@ const EvolutionChamber: React.FC<EvolutionChamberProps> = ({ evolutionState, all
     };
 
     const handlePromote = () => {
-        if (fittestIndividual) {
-            const lastProgress = progress.length > 0 ? progress[progress.length - 1] : null;
-            const fitnessScore = lastProgress ? lastProgress.bestFitness.toFixed(4) : "N/A";
-            
-            const name = prompt("Enter a name for the new toolchain:", fittestIndividual.name);
-            if (!name) return;
-            onCreateToolchain({
-                name,
-                description: `Evolved for goal: ${config.fitnessGoal}. Fitness: ${fitnessScore}`,
-                toolIds: fittestIndividual.toolIds
-            });
-            alert(`Toolchain "${name}" has been created and added to the Mental Tools Lab.`);
-        }
+        if (!fittestIndividual) return;
+
+        const lastProgress = progress.length > 0 ? progress[progress.length - 1] : null;
+        const fitnessScore = lastProgress ? lastProgress.bestFitness.toFixed(4) : "N/A";
+        
+        const name = prompt("Enter a name for the new toolchain:", (fittestIndividual as Toolchain).name);
+        if (!name) return;
+        onCreateToolchain({
+            name,
+            description: `Evolved for goal: ${config.fitnessGoal}. Fitness: ${fitnessScore}`,
+            toolIds: (fittestIndividual as Toolchain).toolIds
+        });
+        alert(`Toolchain "${name}" has been created and added to the Mental Tools Lab.`);
     };
     
     const toolsMap = new Map(allTools.map(tool => [tool.id, tool]));
@@ -96,16 +96,16 @@ const EvolutionChamber: React.FC<EvolutionChamberProps> = ({ evolutionState, all
                     {fittestIndividual ? (
                         <div className="space-y-3">
                             <div className="flex justify-between items-center">
-                                <h4 className="font-semibold text-nexus-text">{fittestIndividual.name}</h4>
+                                <h4 className="font-semibold text-nexus-text">{(fittestIndividual as Toolchain).name}</h4>
                                 <button onClick={handlePromote} disabled={isRunning} className="btn-primary text-xs">Promote to Toolchain</button>
                             </div>
                             <div className="flex flex-wrap items-center gap-2 text-sm">
-                                {fittestIndividual.toolIds.map((tid, i) => (
+                                {(fittestIndividual as Toolchain).toolIds.map((tid, i) => (
                                     <React.Fragment key={i}>
                                         <span className="bg-nexus-surface px-2 py-1 rounded text-nexus-text font-mono">
                                             {toolsMap.get(tid)?.name || 'Unknown'}
                                         </span>
-                                        {i < fittestIndividual.toolIds.length - 1 && <ArrowRightIcon className="w-5 h-5 text-nexus-secondary" />}
+                                        {i < (fittestIndividual as Toolchain).toolIds.length - 1 && <ArrowRightIcon className="w-5 h-5 text-nexus-secondary" />}
                                     </React.Fragment>
                                 ))}
                             </div>

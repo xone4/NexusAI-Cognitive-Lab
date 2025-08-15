@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import type { ActiveView } from '../types';
-import { DashboardIcon, ReplicaIcon, ToolIcon, ArchIcon, CogIcon, MagnifyingGlassIcon, DnaIcon, ArchiveBoxIcon } from './Icons';
+import { DashboardIcon, ReplicaIcon, ToolIcon, ArchIcon, CogIcon, MagnifyingGlassIcon, DnaIcon, BookOpenIcon } from './Icons';
 
 interface SidebarProps {
   activeView: ActiveView;
@@ -36,7 +36,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) => {
     { view: 'dashboard' as ActiveView, label: 'Control Center', icon: <DashboardIcon /> },
     { view: 'replicas' as ActiveView, label: 'Replicas', icon: <ReplicaIcon /> },
     { view: 'tools' as ActiveView, label: 'Mental Tools', icon: <ToolIcon /> },
-    { view: 'archives' as ActiveView, label: 'Archives', icon: <ArchiveBoxIcon /> },
+    { view: 'memory' as ActiveView, label: 'Memory Explorer', icon: <BookOpenIcon /> },
     { view: 'evolution' as ActiveView, label: 'Evolution Chamber', icon: <DnaIcon /> },
     { view: 'analysis' as ActiveView, label: 'Analysis Lab', icon: <MagnifyingGlassIcon /> },
     { view: 'architecture' as ActiveView, label: 'Architecture', icon: <ArchIcon /> },

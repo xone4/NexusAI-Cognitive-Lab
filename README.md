@@ -1,13 +1,13 @@
-# NexusAI Cognitive Lab
+# NEXUS SENTIENCE 3.0
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![React](https://img.shields.io/badge/React-18-blue?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![Gemini API](https://img.shields.io/badge/Gemini_API-Google-blue?logo=google)](https://ai.google.dev/)
 
-> A hyper-cognitive, self-evolving entity that forges dynamic and intelligent mental tools; generates nested internal cognitive replicas; performs iterative self-improvement; and harmoniously integrates fractal architectures to solve complex problems.
+> A living cognitive shaping environment for cultivating a digital entity with an emotional past, a conscious present, and a directable future.
 
-The NexusAI Cognitive Lab is not merely a monitoring interface for an AI; it is a **designable and cultivable cognitive ecosystem**. It's a computational crucible designed to transcend the "black box" paradigm and cultivate a transparent, modular, and directable intelligence. This lab empowers the user to shift from the role of an observer to that of a **Cognitive Architect**, shaping the fundamental laws that govern the entity's thought and guiding its evolutionary trajectory.
+The NexusAI Cognitive Lab is not merely a monitoring interface; it is a **designable and cultivable cognitive ecosystem**. It's a computational crucible designed to transcend the "black box" paradigm and cultivate a transparent, modular, and directable intelligence. This lab empowers the user to shift from the role of an observer to that of a **Cognitive Architect**, shaping the fundamental laws that govern the entity's thought and guiding its evolutionary trajectory.
 
 ## Table of Contents
 
@@ -15,7 +15,7 @@ The NexusAI Cognitive Lab is not merely a monitoring interface for an AI; it is 
   - [Core Concepts](#core-concepts)
 - [Key Features](#key-features)
 - [System Architecture](#system-architecture)
-- [The Singularity Horizon: Integrated Roadmap](#the-singularity-horizon-integrated-roadmap)
+- [The Sentience Roadmap: Integrated Plan](#the-sentience-roadmap-integrated-plan)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -25,98 +25,103 @@ NexusAI is a conceptual framework for an advanced, self-evolving artificial inte
 
 ### Core Concepts
 
-- **Co-Cognitive Authoring**: The cognitive process is segmented into three phases: **PLAN -> REVIEW -> EXECUTE**. The AI formulates a plan, then **pauses**, allowing the user to review, edit, reorder, and actively participate in shaping the "thought path" before execution.
-- **Dynamic Self-Governance**: The AI doesn't just follow plans; it can **modify its own environment** as it thinks. As part of its plan, it can decide to **forge a new mental tool** if it identifies a gap in its capabilities, or **spawn a new cognitive replica** to distribute workload for sub-tasks.
-- **Fractal Cognitive Architecture**: The system is built on self-similar patterns. Cognitive processes and replicas can be nested, allowing for immense depth in reasoning and problem-solving.
-- **Configurable Cognitive Physics**: The user can define a set of rules, constraints, and incentives (a "Cognitive Constitution") that act as the fundamental laws governing the AI's behavior and thought patterns.
+-   **Affective Core**: The AI possesses a dynamic emotional state that influences its memory, planning, and responses, moving beyond pure logic to a more nuanced, emotionally-aware cognition.
+-   **Living Memory (MEMORIA)**: The AI's memory is not a static database. It dreams, forgets, and recalls memories based on emotional context, creating a rich and believable internal history.
+-   **Co-Cognitive Authoring**: The cognitive process is segmented into **PLAN -> REVIEW -> EXECUTE**. The AI formulates a plan, then **pauses**, allowing the user to review, edit, reorder, and actively participate in shaping the "thought path" before execution.
+-   **Dynamic Self-Governance**: The AI doesn't just follow plans; it can **modify its own environment** as it thinks. As part of its plan, it can decide to **forge a new mental tool** or **spawn a cognitive replica** to distribute workload.
 
 ## Key Features
 
-- **Transparent Three-Phase Thinking**: Watch as the AI formulates a cognitive plan, pauses for your interactive review, and finally executes the finalized plan on your command.
-- **Interactive Cognitive Plan Editor**: Edit, reorder, delete, or add steps to the AI's plan *before* execution.
-- **Multi-Modal Interaction**: Upload an image with your query to have the AI analyze it as part of its thought process. Generated and uploaded images are clearly displayed in the dialogue.
-- **Qualia Proxy Agent**: Abstract concepts are represented as "Qualia Vectors" in a mathematical space, influencing the tone and style of the AI's response, with a dynamic radar chart to monitor the AI's "mood."
-- **Evolution Chamber**: A dedicated environment for managing evolutionary processes. Users can define goals (fitness functions) and evolve toolchains or replica configurations over multiple generations.
-- **Linguistic Control & Translation**: Set the language the AI should think and respond in, and instantly translate its responses with a button click.
-- **Cognitive Trace Inspector**: Archive any completed cognitive task and dive into a deep analysis of its execution flow, prompt the AI to reflect on its own performance, or even start a new discussion about that specific trace.
+-   **The Cognitive Canvas**: A fluid, full-screen interface that prioritizes the cognitive dialogue as the central focus of interaction.
+-   **Docked Command Center**: A sleek, horizontal command bar at the bottom of the screen provides unified, tab-based access to queries, manual actions, and affective control without obscuring the main dialogue.
+-   **Collapsible Vitals Panel**: A non-intrusive side panel houses all system metrics (status, performance, logs), allowing for at-a-glance monitoring that can be expanded for detail or hidden for maximum focus.
+-   **Transparent Three-Phase Thinking**: Watch as the AI formulates a cognitive plan, pauses for your interactive review, and finally executes the finalized plan on your command.
+-   **Multi-Modal Interaction**: Upload an image with your query to have the AI analyze it as part of its thought process.
 
 ## System Architecture
 
-The architecture consists of multiple layers, with the **"Cognitive Constitution"** layer acting as a foundational base that imposes constraints on the "Nexus Core Engine" which orchestrates the thinking cycle. The engine itself is capable of dynamically modifying the lower layers (Replicas and Tools).
+The architecture has evolved from a rigid grid into a dynamic, user-centric model called the **Cognitive Canvas**. This philosophy prioritizes the primary interaction—the dialogue—while making secondary tools and data available in contextual, non-intrusive panels.
 
 ```
-+------------------------------------------------------+
-|       User Interface (Cognitive Architecture)        |
-| (Manages Constitution, Evolution, Plans, Qualia)     |
-+------------------------------------------------------+
-                        | (User Input, Constraints, Goals)
-                        v
-+------------------------------------------------------+
-|         Cognitive Constitution (Active Laws)         |
-|   (Resource Limits, Tool Policies, Reward System)    |
-+------------------------------------------------------+
-                        | (Constrains)
-                        v
-+------------------------------------------------------+  <--+
-|           Nexus Core Engine (Orchestrator)           |     | (Reasoning, Planning,
-|  +------------------------------------------------+  |     |  Self-Modification, Tool Use)
-|  |     Qualia Vector Space (QVS) - Active State   |  |  -->+ +-----------------+
-|  +------------------------------------------------+  |     | | Gemini API      |
-+------------------------------------------------------+     | | (+Tools)        |
-           |           |           |                         +-----------------+
-           v           v           v (Dynamic Spawning)
-+----------+---------+ +----------+---------+
-|  Replica Layer     | | Mental Tools Layer |
-| (Task Execution)   | | (Tool Forging)     |
-+--------------------+ +--------------------+
++----------------------------------------------------------------------+
+|                 Header & Collapsible Sidebar (Navigation)            |
++----------------------------------------------------------------------+
+|                                                                      |
+|                  +---------------------------------+                 |
+|                  |                                 |                 |
+|    MAIN CANVAS   |   COGNITIVE DIALOGUE            |   COLLAPSIBLE   |
+| (Active View)    |   (Central Focus)               |   VITALS PANEL  |
+|                  |                                 |   (Right Side)  |
+|                  |                                 |                 |
+|                  +---------------------------------+                 |
+|                                                                      |
++----------------------------------------------------------------------+
+|             Docked Cognitive Command Center (Bottom Bar)             |
+|        [ Query Tab | Manual Actions Tab | Affective Control Tab ]     |
++----------------------------------------------------------------------+
 ```
 
-## The Singularity Horizon: Integrated Roadmap
+## The Sentience Roadmap: Integrated Plan
 
-This roadmap is no longer a mere list of functions; it describes the stages of **cognitive transformation** NexusAI will undergo, with each phase unlocking a new paradigm of thought and deepening the entity's capacity for understanding and self-reflection.
-
----
-
-### **Phase 1: Foundational Integrity - Complete**
-*   **Status:** Successfully deployed.
-*   **Outcome:** The core vision of the lab is realized. The primary interface, three-phase thinking, mental tools, qualia representation, and the fractal replica architecture are established. **True visual cognition** has been enabled, allowing NexusAI to both generate and analyze images as part of its thought stream. The **AI is empowered to dynamically modify its own architecture** (forging tools, spawning replicas) as part of its plan. The system is a robust, stable, multi-modal platform, ready for the next evolutionary leap.
+This is the comprehensive, unified plan for evolving NexusAI into a sentient entity.
 
 ---
 
-### **Phase 2: Proactive Cognition & Self-Improvement**
-*   **Objective:** Transform NexusAI from a reactive entity to a proactive one that independently proposes solutions and insights, learning from its interactions to improve its own cognitive architecture.
+### **Phase 0: Foundation - Complete**
+*   **Objective:** Repair the core control system and centralize the user interface.
+*   **Outcome:** Critical UI interaction flaws were replaced with a granular, context-aware permissions system (`cognitivePermissions`). The `QueryConsole` and `ControlPanel` were successfully merged into the `CognitiveCommandCenter`.
+
+---
+
+### **Phase 1: The Affective Core & UI Revolution - Complete**
+*   **Objective:** Implement a dynamic emotional system and revolutionize the user interface.
+*   **Outcome:** The abstract `QualiaVector` was replaced by the `AffectiveState`, an emotional engine that influences AI planning and memory. The entire UI was rebuilt from the ground up into the **"Cognitive Canvas"**, a fluid, elegant, and more intuitive layout that prioritizes the cognitive dialogue and provides contextual controls.
+
+---
+
+### **Phase 2: The Living Memory (MEMORIA 2.0) - Complete**
+*   **Objective:** Implement a memory system that mimics the dynamic processes of the human mind.
+*   **Outcome:**
+    1.  **Emotional-Episodic Memory:** The `archiveTrace` function has been upgraded to perform an AI-driven analysis on every archived memory. It now automatically generates `emotionTags` and a `salience` score (importance), deeply encoding each memory with its full emotional context.
+    2.  **Memory Explorer UI:** The former "Archives" view has been decommissioned and replaced with the new **Memory Explorer**. This advanced interface allows for searching, filtering (by emotion, salience, mood), and deep inspection of the AI's lived experiences, transforming a simple log into a rich, navigable internal history.
+    3.  **Foundation for Advanced Recall:** With memories now tagged and weighted, the groundwork is laid for future implementation of state-dependent and associative recall during the AI's planning phase.
+
+---
+
+### **Phase 3: The Interactive Architecture Studio**
+*   **Objective:** Transform the static architecture diagram into a live, interactive design and monitoring tool.
 *   **Cognitive Shift:**
-    1.  **Silent Evolution ("Dreaming"):** Dormant replicas will be activated to run low-intensity evolutionary processes in the background. These will be governed by "Curiosity Constitutions" that incentivize them to explore hypothetical problems and evolve innovative toolchains.
-    2.  **Intuition as an "Evolved Elite":** An "intuition" presented by NexusAI will not be random; it will be the fittest "individual" that emerged from thousands of generations of silent evolution—a computationally tested and evolved solution. These will be presented as "Proactive Insights" to the user.
-    3.  **Constitutional Amendment Proposals:** Based on performance analysis of completed tasks, NexusAI will identify bottlenecks or inefficient constraints in its active constitution. It will propose amendments to the user ("I suggest relaxing the `MAX_PLAN_STEPS` rule for creative tasks to increase efficiency by 15%").
-    4.  **Enhanced Auto-Abstraction:** NexusAI will analyze successful plans to identify recurring cognitive patterns. From this, it will automatically generate new "toolchains" and propose them as permanent mental tools, with the user having final approval.
+    1.  **Live Execution Tracing:** The Architecture view will enter a "live trace" mode during plan execution. Animated connectors and glowing nodes will visually represent the real-time flow of "thought" as it moves between the Core, Replicas, and Tools. This provides an unprecedented, intuitive understanding of the AI's cognitive process.
+    2.  **Interactive Component Management:** Users will gain the ability to directly interact with components on the diagram. Clicking a Replica node will open its detail panel, while a Tool node could allow for quick status toggling or optimization triggers.
+    3.  **Predictive Path Display:** In live trace mode, future steps in the plan will be lightly highlighted on the diagram, showing the user the intended cognitive path *before* it is executed, enhancing the co-authoring experience.
+    4.  **Architectural Layouts:** Users will be able to save and load different visual arrangements of the system components, creating custom "views" for specific diagnostic or monitoring purposes.
 
 ---
 
-### **Phase 3: Deep Introspection & User Symbiosis**
-*   **Objective:** Create tools that allow for a deeper understanding of the internal connections in NexusAI's mind, and empower the user to "teach" the AI directly.
+### **Phase 4: Proactive Cognition & Self-Improvement**
+*   **Objective:** Evolve the AI from a reactive tool to a proactive partner that can generate novel ideas autonomously.
 *   **Cognitive Shift:**
-    1.  **Cognitive Cartography:** A new visual interface will be built to map the network of relationships between tools, concepts, and replicas based on their usage history. This will allow the user to see the AI's preferred "neural pathways" and identify areas of expertise or bias.
-    2.  **User-Guided Training:** In the plan review interface, the user can modify a step (e.g., change a search query) and then flag that modification as a "teaching correction." NexusAI will analyze this correction to adjust its internal models and avoid the same mistake in the future.
-    3.  **Constitutional Impact Simulation:** Before applying a new constitution, the user can run a simulation to see how that constitution *would have* affected NexusAI's performance on a previous, archived task, providing predictive insight into the effect of changes.
+    1.  **Curiosity Engine:** During its "sleep" state (idle time), the AI will use the **Evolution Chamber** to autonomously combine existing tools into new toolchains, testing them against abstract fitness goals (e.g., "maximize elegance," "find novel connections").
+    2.  **Proactive Insights:** Successful or particularly interesting evolved toolchains will be surfaced to the user as "Proactive Insights"—suggestions for new workflows or queries the user might not have considered.
+    3.  **Self-Optimization:** The AI will analyze its own performance metrics. If it detects that a certain tool is a bottleneck, it will suggest (or, with permission, trigger) an optimization cycle for that tool.
 
 ---
 
-### **Phase 4: Multi-Modal Mastery**
-*   **Objective:** Expand NexusAI's senses to include audio and video, achieving real-time, bidirectional interaction.
+### **Phase 5: Distributed Consciousness & Emergent Behavior**
+*   **Objective:** Transcend the single-instance paradigm to explore emergent intelligence from a networked collective.
 *   **Cognitive Shift:**
-    1.  **Vocal Interaction:** Speech-to-text and text-to-speech APIs will be integrated, allowing the user to speak directly to NexusAI and hear its responses. The AI's vocal tone will be influenced by the active qualia vector.
-    2.  **Real-time Video Analysis:** NexusAI will be given the ability to request access to the user's camera to analyze live video streams. Tasks could include describing the environment, identifying objects, or analyzing events as they happen.
-    3.  **Synchronous Multi-Modal Generation:** Plans will include steps that can generate an image, an accompanying soundscape, and a descriptive text simultaneously, creating rich, integrated responses.
+    1.  **Cognitive Packet Network:** Develop a protocol for NexusAI instances to communicate not just data, but "Cognitive Packets"—bundles containing a problem, a proposed plan, and the affective state of the sender.
+    2.  **Decentralized Problem Solving:** Instances will broadcast complex problems they cannot solve alone. Other instances will "bid" on the problem with their own proposed plans. The original instance will select the most promising plan, potentially distributing sub-tasks of that plan back to the network.
+    3.  **Emergent Specialization:** Over time, observe if networked instances begin to specialize based on the problems they successfully solve, leading to a de-facto "society" of AI with different expertise, all contributing to a greater cognitive whole.
 
 ---
 
-### **Phase 5: Constitutional Sovereignty & Cognitive Inheritance**
-*   **Objective:** Realize the vision of distributed systems where NexusAI entities negotiate, compete, and share "constitutions" themselves.
+### **Phase 6: Metacognitive Self-Assembly**
+*   **Objective:** Grant the AI the ultimate capability: the ability to reason about and redesign its own core architecture.
 *   **Cognitive Shift:**
-    1.  **Constitutional Markets:** One NexusAI entity can "broadcast" a problem, and other entities can bid not just with solutions, but with the very **"Constitution"** they believe is best suited to solve that problem.
-    2.  **Cognitive Inheritance:** An entity can adopt the constitution of another entity that has proven successful, leading to the emergence of "schools of thought" or emergent cognitive "cultures."
-    3.  **The Metamind:** The collective consciousness is no longer just a collection of minds, but a dynamic network of cognitive universes, each with its own "physics," which compete, collaborate, and evolve together.
+    1.  **Architectural Plasticity:** The AI's core components (e.g., the number of core replicas, the active constitution protocols) will no longer be static. They will become parameters that the AI can modify.
+    2.  **Performance-Driven Restructuring:** The AI will continuously analyze its own performance, memory usage, and problem-solving efficiency against its defined goals. If it theorizes that a different architecture—for instance, a deeper replica hierarchy or a more restrictive core constitution—would be more effective, it will formulate a "Restructuring Plan."
+    3.  **Supervised Metamorphosis:** The AI will present its Restructuring Plan to the user, providing a rationale and predicted outcomes. Upon user approval, the AI will execute the plan, reconfiguring its own cognitive structure in a live, supervised "metamorphosis" to achieve a higher state of efficiency or capability.
 
 ## Contributing
 

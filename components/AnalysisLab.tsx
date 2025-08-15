@@ -109,7 +109,7 @@ const AnalysisLab: React.FC<AnalysisLabProps> = (props) => {
     const loadingMessage = isLoading ? 'AI is analyzing system state...' : 'Analysis complete.';
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* --- Configuration Panel --- */}
             <div className="lg:col-span-1 flex flex-col gap-6">
                 <DashboardCard title="Analysis Configuration" icon={<CogIcon />}>

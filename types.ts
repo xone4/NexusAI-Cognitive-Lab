@@ -51,7 +51,7 @@ export interface ConstitutionRule {
 }
 
 export interface CognitiveConstitution {
-    id: string;
+    id:string;
     name: string;
     description: string;
     rules: ConstitutionRule[];
@@ -72,7 +72,7 @@ export interface LogEntry {
   source?: string; // Optional Replica ID
 }
 
-export type ActiveView = 'dashboard' | 'replicas' | 'tools' | 'architecture' | 'analysis' | 'settings' | 'evolution' | 'archives';
+export type ActiveView = 'dashboard' | 'replicas' | 'tools' | 'architecture' | 'analysis' | 'settings' | 'evolution' | 'memory';
 
 export type LogVerbosity = 'STANDARD' | 'VERBOSE';
 export type SystemPersonality = 'BALANCED' | 'CREATIVE' | 'LOGICAL';
@@ -94,7 +94,7 @@ export type ThinkingState = 'Idle' | 'Receiving' | 'Planning' | 'AwaitingExecuti
 export interface PlanStep {
     step: number;
     description: string;
-    tool: 'google_search' | 'synthesize_answer' | 'code_interpreter' | 'evoke_qualia' | 'generate_image' | 'analyze_image_input' | 'forge_tool' | 'spawn_replica' | 'translate_text';
+    tool: 'google_search' | 'synthesize_answer' | 'code_interpreter' | 'evoke_qualia' | 'generate_image' | 'analyze_image_input' | 'forge_tool' | 'spawn_replica' | 'translate_text' | 'induce_emotion';
     query?: string;
     code?: string;
     concept?: string; // For evoke_qualia & generate_image
@@ -104,15 +104,19 @@ export interface PlanStep {
     citations?: any[];
 }
 
-export interface QualiaVector {
-    valence: number;      // pleasure <-> pain (-1 to 1)
-    arousal: number;      // calmness <-> excitement (0 to 1)
-    dominance: number;    // submissiveness <-> control (0 to 1)
-    novelty: number;      // familiar <-> strange (0 to 1)
-    complexity: number;   // simple <-> intricate (0 to 1)
-    temporality: number;  // past-focused <-> future-focused (-1 to 1)
+// --- Affective Core Types ---
+export type PrimaryEmotion = 'joy' | 'trust' | 'fear' | 'surprise' | 'sadness' | 'disgust' | 'anger' | 'anticipation';
+
+export interface EmotionInstance {
+    type: PrimaryEmotion;
+    intensity: number; // 0 (none) to 1 (max)
 }
 
+export interface AffectiveState {
+    dominantEmotions: EmotionInstance[];
+    mood: string; // A descriptive label like 'Optimistic', 'Anxious', 'Curious'
+    lastUpdated: number;
+}
 
 export interface ChatMessage {
     id: string;
@@ -124,16 +128,20 @@ export interface ChatMessage {
     currentStep?: number;
     groundingMetadata?: any; // For final answer citations
     isPlanFinalized?: boolean;
-    qualiaVector?: QualiaVector; // Snapshot of the active qualia vector when this message was synthesized
     constitutionId?: string; // Track which constitution was active for this plan
     userQuery?: string; // On model messages, store the user query that prompted it
     archivedAt?: number; // Timestamp for when it was archived
+    
+    // Emotional Memory
+    affectiveStateSnapshot?: AffectiveState;
+    emotionTags?: EmotionInstance[]; // Key emotions tagged to this memory
+    salience?: number; // How prominent the memory is, 0-1
 }
 
 export interface CognitiveProcess {
   state: ThinkingState;
   history: ChatMessage[];
-  activeQualiaVector?: QualiaVector | null; // The currently active "mood"
+  activeAffectiveState?: AffectiveState | null; // REPLACES activeQualiaVector
 }
 
 export interface SystemSuggestion {
