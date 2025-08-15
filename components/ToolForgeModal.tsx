@@ -45,9 +45,9 @@ const ToolForgeModal: React.FC<ToolForgeModalProps> = ({ onClose, onForge }) => 
                     </div>
                     
                     {isLoading ? (
-                        <div className="flex flex-col items-center justify-center h-48 text-center text-nexus-text-muted animate-pulse">
-                            <BrainCircuitIcon className="w-16 h-16 text-nexus-primary" />
-                            <p className="mt-4 font-semibold text-lg">AI is Forging...</p>
+                        <div className="flex flex-col items-center justify-center h-48 text-center text-nexus-text-muted">
+                            <div className="w-16 h-16 mb-4 relative"><div className="nexus-loader"></div></div>
+                            <p className="font-semibold text-lg">AI is Forging...</p>
                             <p className="text-sm">Synthesizing a new cognitive instrument based on your design...</p>
                         </div>
                     ) : (

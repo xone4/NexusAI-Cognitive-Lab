@@ -33,7 +33,7 @@ const DetailedPlanStep: React.FC<{ step: PlanStep }> = ({ step }) => {
         switch(step.tool) {
             case 'google_search': return <CubeTransparentIcon className="w-5 h-5 text-blue-400" />;
             case 'code_interpreter': return <CodeBracketIcon className="w-5 h-5 text-purple-400" />;
-            case 'evoke_qualia': return <LightBulbIcon className="w-5 h-5 text-yellow-400" />;
+            case 'induce_emotion': return <LightBulbIcon className="w-5 h-5 text-yellow-400" />;
             case 'generate_image': return <PhotographIcon className="w-5 h-5 text-green-400" />;
             case 'analyze_image_input': return <SparklesIcon className="w-5 h-5 text-pink-400" />;
             default: return <CogIcon className="w-5 h-5 text-gray-400" />;

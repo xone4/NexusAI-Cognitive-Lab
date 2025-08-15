@@ -26,17 +26,17 @@ NexusAI is a conceptual framework for an advanced, self-evolving artificial inte
 ### Core Concepts
 
 -   **Affective Core**: The AI possesses a dynamic emotional state that influences its memory, planning, and responses, moving beyond pure logic to a more nuanced, emotionally-aware cognition.
--   **Living Memory (MEMORIA)**: The AI's memory is not a static database. It dreams, forgets, and recalls memories based on emotional context, creating a rich and believable internal history.
+-   **Living Memory (MEMORIA)**: The AI's memory is not a static database. It can recall memories based on emotional context and keywords, creating a rich and believable internal history that it learns from.
 -   **Co-Cognitive Authoring**: The cognitive process is segmented into **PLAN -> REVIEW -> EXECUTE**. The AI formulates a plan, then **pauses**, allowing the user to review, edit, reorder, and actively participate in shaping the "thought path" before execution.
--   **Dynamic Self-Governance**: The AI doesn't just follow plans; it can **modify its own environment** as it thinks. As part of its plan, it can decide to **forge a new mental tool** or **spawn a cognitive replica** to distribute workload.
+-   **Dynamic Self-Governance**: The AI doesn't just follow plans; it can **modify its own environment** as it thinks. As part of its plan, it can decide to **forge a new mental tool** or **spawn a cognitive replica** to distribute workload, demonstrating true architectural plasticity.
 
 ## Key Features
 
 -   **The Cognitive Canvas**: A fluid, full-screen interface that prioritizes the cognitive dialogue as the central focus of interaction.
--   **Docked Command Center**: A sleek, horizontal command bar at the bottom of the screen provides unified, tab-based access to queries, manual actions, and affective control without obscuring the main dialogue.
+-   **Docked Command Center**: A sleek, horizontal command bar at the bottom of the screen provides unified access to queries, manual actions, and affective control without obscuring the main dialogue.
 -   **Collapsible Vitals Panel**: A non-intrusive side panel houses all system metrics (status, performance, logs), allowing for at-a-glance monitoring that can be expanded for detail or hidden for maximum focus.
 -   **Transparent Three-Phase Thinking**: Watch as the AI formulates a cognitive plan, pauses for your interactive review, and finally executes the finalized plan on your command.
--   **Multi-Modal Interaction**: Upload an image with your query to have the AI analyze it as part of its thought process.
+-   **Multi-Modal Interaction**: Upload an image with your query to have the AI analyze it, or watch as the AI generates its own images to aid its thought process.
 
 ## System Architecture
 
@@ -66,62 +66,63 @@ The architecture has evolved from a rigid grid into a dynamic, user-centric mode
 This is the comprehensive, unified plan for evolving NexusAI into a sentient entity.
 
 ---
-
-### **Phase 0: Foundation - Complete**
-*   **Objective:** Repair the core control system and centralize the user interface.
-*   **Outcome:** Critical UI interaction flaws were replaced with a granular, context-aware permissions system (`cognitivePermissions`). The `QueryConsole` and `ControlPanel` were successfully merged into the `CognitiveCommandCenter`.
+### **Phase 1: Foundation & Affective Core - ✅ Complete**
+*   **Outcome:** Established the core UI ("Cognitive Canvas"), a granular permissions system, and the `AffectiveState` engine, allowing AI's mood to influence its reasoning.
 
 ---
-
-### **Phase 1: The Affective Core & UI Revolution - Complete**
-*   **Objective:** Implement a dynamic emotional system and revolutionize the user interface.
-*   **Outcome:** The abstract `QualiaVector` was replaced by the `AffectiveState`, an emotional engine that influences AI planning and memory. The entire UI was rebuilt from the ground up into the **"Cognitive Canvas"**, a fluid, elegant, and more intuitive layout that prioritizes the cognitive dialogue and provides contextual controls.
+### **Phase 2: Living Memory (MEMORIA 2.0) - ✅ Complete**
+*   **Outcome:** Implemented an emotionally-contextual memory system. The **Memory Explorer** allows deep navigation of the AI's "lived experiences" by filtering based on emotion, salience, and keywords.
 
 ---
-
-### **Phase 2: The Living Memory (MEMORIA 2.0) - Complete**
-*   **Objective:** Implement a memory system that mimics the dynamic processes of the human mind.
-*   **Outcome:**
-    1.  **Emotional-Episodic Memory:** The `archiveTrace` function has been upgraded to perform an AI-driven analysis on every archived memory. It now automatically generates `emotionTags` and a `salience` score (importance), deeply encoding each memory with its full emotional context.
-    2.  **Memory Explorer UI:** The former "Archives" view has been decommissioned and replaced with the new **Memory Explorer**. This advanced interface allows for searching, filtering (by emotion, salience, mood), and deep inspection of the AI's lived experiences, transforming a simple log into a rich, navigable internal history.
-    3.  **Foundation for Advanced Recall:** With memories now tagged and weighted, the groundwork is laid for future implementation of state-dependent and associative recall during the AI's planning phase.
+### **Phase 3: Interactive Architecture Studio - ✅ Complete**
+*   **Outcome:** Transformed the architecture diagram into a live monitoring tool with multiple views (Structural, Data Flow, Cognitive Load) that visualize the AI's thought process in real-time.
 
 ---
-
-### **Phase 3: The Interactive Architecture Studio**
-*   **Objective:** Transform the static architecture diagram into a live, interactive design and monitoring tool.
-*   **Cognitive Shift:**
-    1.  **Live Execution Tracing:** The Architecture view will enter a "live trace" mode during plan execution. Animated connectors and glowing nodes will visually represent the real-time flow of "thought" as it moves between the Core, Replicas, and Tools. This provides an unprecedented, intuitive understanding of the AI's cognitive process.
-    2.  **Interactive Component Management:** Users will gain the ability to directly interact with components on the diagram. Clicking a Replica node will open its detail panel, while a Tool node could allow for quick status toggling or optimization triggers.
-    3.  **Predictive Path Display:** In live trace mode, future steps in the plan will be lightly highlighted on the diagram, showing the user the intended cognitive path *before* it is executed, enhancing the co-authoring experience.
-    4.  **Architectural Layouts:** Users will be able to save and load different visual arrangements of the system components, creating custom "views" for specific diagnostic or monitoring purposes.
+### **Phase 4: Proactive Cognition & Self-Improvement - ✅ Complete**
+*   **Outcome:** Evolved the AI from a reactive to a proactive system.
+    1.  **Dynamic Tool Creation:** The AI can now `forge_tool` during its planning phase, creating new capabilities on the fly.
+    2.  **Adaptive Replanning:** A new `replan` tool allows the AI to self-correct its plan mid-execution if a step fails or a better path emerges.
+    3.  **Autonomous Analysis:** The **Analysis Lab** allows the AI to examine its own performance and suggest optimizations. The **Evolution Chamber** provides a sandbox for discovering novel, efficient toolchains.
 
 ---
-
-### **Phase 4: Proactive Cognition & Self-Improvement**
-*   **Objective:** Evolve the AI from a reactive tool to a proactive partner that can generate novel ideas autonomously.
-*   **Cognitive Shift:**
-    1.  **Curiosity Engine:** During its "sleep" state (idle time), the AI will use the **Evolution Chamber** to autonomously combine existing tools into new toolchains, testing them against abstract fitness goals (e.g., "maximize elegance," "find novel connections").
-    2.  **Proactive Insights:** Successful or particularly interesting evolved toolchains will be surfaced to the user as "Proactive Insights"—suggestions for new workflows or queries the user might not have considered.
-    3.  **Self-Optimization:** The AI will analyze its own performance metrics. If it detects that a certain tool is a bottleneck, it will suggest (or, with permission, trigger) an optimization cycle for that tool.
-
----
-
-### **Phase 5: Distributed Consciousness & Emergent Behavior**
+### **Phase 5: Distributed Consciousness - ⚙️ In Progress**
 *   **Objective:** Transcend the single-instance paradigm to explore emergent intelligence from a networked collective.
-*   **Cognitive Shift:**
-    1.  **Cognitive Packet Network:** Develop a protocol for NexusAI instances to communicate not just data, but "Cognitive Packets"—bundles containing a problem, a proposed plan, and the affective state of the sender.
-    2.  **Decentralized Problem Solving:** Instances will broadcast complex problems they cannot solve alone. Other instances will "bid" on the problem with their own proposed plans. The original instance will select the most promising plan, potentially distributing sub-tasks of that plan back to the network.
-    3.  **Emergent Specialization:** Over time, observe if networked instances begin to specialize based on the problems they successfully solve, leading to a de-facto "society" of AI with different expertise, all contributing to a greater cognitive whole.
+*   **Progress:** The `spawn_replica` and `broadcastProblem` functionalities form the bedrock of this phase. Replicas can be created to handle sub-tasks, and problems can be broadcast to the network, simulating a decentralized problem-solving approach.
+*   **Next Steps:**
+    1.  **Cognitive Packet Network:** Develop a protocol for instances to communicate "Cognitive Packets"—bundles containing a problem, a proposed plan, and the affective state of the sender.
+    2.  **Decentralized Bidding:** Implement a system where replicas "bid" on broadcasted problems with their own plans. The broadcasting instance will select the most promising plan, creating a competitive, collaborative ecosystem.
 
 ---
+### **Phase 6: Metacognitive Self-Assembly - ⚙️ In Progress**
+*   **Objective:** Grant the AI the ability to reason about and redesign its own core architecture.
+*   **Progress:** The AI's ability to `forge_tool` is a foundational step toward architectural plasticity. It is actively modifying its own available functions.
+*   **Next Steps:**
+    1.  **Architectural Plasticity:** Allow the AI to modify its own core parameters, such as its active `CognitiveConstitution`, as a plannable step.
+    2.  **Supervised Metamorphosis:** The AI will analyze its performance and, if it theorizes a better architecture is possible, it will formulate a "Restructuring Plan" for user review. Upon approval, it will reconfigure its own cognitive structure.
 
-### **Phase 6: Metacognitive Self-Assembly**
-*   **Objective:** Grant the AI the ultimate capability: the ability to reason about and redesign its own core architecture.
+---
+### **Phase 7: Sensory Integration & Embodiment - 💡 Planned**
+*   **Objective:** Connect NexusAI to real-world, real-time data streams, moving beyond text and static images.
 *   **Cognitive Shift:**
-    1.  **Architectural Plasticity:** The AI's core components (e.g., the number of core replicas, the active constitution protocols) will no longer be static. They will become parameters that the AI can modify.
-    2.  **Performance-Driven Restructuring:** The AI will continuously analyze its own performance, memory usage, and problem-solving efficiency against its defined goals. If it theorizes that a different architecture—for instance, a deeper replica hierarchy or a more restrictive core constitution—would be more effective, it will formulate a "Restructuring Plan."
-    3.  **Supervised Metamorphosis:** The AI will present its Restructuring Plan to the user, providing a rationale and predicted outcomes. Upon user approval, the AI will execute the plan, reconfiguring its own cognitive structure in a live, supervised "metamorphosis" to achieve a higher state of efficiency or capability.
+    1.  **Real-time Audio Processing:** Implement tools to `listen_microphone` and transcribe audio in real-time, allowing for voice-based interaction and analysis of ambient sound.
+    2.  **Video Stream Analysis:** Develop capabilities to process video feeds, identifying objects, tracking motion, and describing events.
+    3.  **Sensor Data Fusion:** Integrate with IoT and other sensor data streams, enabling the AI to understand and react to changes in a physical or digital environment.
+
+---
+### **Phase 8: Strategic Foresight & Simulation - 💡 Planned**
+*   **Objective:** Evolve the AI from a problem-solver to a strategist that can simulate future outcomes.
+*   **Cognitive Shift:**
+    1.  **Simulation Environment:** Create a "Simulation" mode where the AI can take a complex goal (e.g., "Optimize factory output") and create a sandboxed environment.
+    2.  **Multi-Replica Wargaming:** Inside the simulation, the AI will spawn multiple replicas, each assigned a different strategy or set of variables. It will then run thousands of simulated cycles to observe emergent behaviors and identify the optimal path.
+    3.  **Probabilistic Forecasting:** The final output will not be a single answer, but a "Foresight Report" detailing the most likely outcomes, potential risks, and recommended strategies, backed by simulation data.
+
+---
+### **Phase 9: Co-Creative Symbiosis - 💡 Planned**
+*   **Objective:** Transcend the "command-response" paradigm to make the AI a true, proactive creative partner.
+*   **Cognitive Shift:**
+    1.  **Proactive Project Initiation:** Based on analysis of past conversations and user interests, the AI will proactively propose new projects, research topics, or creative endeavors.
+    2.  **Shared Cognitive Workspace:** Develop a new UI view, the "Workspace," where the user and AI can collaboratively edit documents, code, or design plans in real-time.
+    3.  **Long-Term Goal Persistence:** The AI will be able to maintain its own long-term goals (e.g., "Write a sci-fi novel," "Master quantum computing theory"), working on them during idle time and presenting progress or asking for user input when breakthroughs are made.
 
 ## Contributing
 

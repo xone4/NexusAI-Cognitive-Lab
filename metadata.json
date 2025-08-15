@@ -2,7 +2,8 @@
   "name": "NEXUS SENTIENCE 3.0",
   "description": "A living cognitive shaping environment for cultivating a digital entity with an emotional past, a conscious present, and a directable future.",
   "requestFramePermissions": [
-    "camera"
+    "camera",
+    "microphone"
   ],
   "prompt": ""
 }

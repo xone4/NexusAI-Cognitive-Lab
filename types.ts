@@ -94,10 +94,10 @@ export type ThinkingState = 'Idle' | 'Receiving' | 'Planning' | 'AwaitingExecuti
 export interface PlanStep {
     step: number;
     description: string;
-    tool: 'google_search' | 'synthesize_answer' | 'code_interpreter' | 'evoke_qualia' | 'generate_image' | 'analyze_image_input' | 'forge_tool' | 'spawn_replica' | 'translate_text' | 'induce_emotion';
+    tool: 'google_search' | 'synthesize_answer' | 'code_interpreter' | 'recall_memory' | 'generate_image' | 'analyze_image_input' | 'forge_tool' | 'spawn_replica' | 'induce_emotion' | 'replan' | 'summarize_text' | 'translate_text' | 'analyze_sentiment' | 'execute_toolchain';
     query?: string;
     code?: string;
-    concept?: string; // For evoke_qualia & generate_image
+    concept?: string; // For induce_emotion & generate_image
     inputRef?: number; // References the step number for input, e.g., for analyze_image_input
     status: 'pending' | 'executing' | 'complete' | 'error';
     result?: any; // Can be complex objects like images or text

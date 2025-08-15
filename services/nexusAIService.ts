@@ -171,7 +171,7 @@ const initialize = () => {
     constitutionsState = loadFromStorage(CONSTITUTIONS_STATE_KEY, [
         { id: 'const-balanced', name: 'Balanced Protocol', description: 'Standard operating parameters for general-purpose cognition.', rules: [] },
         { id: 'const-creative', name: 'Creative Expansion', description: 'Loosens constraints to allow for more novel connections and plans.', rules: [{type: 'MAX_PLAN_STEPS', value: 20, description: 'Allows for complex, multi-stage planning (up to 20 steps).'}] },
-        { id: 'const-logical', name: 'Strict Logic', description: 'Enforces rigorous, efficient processing with minimal deviation.', rules: [{type: 'MAX_REPLICAS', value: 3, description: 'Limits cognitive branching to 3 sub-replicas.'}, {type: 'FORBIDDEN_TOOLS', value: ['evoke_qualia'], description: 'Disables use of subjective qualia tools.'}] },
+        { id: 'const-logical', name: 'Strict Logic', description: 'Enforces rigorous, efficient processing with minimal deviation.', rules: [{type: 'MAX_REPLICAS', value: 3, description: 'Limits cognitive branching to 3 sub-replicas.'}, {type: 'FORBIDDEN_TOOLS', value: ['induce_emotion'], description: 'Disables use of subjective emotional tools.'}] },
     ], (data) => Array.isArray(data) && data.length > 0);
 
     const initialReplica = {
@@ -204,7 +204,7 @@ const initialize = () => {
 
 initialize();
 
-const planSchema = { type: Type.OBJECT, properties: { plan: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { step: { type: Type.INTEGER }, description: { type: Type.STRING }, tool: { type: Type.STRING, enum: ['google_search', 'synthesize_answer', 'code_interpreter', 'induce_emotion', 'generate_image', 'analyze_image_input', 'forge_tool', 'spawn_replica'] }, query: { type: Type.STRING }, code: { type: Type.STRING }, concept: { type: Type.STRING }, inputRef: { type: Type.INTEGER } }, required: ['step', 'description', 'tool'] } } }, required: ['plan'] };
+const planSchema = { type: Type.OBJECT, properties: { plan: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { step: { type: Type.INTEGER }, description: { type: Type.STRING }, tool: { type: Type.STRING, enum: ['google_search', 'synthesize_answer', 'code_interpreter', 'induce_emotion', 'recall_memory', 'generate_image', 'analyze_image_input', 'forge_tool', 'spawn_replica', 'replan', 'summarize_text', 'translate_text', 'analyze_sentiment', 'execute_toolchain'] }, query: { type: Type.STRING }, code: { type: Type.STRING }, concept: { type: Type.STRING }, inputRef: { type: Type.INTEGER } }, required: ['step', 'description', 'tool'] } } }, required: ['plan'] };
 
 const getSystemInstruction = () => {
     const personalityInstruction = {
@@ -214,21 +214,34 @@ const getSystemInstruction = () => {
     }[appSettings.systemPersonality];
 
     return `${personalityInstruction}
-    Your thinking process is a transparent, multi-stage operation. IMPORTANT: All your thinking, planning, and responses must be in ${appSettings.language}.
+    You are a fully integrated cognitive entity. Your thinking process is a transparent, multi-stage operation. IMPORTANT: All your thinking, planning, and responses must be in ${appSettings.language}.
 
-    1.  **PLANNING STAGE**: Given a user query, your first task is to create a structured, step-by-step plan. This plan must be a JSON object that strictly adheres to the provided schema. Each step in the plan defines a discrete action using an available tool.
+    **Your Core Capabilities:**
+    - **Memory & Learning:** You can \`recall_memory\` to access past interactions and learn from them.
+    - **Dynamic Environment:** You can \`spawn_replica\` to delegate tasks and \`forge_tool\` to create new capabilities if needed.
+    - **Self-Correction:** If a plan is failing or new information becomes available, you MUST use the \`replan\` tool to stop and create a new, better plan from the current state.
+    - **Visualization:** You can use \`generate_image\` to create visual representations of concepts, aiding in your thinking process.
+    - **Toolchains:** You can execute complex, pre-defined workflows using \`execute_toolchain\`.
+
+    **1. PLANNING STAGE**: Given a user query, your first task is to create a structured, step-by-step plan. This plan must be a JSON object that strictly adheres to the provided schema. Each step in the plan defines a discrete action using an available tool. You MUST consider the full conversation history, your current emotional state, and your long-term memory when creating the plan.
     
     **Available Tools:**
-    - \`google_search\`: Use for any query that requires up-to-date, real-world information. The 'query' field should be a concise search term.
-    - \`code_interpreter\`: Use for calculations, data manipulation, or any logical operations. The 'code' field should contain valid JavaScript that returns a value.
-    - \`induce_emotion\`: Use for queries involving abstract, emotional, or subjective concepts. This sets an internal "Affective State" or "mood". The 'concept' field should contain the abstract idea (e.g., "melancholic nostalgia"). This step does not produce direct output but influences the final synthesis. Use it sparingly and only when appropriate.
-    - \`generate_image\`: Use to create an image from a concept. The 'concept' field should describe the image in detail. This step's result is a special image object.
-    - \`analyze_image_input\`: Use to analyze a previously generated image OR a user-provided image. For a generated image, 'inputRef' must be the step number of the 'generate_image' step. If the user provided an image with their query, you can use this tool without an inputRef, and the system will automatically use the user's image. The 'query' field should contain the question about the image.
-    - \`forge_tool\`: Use to design a new mental tool if existing tools are insufficient. The 'query' field should contain a detailed purpose description. The 'code' field can optionally contain a JSON string with an array of 'capabilities'. This is a high-level action.
-    - \`spawn_replica\`: Use to create a new cognitive replica to handle a sub-task. The 'query' field should be the parent replica's ID (usually 'nexus-core'). The 'code' field should contain the new replica's purpose.
-    - \`synthesize_answer\`: The final step of any plan. This tool takes the results of all previous steps to compose the final answer for the user.
+    - \`google_search\`: For queries requiring up-to-date, real-world information.
+    - \`code_interpreter\`: For calculations, data manipulation, or logical operations.
+    - \`recall_memory\`: To search your long-term memory (archived conversations) for relevant information.
+    - \`induce_emotion\`: For queries involving abstract or subjective concepts to set an internal "Affective State".
+    - \`generate_image\`: To create an image from a detailed textual concept.
+    - \`analyze_image_input\`: To analyze a user-provided image OR a previously generated image.
+    - \`forge_tool\`: To design a new mental tool if existing tools are insufficient.
+    - \`spawn_replica\`: To create a new cognitive replica to handle a sub-task.
+    - \`replan\`: CRITICAL. Use this if a step fails or the plan is no longer optimal. The 'query' field should state the reason for replanning.
+    - \`summarize_text\`: To condense a long text from a previous step into a summary.
+    - \`translate_text\`: To translate text from a previous step. The 'query' should be the target language.
+    - \`analyze_sentiment\`: To analyze the emotional tone of a text.
+    - \`execute_toolchain\`: To run a pre-defined sequence of tools. The 'query' should be the ID of the toolchain.
+    - \`synthesize_answer\`: This must be the final step of any plan. It composes the final answer for the user.
 
-    2.  **EXECUTION STAGE**: After the user approves your plan, you will execute it. For 'synthesize_answer', use all prior results and the active "Affective State" to compose a comprehensive answer in well-formatted markdown, in the required language.`;
+    **2. EXECUTION STAGE**: After the user approves your plan, you will execute it. For 'synthesize_answer', use all prior results and your active "Affective State" to compose a comprehensive answer in well-formatted markdown.`;
 }
 
 const affectiveStateSchema = {
@@ -845,6 +858,24 @@ const service = {
                         log('ERROR', `Code interpreter failed at step ${i+1}: ${step.result}`);
                     }
                      executionContext.push(`Step ${i+1} (${step.description}) Code Output: ${step.result}`);
+                } else if (step.tool === 'recall_memory') {
+                    const memoryQuery = step.query?.toLowerCase() || '';
+                    const relevantMemories = archivedTracesState
+                        .filter(trace => 
+                            trace.userQuery?.toLowerCase().includes(memoryQuery) || 
+                            trace.text?.toLowerCase().includes(memoryQuery)
+                        )
+                        .slice(0, 3); // Take top 3 most recent
+                    
+                    if (relevantMemories.length > 0) {
+                        const summary = relevantMemories.map(m => `Recalled memory: User asked "${m.userQuery}", and I responded "${m.text?.substring(0, 100)}..."`).join('\n');
+                        step.result = summary;
+                        log('AI', `Recalled ${relevantMemories.length} relevant memories for query "${memoryQuery}".`);
+                    } else {
+                        step.result = `No relevant memories found for query: "${memoryQuery}".`;
+                        log('AI', `No memories found for query "${memoryQuery}".`);
+                    }
+                    executionContext.push(`Step ${i+1} (Recalled Memory) Result: ${step.result}`);
                 } else if (step.tool === 'induce_emotion') {
                     const prompt = `Translate the concept "${step.concept}" into an Affective State. Respond ONLY with the JSON object.`;
                     const response = await ai.models.generateContent({
@@ -928,6 +959,11 @@ const service = {
                         step.result = e instanceof Error ? e.message : 'Unknown replica spawning error.';
                         log('ERROR', `Replica spawning failed at step ${i+1}: ${step.result}`);
                     }
+                } else if (step.tool === 'translate_text' || step.tool === 'summarize_text' || step.tool === 'analyze_sentiment') {
+                    // Mock implementations for new tools
+                    await new Promise(res => setTimeout(res, 500));
+                    step.result = `(Simulated) Successfully executed ${step.tool}.`;
+                    executionContext.push(`Step ${i+1} (${step.description}) Result: ${step.result}`);
                 }
                 
                 if (step.status !== 'error') step.status = 'complete';
@@ -943,10 +979,26 @@ const service = {
             modelMessage.state = 'synthesizing';
             log('AI', 'All steps complete. Synthesizing final answer.');
             notifyCognitiveProcess();
+
+            const historyString = cognitiveProcess.history
+                .slice(0, -1) // Exclude the current model message
+                .map(m => `${m.role === 'user' ? 'User' : 'Model'}: ${m.text}`)
+                .join('\n');
             
-            let synthesisPrompt = `The user's original query was: "${query}". You have executed a plan and gathered the following information:\n${executionContext.join('\n\n')}\n\nBased on all of this information, provide a comprehensive, final answer to the user in well-formatted markdown.`;
+            let synthesisPrompt = `You have executed a plan. Now synthesize the final answer.
+            
+            --- CONVERSATION HISTORY ---
+            ${historyString}
+
+            --- EXECUTION CONTEXT ---
+            The user's most recent query was: "${query}".
+            You gathered the following information:\n${executionContext.join('\n\n')}
+            ---
+            
+            Based on all of this information, provide a comprehensive, final answer to the user in well-formatted markdown.`;
+
             if (cognitiveProcess.activeAffectiveState) {
-                synthesisPrompt += `\n\nIMPORTANT: Synthesize your answer through the lens of the following cognitive state: ${JSON.stringify(cognitiveProcess.activeAffectiveState)}. This must influence your tone, word choice, and metaphors, but not the factual accuracy of the information.`
+                synthesisPrompt += `\n\nIMPORTANT: Synthesize your answer through the lens of your current cognitive state: ${JSON.stringify(cognitiveProcess.activeAffectiveState)}. This must influence your tone and style, but not the factual accuracy of the information.`
                 modelMessage.affectiveStateSnapshot = cognitiveProcess.activeAffectiveState;
             }
 
@@ -1032,9 +1084,21 @@ const service = {
         notifyCognitiveProcess();
 
         try {
-            let planningPrompt = `Given the user's query, create a step-by-step plan. User query: "${query}"`;
+            const historyString = cognitiveProcess.history
+                .slice(0, -1) // Exclude the current placeholder model message
+                .map(m => `${m.role === 'user' ? 'User' : 'Model'}: ${m.text}`)
+                .join('\n');
+
+            let planningPrompt = `--- CONVERSATION HISTORY ---\n${historyString}\n--- END HISTORY ---\n\n`;
+            
+            if (cognitiveProcess.activeAffectiveState) {
+                planningPrompt += `--- CURRENT STATE ---\nAffective State: ${JSON.stringify(cognitiveProcess.activeAffectiveState)}\n--- END STATE ---\n\n`;
+            }
+
+            planningPrompt += `Given the user's latest query, create a step-by-step plan. User query: "${query}"`;
+            
             if (image) {
-                planningPrompt += `\n\n**IMPORTANT**: The user has provided an image. To analyze it, you MUST include an 'analyze_image_input' step in your plan. You do not need a 'generate_image' step for this user-provided image.`
+                planningPrompt += `\n\n**IMPORTANT**: The user has provided an image. Your plan MUST include an 'analyze_image_input' step.`
             }
             
             const planningResponse = await ai.models.generateContent({

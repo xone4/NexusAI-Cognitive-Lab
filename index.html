@@ -35,6 +35,7 @@
               'load-pulse': 'load-pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
               'slide-in-right': 'slide-in-right 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both',
               'slide-out-right': 'slide-out-right 0.5s cubic-bezier(0.550, 0.085, 0.680, 0.530) both',
+              'loader-rotate': 'loader-rotate 1.5s linear infinite',
             },
             keyframes: {
               'text-focus-in': {
@@ -74,6 +75,9 @@
                 '0%': { transform: 'translateX(0)', opacity: '1' },
                 '100%': { transform: 'translateX(100%)', opacity: '0' },
               },
+              'loader-rotate': {
+                '100%': { transform: 'rotate(360deg)' }
+              },
             }
           }
         }
@@ -88,6 +92,28 @@
       .animations-none * {
         transition: none !important;
         animation: none !important;
+      }
+      .nexus-loader {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        display: inline-block;
+        border-top: 3px solid #00aaff;
+        border-right: 3px solid transparent;
+        box-sizing: border-box;
+        animation: loader-rotate 1s linear infinite;
+      }
+      .nexus-loader::after {
+        content: '';  
+        box-sizing: border-box;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border-bottom: 3px solid #00e5ff;
+        border-left: 3px solid transparent;
       }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">

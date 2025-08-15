@@ -224,16 +224,15 @@ const App: React.FC = () => {
   
   const cognitivePermissions = useMemo(() => {
     const state = cognitiveProcess?.state ?? 'Idle';
-    const isProcessing = state === 'Receiving' || state === 'Executing' || state === 'Synthesizing';
-    const isPlanning = state === 'Planning';
+    const isProcessing = state === 'Receiving' || state === 'Executing' || state === 'Synthesizing' || state === 'Planning';
 
     return {
         canSubmitQuery: state === 'Idle' || state === 'Done' || state === 'Error' || state === 'Cancelled',
         canEditPlan: state === 'AwaitingExecution',
         canExecutePlan: state === 'AwaitingExecution',
-        canCancelProcess: isProcessing || isPlanning,
-        canUseManualControls: state === 'Idle' || state === 'Done' || state === 'Error',
-        isGloballyBusy: isProcessing || isPlanning,
+        canCancelProcess: isProcessing,
+        canUseManualControls: state === 'Idle' || state === 'Done' || state === 'Error' || state === 'Cancelled',
+        isGloballyBusy: isProcessing || state === 'AwaitingExecution',
     };
   }, [cognitiveProcess?.state]);
 

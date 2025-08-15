@@ -103,7 +103,7 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
     const handleSave = () => {
         const newStep = { ...step, description: editContent };
         if (step.tool === 'code_interpreter' || step.tool === 'induce_emotion') newStep.code = editCode;
-        else if (step.tool === 'evoke_qualia' || step.tool === 'generate_image') newStep.concept = editCode;
+        else if (step.tool === 'generate_image') newStep.concept = editCode;
         else newStep.query = editCode;
 
         onUpdate(newStep);
@@ -113,7 +113,7 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
     const statusIcon = () => {
         switch (step.status) {
             case 'pending': return <div className="w-5 h-5 rounded-full border-2 border-nexus-text-muted/50" title="Pending" />;
-            case 'executing': return <CogIcon className="w-5 h-5 text-nexus-accent animate-spin" title="Executing"/>;
+            case 'executing': return <div className="w-5 h-5 relative"><div className="nexus-loader"></div></div>;
             case 'complete': return <CheckCircleIcon className="w-5 h-5 text-nexus-secondary" title="Complete"/>;
             case 'error': return <div className="w-5 h-5 rounded-full bg-red-500" title="Error"/>;
             default: return null;
@@ -124,12 +124,14 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
         switch(step.tool) {
             case 'google_search': return <CubeTransparentIcon className="w-4 h-4 text-blue-400" />;
             case 'code_interpreter': return <CodeBracketIcon className="w-4 h-4 text-purple-400" />;
-            case 'evoke_qualia': return <LightBulbIcon className="w-4 h-4 text-yellow-400" />;
+            case 'recall_memory': return <BookOpenIcon className="w-4 h-4 text-yellow-400" />;
             case 'induce_emotion': return <LightBulbIcon className="w-4 h-4 text-orange-400" />;
             case 'generate_image': return <PhotographIcon className="w-4 h-4 text-green-400" />;
             case 'analyze_image_input': return <SparklesIcon className="w-4 h-4 text-pink-400" />;
             case 'forge_tool': return <SparklesIcon className="w-4 h-4 text-yellow-500" />;
             case 'spawn_replica': return <CubeTransparentIcon className="w-4 h-4 text-teal-400" />;
+            case 'replan': return <RefreshIcon className="w-4 h-4 text-red-400" />;
+            case 'translate_text': return <GlobeAltIcon className="w-4 h-4 text-cyan-400" />;
             default: return <CogIcon className="w-4 h-4 text-gray-400" />;
         }
     }
@@ -144,7 +146,7 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
         return <pre className="text-xs text-green-400/80 font-mono italic whitespace-pre-wrap">Result: {String(step.result)}</pre>;
     };
 
-    const isCodeEditable = ['code_interpreter', 'google_search', 'evoke_qualia', 'generate_image', 'analyze_image_input', 'induce_emotion'].includes(step.tool);
+    const isCodeEditable = ['code_interpreter', 'google_search', 'recall_memory', 'generate_image', 'analyze_image_input', 'induce_emotion', 'translate_text', 'summarize_text', 'replan'].includes(step.tool);
 
     return (
         <li className={`p-2 rounded-md transition-all duration-300 ${isCurrent ? 'bg-nexus-primary/10' : ''} ${isEditable ? 'hover:bg-nexus-surface/50' : ''}`}>
@@ -237,7 +239,7 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
         if (message.state === 'planning') {
             return (
                 <div className="flex items-center text-nexus-text-muted italic">
-                    <CogIcon className="w-5 h-5 mr-2 animate-spin" />
+                    <div className="w-5 h-5 mr-2 relative"><div className="nexus-loader"></div></div>
                     NexusAI is formulating a cognitive plan...
                 </div>
             );
@@ -397,11 +399,11 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
 
     const getModelIcon = () => {
         switch(message.state) {
-            case 'planning': return <CogIcon className="w-8 h-8 text-nexus-accent animate-spin"/>;
+            case 'planning': return <BrainCircuitIcon className="w-8 h-8 text-nexus-accent animate-pulse-slow"/>;
             case 'awaiting_execution': return <PencilIcon className="w-8 h-8 text-yellow-400 animate-pulse-slow"/>;
             case 'executing':
             case 'synthesizing': 
-                return <CogIcon className="w-8 h-8 text-nexus-accent animate-spin"/>;
+                return <div className="w-8 h-8 relative"><div className="nexus-loader"></div></div>;
             case 'done': return <BrainCircuitIcon className="w-8 h-8 text-nexus-secondary animate-glow-pulse" />;
             case 'error': return <BrainCircuitIcon className="w-8 h-8 text-red-500" />;
             default: return <BrainCircuitIcon className="w-8 h-8 text-nexus-text-muted" />;

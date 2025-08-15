@@ -166,9 +166,9 @@ const AnalysisLab: React.FC<AnalysisLabProps> = (props) => {
                 <DashboardCard title="Analysis Results" icon={<BrainCircuitIcon />} fullHeight>
                     <div className="h-full overflow-y-auto pr-2">
                         {isLoading && (
-                             <div className="flex flex-col items-center justify-center h-full text-center text-nexus-text-muted animate-pulse">
-                                <BrainCircuitIcon className="w-16 h-16 text-nexus-primary" />
-                                <p className="mt-4 font-semibold text-lg">{loadingMessage}</p>
+                             <div className="flex flex-col items-center justify-center h-full text-center text-nexus-text-muted">
+                                <div className="w-16 h-16 mb-4 relative"><div className="nexus-loader"></div></div>
+                                <p className="font-semibold text-lg">{loadingMessage}</p>
                                 <p className="text-sm">Please wait while the AI examines the system...</p>
                              </div>
                         )}
