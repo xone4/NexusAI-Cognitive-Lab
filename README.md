@@ -28,7 +28,8 @@ NexusAI is a conceptual framework for an advanced, self-evolving artificial inte
 -   **Affective Core**: The AI possesses a dynamic emotional state that influences its memory, planning, and responses, moving beyond pure logic to a more nuanced, emotionally-aware cognition.
 -   **Living Memory (MEMORIA)**: The AI's memory is not a static database. It can recall memories based on emotional context and keywords, creating a rich and believable internal history that it learns from.
 -   **Co-Cognitive Authoring**: The cognitive process is segmented into **PLAN -> REVIEW -> EXECUTE**. The AI formulates a plan, then **pauses**, allowing the user to review, edit, reorder, and actively participate in shaping the "thought path" before execution.
--   **Dynamic Self-Governance**: The AI doesn't just follow plans; it can **modify its own environment** as it thinks. As part of its plan, it can decide to **forge a new mental tool** or **spawn a cognitive replica** to distribute workload, demonstrating true architectural plasticity.
+-   **Architectural Plasticity**: The AI doesn't just follow plans; it can **modify its own environment** as it thinks. As part of its plan, it can decide to **forge a new mental tool** or **spawn a cognitive replica** to distribute workload, demonstrating true self-governance.
+-   **Adaptive Replanning**: The AI can self-assess its plan's viability during execution. Using the `replan` tool, it can halt a failing or suboptimal strategy and formulate a new, more effective plan on the fly.
 
 ## Key Features
 
@@ -37,6 +38,7 @@ NexusAI is a conceptual framework for an advanced, self-evolving artificial inte
 -   **Collapsible Vitals Panel**: A non-intrusive side panel houses all system metrics (status, performance, logs), allowing for at-a-glance monitoring that can be expanded for detail or hidden for maximum focus.
 -   **Transparent Three-Phase Thinking**: Watch as the AI formulates a cognitive plan, pauses for your interactive review, and finally executes the finalized plan on your command.
 -   **Multi-Modal Interaction**: Upload an image with your query to have the AI analyze it, or watch as the AI generates its own images to aid its thought process.
+-   **Dynamic Tool Forging & Self-Correction**: Witness an AI that can invent new tools and correct its own course of action in real-time.
 
 ## System Architecture
 

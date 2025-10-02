@@ -1,6 +1,6 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
 import type { CognitiveProcess, ChatMessage, PlanStep, CognitiveConstitution, GeneratedImage } from '../types';
-import { BrainCircuitIcon, UserIcon, BookOpenIcon, CogIcon, CheckCircleIcon, CubeTransparentIcon, PlayIcon, PencilIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, PlusCircleIcon, CodeBracketIcon, LightBulbIcon, LinkIcon, ArrowRightIcon, PhotographIcon, SparklesIcon, ArchiveBoxArrowDownIcon, RefreshIcon, GlobeAltIcon } from './Icons';
+import { BrainCircuitIcon, UserIcon, BookOpenIcon, CogIcon, CheckCircleIcon, CubeTransparentIcon, PlayIcon, PencilIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, PlusCircleIcon, CodeBracketIcon, LightBulbIcon, LinkIcon, ArrowRightIcon, PhotographIcon, SparklesIcon, ArchiveBoxArrowDownIcon, RefreshIcon, GlobeAltIcon, DocumentTextIcon } from './Icons';
 
 interface CognitiveProcessVisualizerProps {
   process: CognitiveProcess;
@@ -132,6 +132,9 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
             case 'spawn_replica': return <CubeTransparentIcon className="w-4 h-4 text-teal-400" />;
             case 'replan': return <RefreshIcon className="w-4 h-4 text-red-400" />;
             case 'translate_text': return <GlobeAltIcon className="w-4 h-4 text-cyan-400" />;
+            case 'summarize_text': return <DocumentTextIcon className="w-4 h-4 text-indigo-400" />;
+            case 'analyze_sentiment': return <LightBulbIcon className="w-4 h-4 text-yellow-300" />;
+            case 'execute_toolchain': return <LinkIcon className="w-4 h-4 text-green-300" />;
             default: return <CogIcon className="w-4 h-4 text-gray-400" />;
         }
     }
