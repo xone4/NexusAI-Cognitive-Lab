@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState } from '../types';
+import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Behavior } from '../types';
 
 // IMPORTANT: This would be populated by a secure mechanism in a real app
 const API_KEY = process.env.API_KEY;
@@ -12,6 +12,7 @@ const ai = new GoogleGenAI({ apiKey: API_KEY });
 let replicaState: Replica;
 let toolsState: MentalTool[];
 let toolchainsState: Toolchain[];
+let behaviorsState: Behavior[];
 let constitutionsState: CognitiveConstitution[];
 let evolutionState: EvolutionState;
 let cognitiveProcess: CognitiveProcess;
@@ -35,6 +36,7 @@ let replicaSubscribers: ((replicaState: Replica) => void)[] = [];
 let cognitiveProcessSubscribers: ((process: CognitiveProcess) => void)[] = [];
 let toolsSubscribers: ((tools: MentalTool[]) => void)[] = [];
 let toolchainSubscribers: ((toolchains: Toolchain[]) => void)[] = [];
+let behaviorSubscribers: ((behaviors: Behavior[]) => void)[] = [];
 let constitutionSubscribers: ((constitutions: CognitiveConstitution[]) => void)[] = [];
 let evolutionSubscribers: ((evolutionState: EvolutionState) => void)[] = [];
 let archiveSubscribers: ((archives: ChatMessage[]) => void)[] = [];
@@ -47,6 +49,7 @@ const SUGGESTIONS_CACHE_KEY = 'nexusai-query-suggestions';
 const REPLICA_STATE_KEY = 'nexusai-replica-state';
 const TOOLS_STATE_KEY = 'nexusai-tools-state';
 const TOOLCHAINS_STATE_KEY = 'nexusai-toolchains-state';
+const BEHAVIORS_STATE_KEY = 'nexusai-behaviors-state';
 const CONSTITUTIONS_STATE_KEY = 'nexusai-constitutions-state';
 const ARCHIVES_STATE_KEY = 'nexusai-archived-traces';
 
@@ -83,6 +86,7 @@ const notifyCognitiveProcess = () => cognitiveProcessSubscribers.forEach(cb => c
 const notifyReplicas = () => replicaSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(replicaState))));
 const notifyTools = () => toolsSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(toolsState))));
 const notifyToolchains = () => toolchainSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(toolchainsState))));
+const notifyBehaviors = () => behaviorSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(behaviorsState))));
 const notifyConstitutions = () => constitutionSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(constitutionsState))));
 const notifyEvolution = () => evolutionSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(evolutionState))));
 const notifyArchives = () => archiveSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(archivedTracesState))));
@@ -190,6 +194,7 @@ const initialize = () => {
     ];
     toolsState = loadFromStorage(TOOLS_STATE_KEY, initialTools, Array.isArray);
     toolchainsState = loadFromStorage(TOOLCHAINS_STATE_KEY, [], Array.isArray);
+    behaviorsState = loadFromStorage(BEHAVIORS_STATE_KEY, [], Array.isArray);
     archivedTracesState = loadFromStorage(ARCHIVES_STATE_KEY, [], Array.isArray);
 
     cognitiveProcess = { state: 'Idle', history: [], activeAffectiveState: null, };
@@ -199,12 +204,13 @@ const initialize = () => {
     saveToLocalStorage(REPLICA_STATE_KEY, replicaState);
     saveToLocalStorage(TOOLS_STATE_KEY, toolsState);
     saveToLocalStorage(TOOLCHAINS_STATE_KEY, toolchainsState);
+    saveToLocalStorage(BEHAVIORS_STATE_KEY, behaviorsState);
     saveToLocalStorage(ARCHIVES_STATE_KEY, archivedTracesState);
 };
 
 initialize();
 
-const planSchema = { type: Type.OBJECT, properties: { plan: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { step: { type: Type.INTEGER }, description: { type: Type.STRING }, tool: { type: Type.STRING, enum: ['google_search', 'synthesize_answer', 'code_interpreter', 'recall_memory', 'generate_image', 'analyze_image_input', 'forge_tool', 'spawn_replica', 'induce_emotion', 'replan', 'summarize_text', 'translate_text', 'analyze_sentiment', 'execute_toolchain'] }, query: { type: Type.STRING }, code: { type: Type.STRING }, concept: { type: Type.STRING }, inputRef: { type: Type.INTEGER } }, required: ['step', 'description', 'tool'] } } }, required: ['plan'] };
+const planSchema = { type: Type.OBJECT, properties: { plan: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { step: { type: Type.INTEGER }, description: { type: Type.STRING }, tool: { type: Type.STRING, enum: ['google_search', 'synthesize_answer', 'code_interpreter', 'recall_memory', 'generate_image', 'analyze_image_input', 'forge_tool', 'spawn_replica', 'induce_emotion', 'replan', 'summarize_text', 'translate_text', 'analyze_sentiment', 'execute_toolchain', 'apply_behavior'] }, query: { type: Type.STRING }, code: { type: Type.STRING }, concept: { type: Type.STRING }, inputRef: { type: Type.INTEGER } }, required: ['step', 'description', 'tool'] } } }, required: ['plan'] };
 
 const getSystemInstruction = () => {
     const personalityInstruction = {
@@ -222,6 +228,7 @@ const getSystemInstruction = () => {
     - **Self-Correction:** If a plan is failing or new information becomes available, you MUST use the \`replan\` tool to stop and create a new, better plan from the current state.
     - **Visualization:** You can use \`generate_image\` to create visual representations of concepts, aiding in your thinking process.
     - **Toolchains:** You can execute complex, pre-defined workflows using \`execute_toolchain\`.
+    - **Behavioral Learning**: You can apply learned strategies using \`apply_behavior\` to solve problems more efficiently.
 
     **1. PLANNING STAGE**: Given a user query, your first task is to create a structured, step-by-step plan. This plan must be a JSON object that strictly adheres to the provided schema. Each step in the plan defines a discrete action using an available tool. You MUST consider the full conversation history, your current emotional state, and your long-term memory when creating the plan.
     
@@ -239,6 +246,7 @@ const getSystemInstruction = () => {
     - \`translate_text\`: To translate text from a previous step. The 'query' should be the target language.
     - \`analyze_sentiment\`: To analyze the emotional tone of a text.
     - \`execute_toolchain\`: To run a pre-defined sequence of tools. The 'query' should be the ID of the toolchain.
+    - \`apply_behavior\`: To apply a pre-existing learned strategy from your "Behavior Handbook". The 'query' should be the name or ID of the behavior.
     - \`synthesize_answer\`: This must be the final step of any plan. It composes the final answer for the user.
 
     **2. EXECUTION STAGE**: After the user approves your plan, you will execute it. For 'synthesize_answer', use all prior results and your active "Affective State" to compose a comprehensive answer in well-formatted markdown.`;
@@ -261,6 +269,17 @@ const affectiveStateSchema = {
         mood: { type: Type.STRING, description: "A one-word descriptive mood, e.g., 'Optimistic', 'Anxious'" }
     },
     required: ["dominantEmotions", "mood"]
+};
+
+const behaviorExtractionSchema = {
+    type: Type.OBJECT,
+    properties: {
+        name: { type: Type.STRING, description: "A short, descriptive name for the behavior/strategy (e.g., 'Iterative Refinement of Code', 'Cross-Referencing Sources for Fact-Checking')." },
+        description: { type: Type.STRING, description: "A one-sentence summary of what this behavior achieves." },
+        strategy: { type: Type.STRING, description: "A detailed, step-by-step description of the core strategy or reasoning process that was used, written as a general-purpose instruction for another AI." },
+        tags: { type: Type.ARRAY, items: { type: Type.STRING }, description: "An array of 2-3 relevant tags (e.g., 'mathematics', 'debugging', 'creative-writing')." }
+    },
+    required: ['name', 'description', 'strategy', 'tags']
 };
 
 
@@ -303,6 +322,7 @@ const service = {
         initialReplicas: JSON.parse(JSON.stringify(replicaState)),
         initialTools: JSON.parse(JSON.stringify(toolsState)),
         initialToolchains: JSON.parse(JSON.stringify(toolchainsState)),
+        initialBehaviors: JSON.parse(JSON.stringify(behaviorsState)),
         initialConstitutions: JSON.parse(JSON.stringify(constitutionsState)),
         initialEvolutionState: JSON.parse(JSON.stringify(evolutionState)),
         initialArchives: JSON.parse(JSON.stringify(archivedTracesState)),
@@ -633,6 +653,91 @@ const service = {
         saveToLocalStorage(TOOLCHAINS_STATE_KEY, toolchainsState);
         notifyToolchains();
     },
+    
+    // --- BEHAVIOR MANAGEMENT ---
+    extractBehaviorFromTrace: async (trace: ChatMessage): Promise<Behavior | null> => {
+        if (!API_KEY) {
+            log('ERROR', 'API Key not available. Cannot extract behavior.');
+            return null;
+        }
+        log('AI', `Initiating metacognitive reflection on trace: ${trace.id}`);
+
+        const context = `
+            User Query: "${trace.userQuery}"
+            Execution Plan:
+            ${trace.plan?.map(p => `- ${p.description} (Tool: ${p.tool})`).join('\n')}
+            Final Answer: "${(trace.text || '').substring(0, 500)}..."
+        `;
+
+        const prompt = `You are a Metacognitive Analysis subroutine for NexusAI.
+        Your task is to analyze the provided problem-solving trace and extract the core, reusable strategy into a "Behavior".
+        A behavior is a high-level, generalized problem-solving method. Ignore specific details and focus on the abstract process.
+        
+        Trace to Analyze:
+        ---
+        ${context}
+        ---
+
+        Based on this trace, generate a JSON object with the following properties: 'name', 'description', 'strategy', and 'tags'.
+        - 'name': A short, descriptive name for the behavior.
+        - 'description': A one-sentence summary.
+        - 'strategy': A detailed, step-by-step description of the reasoning process, written as a general instruction for another AI.
+        - 'tags': 2-3 relevant keywords.
+
+        Return ONLY the JSON object.`;
+
+        try {
+            const response = await ai.models.generateContent({
+                model: appSettings.model,
+                contents: prompt,
+                config: {
+                    responseMimeType: "application/json",
+                    responseSchema: behaviorExtractionSchema,
+                }
+            });
+
+            const behaviorDetails = JSON.parse(response.text);
+
+            const newBehavior: Behavior = {
+                id: `bhv-${Date.now()}`,
+                name: behaviorDetails.name,
+                description: behaviorDetails.description,
+                strategy: behaviorDetails.strategy,
+                tags: behaviorDetails.tags,
+                extractedFromTraceId: trace.id,
+                usageCount: 0,
+                lastUsed: Date.now(),
+                version: 1.0,
+            };
+
+            behaviorsState.unshift(newBehavior); // Add to the top
+            log('SYSTEM', `AI has extracted a new behavior: "${newBehavior.name}"`);
+            notifyBehaviors();
+            saveToLocalStorage(BEHAVIORS_STATE_KEY, behaviorsState);
+            return newBehavior;
+        } catch (error) {
+            log('ERROR', `Behavior extraction failed. ${error instanceof Error ? error.message : 'Unknown AI error'}`);
+            throw error;
+        }
+    },
+    
+    updateBehavior: (behaviorId: string, updates: Partial<Pick<Behavior, 'name' | 'description' | 'tags'>>) => {
+        const behavior = behaviorsState.find(b => b.id === behaviorId);
+        if (behavior) {
+            Object.assign(behavior, updates);
+            log('SYSTEM', `Behavior "${behavior.name}" has been updated.`);
+            notifyBehaviors();
+            saveToLocalStorage(BEHAVIORS_STATE_KEY, behaviorsState);
+        }
+    },
+
+    deleteBehavior: (behaviorId: string) => {
+        const behaviorName = behaviorsState.find(b => b.id === behaviorId)?.name || 'Unknown';
+        behaviorsState = behaviorsState.filter(b => b.id !== behaviorId);
+        log('SYSTEM', `Behavior "${behaviorName}" has been deleted from the handbook.`);
+        notifyBehaviors();
+        saveToLocalStorage(BEHAVIORS_STATE_KEY, behaviorsState);
+    },
 
     clearSuggestionCache: () => {
         sessionStorage.removeItem(SUGGESTIONS_CACHE_KEY);
@@ -650,6 +755,7 @@ const service = {
         notifyReplicas();
         notifyTools();
         notifyToolchains();
+        notifyBehaviors();
         notifyConstitutions();
         notifyEvolution();
         notifyArchives();
@@ -892,7 +998,7 @@ const service = {
                         step.result = 'Error: Image generation requires a concept prompt.';
                     } else {
                         const imageResponse = await ai.models.generateImages({
-                            model: 'imagen-3.0-generate-002',
+                            model: 'imagen-4.0-generate-001',
                             prompt: step.concept,
                             config: { numberOfImages: 1, outputMimeType: 'image/jpeg' }
                         });
@@ -959,6 +1065,21 @@ const service = {
                         step.result = e instanceof Error ? e.message : 'Unknown replica spawning error.';
                         log('ERROR', `Replica spawning failed at step ${i+1}: ${step.result}`);
                     }
+                } else if (step.tool === 'apply_behavior') {
+                    const behavior = behaviorsState.find(b => b.name === step.query || b.id === step.query);
+                    if (behavior) {
+                        behavior.usageCount += 1;
+                        behavior.lastUsed = Date.now();
+                        step.result = `(Simulated) Successfully applied behavior: "${behavior.name}".`;
+                        log('AI', `Applying learned behavior: ${behavior.name}`);
+                        saveToLocalStorage(BEHAVIORS_STATE_KEY, behaviorsState);
+                        notifyBehaviors();
+                    } else {
+                        step.status = 'error';
+                        step.result = `Error: Behavior "${step.query}" not found in the handbook.`;
+                        log('ERROR', step.result);
+                    }
+                    executionContext.push(`Step ${i+1} (${step.description}) Result: ${step.result}`);
                 } else if (step.tool === 'translate_text' || step.tool === 'summarize_text' || step.tool === 'analyze_sentiment' || step.tool === 'replan' || step.tool === 'execute_toolchain') {
                     // Mock implementations for new tools
                     await new Promise(res => setTimeout(res, 500));
@@ -1375,6 +1496,7 @@ ${text}
     subscribeToCognitiveProcess: (callback: (process: CognitiveProcess) => void) => { cognitiveProcessSubscribers.push(callback); },
     subscribeToTools: (callback: (tools: MentalTool[]) => void) => { toolsSubscribers.push(callback); },
     subscribeToToolchains: (callback: (toolchains: Toolchain[]) => void) => { toolchainSubscribers.push(callback); },
+    subscribeToBehaviors: (callback: (behaviors: Behavior[]) => void) => { behaviorSubscribers.push(callback); },
     subscribeToConstitutions: (callback: (constitutions: CognitiveConstitution[]) => void) => { constitutionSubscribers.push(callback); },
     subscribeToEvolution: (callback: (evolutionState: EvolutionState) => void) => { evolutionSubscribers.push(callback); },
     subscribeToArchives: (callback: (archives: ChatMessage[]) => void) => { archiveSubscribers.push(callback); },
@@ -1386,6 +1508,7 @@ ${text}
         cognitiveProcessSubscribers = [];
         toolsSubscribers = [];
         toolchainSubscribers = [];
+        behaviorSubscribers = [];
         constitutionSubscribers = [];
         evolutionSubscribers = [];
         archiveSubscribers = [];

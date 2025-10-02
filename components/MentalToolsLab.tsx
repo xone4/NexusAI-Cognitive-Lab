@@ -1,10 +1,11 @@
 import React, { memo, useState, useMemo, Fragment } from 'react';
-import type { MentalTool, Toolchain } from '../types';
+import type { MentalTool, Toolchain, Behavior } from '../types';
 import { Menu, Transition } from '@headlessui/react';
 import DashboardCard from './DashboardCard';
 import ToolForgeModal from './ToolForgeModal';
 import ModifyToolModal from './ModifyToolModal';
 import ToolchainsManager from './ToolchainsManager';
+import BehaviorManager from './BehaviorManager';
 import { 
     BeakerIcon, 
     CodeBracketIcon, 
@@ -23,6 +24,7 @@ type FilterStatus = MentalTool['status'] | 'All';
 interface MentalToolsLabProps {
   tools: MentalTool[];
   toolchains: Toolchain[];
+  behaviors: Behavior[];
   isInteractionDisabled: boolean;
   onForgeTool: (details: { purpose: string; capabilities: string[] }) => Promise<MentalTool>;
   onModifyTool: (toolId: string, updates: Partial<Pick<MentalTool, 'name' | 'description' | 'tags'>>) => void;
@@ -33,9 +35,11 @@ interface MentalToolsLabProps {
   onCreateToolchain: (data: Omit<Toolchain, 'id'>) => void;
   onUpdateToolchain: (id: string, updates: Partial<Toolchain>) => void;
   onDeleteToolchain: (id: string) => void;
+  onUpdateBehavior: (behaviorId: string, updates: Partial<Pick<Behavior, 'name' | 'description' | 'tags'>>) => void;
+  onDeleteBehavior: (behaviorId: string) => void;
 }
 
-const ToolCard: React.FC<Omit<MentalToolsLabProps, 'tools' | 'toolchains' | 'onForgeTool' | 'onCreateToolchain' | 'onUpdateToolchain' | 'onDeleteToolchain'> & { tool: MentalTool; onSelectModify: (tool: MentalTool) => void; }> = memo(({ tool, isInteractionDisabled, onToggleStatus, onOptimizeTool, onArchiveTool, onDecommissionTool, onSelectModify }) => {
+const ToolCard: React.FC<Omit<MentalToolsLabProps, 'tools' | 'toolchains' | 'behaviors' | 'onForgeTool' | 'onCreateToolchain' | 'onUpdateToolchain' | 'onDeleteToolchain' | 'onUpdateBehavior' | 'onDeleteBehavior'> & { tool: MentalTool; onSelectModify: (tool: MentalTool) => void; }> = memo(({ tool, isInteractionDisabled, onToggleStatus, onOptimizeTool, onArchiveTool, onDecommissionTool, onSelectModify }) => {
     
     const statusStyles: Record<MentalTool['status'], { border: string; text: string; bg: string; anim?: string }> = {
         Idle: { border: 'border-nexus-surface', text: 'text-nexus-text-muted', bg: 'bg-nexus-surface/50' },
@@ -140,7 +144,7 @@ const MentalToolsLab: React.FC<MentalToolsLabProps> = (props) => {
   const [isForgeModalOpen, setIsForgeModalOpen] = useState(false);
   const [toolToModify, setToolToModify] = useState<MentalTool | null>(null);
   
-  const { tools, toolchains, ...toolchainHandlers } = props;
+  const { tools, toolchains, behaviors, ...otherProps } = props;
 
   const filteredAndSortedTools = useMemo(() => {
     return props.tools
@@ -219,6 +223,13 @@ const MentalToolsLab: React.FC<MentalToolsLabProps> = (props) => {
         onCreate={props.onCreateToolchain}
         onUpdate={props.onUpdateToolchain}
         onDelete={props.onDeleteToolchain}
+       />
+       
+       {/* Behaviors */}
+       <BehaviorManager
+        behaviors={props.behaviors}
+        onUpdate={props.onUpdateBehavior}
+        onDelete={props.onDeleteBehavior}
        />
 
     </div>

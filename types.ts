@@ -34,6 +34,18 @@ export interface MentalTool {
   }[];
 }
 
+export interface Behavior {
+  id: string;
+  name: string;
+  description: string; // AI-generated summary of the strategy
+  extractedFromTraceId: string; // The trace it originated from
+  strategy: string; // The core logic/strategy extracted by the AI
+  usageCount: number;
+  lastUsed: number;
+  version: number;
+  tags: string[];
+}
+
 export interface Toolchain {
   id: string;
   name: string;
@@ -94,7 +106,7 @@ export type ThinkingState = 'Idle' | 'Receiving' | 'Planning' | 'AwaitingExecuti
 export interface PlanStep {
     step: number;
     description: string;
-    tool: 'google_search' | 'synthesize_answer' | 'code_interpreter' | 'recall_memory' | 'generate_image' | 'analyze_image_input' | 'forge_tool' | 'spawn_replica' | 'induce_emotion' | 'replan' | 'summarize_text' | 'translate_text' | 'analyze_sentiment' | 'execute_toolchain';
+    tool: 'google_search' | 'synthesize_answer' | 'code_interpreter' | 'recall_memory' | 'generate_image' | 'analyze_image_input' | 'forge_tool' | 'spawn_replica' | 'induce_emotion' | 'replan' | 'summarize_text' | 'translate_text' | 'analyze_sentiment' | 'execute_toolchain' | 'apply_behavior';
     query?: string;
     code?: string;
     concept?: string; // For induce_emotion & generate_image

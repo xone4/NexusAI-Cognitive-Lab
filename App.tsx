@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, ActiveView, CognitiveProcess, AppSettings, Toolchain, ChatMessage, PlanStep, CognitiveConstitution, EvolutionState } from './types';
+import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, ActiveView, CognitiveProcess, AppSettings, Toolchain, ChatMessage, PlanStep, CognitiveConstitution, EvolutionState, Behavior } from './types';
 import { nexusAIService } from './services/nexusAIService';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -25,6 +25,7 @@ const App: React.FC = () => {
   const [replicas, setReplicas] = useState<Replica | null>(null);
   const [tools, setTools] = useState<MentalTool[]>([]);
   const [toolchains, setToolchains] = useState<Toolchain[]>([]);
+  const [behaviors, setBehaviors] = useState<Behavior[]>([]);
   const [constitutions, setConstitutions] = useState<CognitiveConstitution[]>([]);
   const [evolutionState, setEvolutionState] = useState<EvolutionState>(nexusAIService.getInitialData().initialEvolutionState);
   const [archivedTraces, setArchivedTraces] = useState<ChatMessage[]>([]);
@@ -87,6 +88,10 @@ const App: React.FC = () => {
     setToolchains(newToolchains);
   }, []);
   
+  const handleBehaviorsUpdate = useCallback((newBehaviors: Behavior[]) => {
+    setBehaviors(newBehaviors);
+  }, []);
+
   const handleConstitutionsUpdate = useCallback((newConstitutions: CognitiveConstitution[]) => {
     setConstitutions(newConstitutions);
   }, []);
@@ -112,10 +117,11 @@ const App: React.FC = () => {
   useEffect(() => {
     nexusAIService.updateSettings(settings);
 
-    const { initialReplicas, initialTools, initialToolchains, initialConstitutions, initialEvolutionState, initialLogs, initialPerfData, initialCognitiveProcess, initialArchives } = nexusAIService.getInitialData();
+    const { initialReplicas, initialTools, initialToolchains, initialBehaviors, initialConstitutions, initialEvolutionState, initialLogs, initialPerfData, initialCognitiveProcess, initialArchives } = nexusAIService.getInitialData();
     setReplicas(initialReplicas);
     setTools(initialTools);
     setToolchains(initialToolchains);
+    setBehaviors(initialBehaviors);
     setConstitutions(initialConstitutions);
     setEvolutionState(initialEvolutionState);
     setArchivedTraces(initialArchives);
@@ -129,6 +135,7 @@ const App: React.FC = () => {
     nexusAIService.subscribeToReplicas(handleReplicaUpdate);
     nexusAIService.subscribeToTools(handleToolsUpdate);
     nexusAIService.subscribeToToolchains(handleToolchainsUpdate);
+    nexusAIService.subscribeToBehaviors(handleBehaviorsUpdate);
     nexusAIService.subscribeToConstitutions(handleConstitutionsUpdate);
     nexusAIService.subscribeToEvolution(handleEvolutionUpdate);
     nexusAIService.subscribeToCognitiveProcess(handleCognitiveProcessUpdate);
@@ -141,7 +148,7 @@ const App: React.FC = () => {
       clearInterval(serviceInterval);
       nexusAIService.unsubscribeFromAll();
     };
-  }, [handleLog, handlePerformanceUpdate, handleReplicaUpdate, handleToolsUpdate, handleToolchainsUpdate, handleConstitutionsUpdate, handleEvolutionUpdate, handleCognitiveProcessUpdate, handleArchivesUpdate, settings]);
+  }, [handleLog, handlePerformanceUpdate, handleReplicaUpdate, handleToolsUpdate, handleToolchainsUpdate, handleBehaviorsUpdate, handleConstitutionsUpdate, handleEvolutionUpdate, handleCognitiveProcessUpdate, handleArchivesUpdate, settings]);
 
   const spawnReplica = useCallback((parentId: string) => {
     nexusAIService.spawnReplica(parentId);
@@ -217,6 +224,19 @@ const App: React.FC = () => {
       }
   }, []);
 
+  const handleExtractBehavior = useCallback(async (messageId: string) => {
+      const trace = cognitiveProcess.history.find(m => m.id === messageId);
+      if (trace) {
+          try {
+              await nexusAIService.extractBehaviorFromTrace(trace);
+              // Consider showing a success toast/notification here
+          } catch (e) {
+              console.error("Failed to extract behavior", e);
+              // Consider showing an error toast/notification here
+          }
+      }
+  }, [cognitiveProcess.history]);
+
   const handleRerunTrace = useCallback((trace: ChatMessage) => {
     nexusAIService.rerunTrace(trace);
     setActiveView('dashboard');
@@ -259,6 +279,7 @@ const App: React.FC = () => {
                   onDeletePlanStep={deletePlanStep}
                   onSavePlanAsToolchain={handleSavePlanAsToolchain}
                   onArchiveTrace={handleArchiveTrace}
+                  onExtractBehavior={handleExtractBehavior}
                   onRerunTrace={handleRerunTrace}
                   onTranslate={nexusAIService.translateResponse}
                   language={settings.language}
@@ -314,6 +335,7 @@ const App: React.FC = () => {
         return <MentalToolsLab 
                   tools={tools} 
                   toolchains={toolchains}
+                  behaviors={behaviors}
                   isInteractionDisabled={!cognitivePermissions.canUseManualControls}
                   onForgeTool={nexusAIService.forgeTool}
                   onModifyTool={nexusAIService.modifyTool}
@@ -324,6 +346,8 @@ const App: React.FC = () => {
                   onCreateToolchain={nexusAIService.createToolchain}
                   onUpdateToolchain={nexusAIService.updateToolchain}
                   onDeleteToolchain={nexusAIService.deleteToolchain}
+                  onUpdateBehavior={nexusAIService.updateBehavior}
+                  onDeleteBehavior={nexusAIService.deleteBehavior}
                 />;
       case 'architecture':
         return <ArchitectureDiagram 

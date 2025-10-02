@@ -12,6 +12,7 @@ interface CognitiveProcessVisualizerProps {
   onDeletePlanStep: (messageId: string, stepIndex: number) => void;
   onSavePlanAsToolchain: (plan: PlanStep[]) => void;
   onArchiveTrace: (messageId: string) => void;
+  onExtractBehavior: (messageId: string) => void;
   onRerunTrace: (trace: ChatMessage) => void;
   onTranslate: (text: string, language: string) => Promise<string>;
   language: string;
@@ -135,6 +136,7 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
             case 'summarize_text': return <DocumentTextIcon className="w-4 h-4 text-indigo-400" />;
             case 'analyze_sentiment': return <LightBulbIcon className="w-4 h-4 text-yellow-300" />;
             case 'execute_toolchain': return <LinkIcon className="w-4 h-4 text-green-300" />;
+            case 'apply_behavior': return <BrainCircuitIcon className="w-4 h-4 text-pink-300" />;
             default: return <CogIcon className="w-4 h-4 text-gray-400" />;
         }
     }
@@ -215,7 +217,7 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
 };
 
 const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMessage }> = memo((props) => {
-    const { message, onExecutePlan, onUpdatePlanStep, onReorderPlan, onAddPlanStep, onDeletePlanStep, onSavePlanAsToolchain, onArchiveTrace, onRerunTrace, onTranslate, constitutions, process } = props;
+    const { message, onExecutePlan, onUpdatePlanStep, onReorderPlan, onAddPlanStep, onDeletePlanStep, onSavePlanAsToolchain, onArchiveTrace, onExtractBehavior, onRerunTrace, onTranslate, constitutions, process } = props;
     const isPlanEditable = message.state === 'awaiting_execution' && !message.isPlanFinalized;
     const [isPlanOpen, setIsPlanOpen] = useState(true);
     const [isResponseCollapsed, setIsResponseCollapsed] = useState(true);
@@ -365,17 +367,24 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
                                     <pre className="text-sm whitespace-pre-wrap font-sans text-nexus-text-muted">{translatedText}</pre>
                                 </div>
                              )}
-                            <div className="flex justify-center items-center gap-4 mt-4">
+                            <div className="flex justify-center items-center gap-2 flex-wrap mt-4">
                                 <button 
                                     onClick={() => onArchiveTrace(message.id)}
-                                    className="flex items-center gap-2 bg-blue-500/20 text-blue-400 font-bold py-2 px-4 rounded-md border border-blue-500/50 hover:bg-blue-500/40 hover:text-white transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                    className="action-btn bg-blue-500/20 text-blue-400 border-blue-500/50 hover:bg-blue-500/40"
                                 >
                                     <ArchiveBoxArrowDownIcon className="w-5 h-5" />
                                     Archive
                                 </button>
                                 <button 
+                                    onClick={() => onExtractBehavior(message.id)}
+                                    className="action-btn bg-pink-500/20 text-pink-400 border-pink-500/50 hover:bg-pink-500/40"
+                                >
+                                    <SparklesIcon className="w-5 h-5" />
+                                    Extract Behavior
+                                </button>
+                                <button 
                                     onClick={() => onRerunTrace(message)}
-                                    className="flex items-center gap-2 bg-green-500/20 text-green-400 font-bold py-2 px-4 rounded-md border border-green-500/50 hover:bg-green-500/40 hover:text-white transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-green-400"
+                                    className="action-btn bg-green-500/20 text-green-400 border-green-500/50 hover:bg-green-500/40"
                                 >
                                     <RefreshIcon className="w-5 h-5" />
                                     Rerun
@@ -383,10 +392,10 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
                                 <button 
                                     onClick={handleTranslate}
                                     disabled={isTranslating}
-                                    className="flex items-center gap-2 bg-purple-500/20 text-purple-400 font-bold py-2 px-4 rounded-md border border-purple-500/50 hover:bg-purple-500/40 hover:text-white transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-purple-400 disabled:opacity-50"
+                                    className="action-btn bg-purple-500/20 text-purple-400 border-purple-500/50 hover:bg-purple-500/40 disabled:opacity-50"
                                 >
                                     <GlobeAltIcon className="w-5 h-5" />
-                                    {isTranslating ? 'Translating...' : 'Translate'}
+                                    {isTranslating ? '...' : 'Translate'}
                                 </button>
                             </div>
                         </div>
@@ -428,6 +437,23 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
 
                 {message.state === 'done' && <GroundingCitations metadata={message.groundingMetadata} />}
             </div>
+            <style>{`
+                .action-btn {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    font-weight: bold;
+                    padding: 0.5rem 1rem;
+                    border-radius: 0.375rem;
+                    border-width: 1px;
+                    transition: all 0.3s;
+                    color: white;
+                }
+                .action-btn:focus {
+                    outline: none;
+                    ring: 2px;
+                }
+            `}</style>
         </div>
     );
 });
