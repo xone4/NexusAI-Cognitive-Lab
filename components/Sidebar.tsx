@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ActiveView } from '../types';
-import { DashboardIcon, ReplicaIcon, ToolIcon, ArchIcon, CogIcon, MagnifyingGlassIcon, DnaIcon, BookOpenIcon } from './Icons';
+import { DashboardIcon, ReplicaIcon, ToolIcon, ArchIcon, CogIcon, MagnifyingGlassIcon, DnaIcon, BookOpenIcon, SparklesIcon } from './Icons';
 
 interface SidebarProps {
   activeView: ActiveView;
@@ -18,13 +19,13 @@ const NavItem: React.FC<{
   return (
     <li
       onClick={() => onClick(view)}
-      className={`flex items-center p-3 my-2 cursor-pointer rounded-lg transition-all duration-300
+      className={`flex items-center p-3 my-2 cursor-pointer rounded-full transition-all duration-300
         ${isActive
           ? 'bg-nexus-primary/20 text-nexus-secondary shadow-lg'
           : 'text-nexus-text-muted hover:bg-nexus-surface hover:text-nexus-text'
         }`}
     >
-      <div className="w-6 h-6 mr-4">{icon}</div>
+      <div className="w-6 h-6 me-4">{icon}</div>
       <span className="font-semibold">{label}</span>
     </li>
   );
@@ -32,22 +33,25 @@ const NavItem: React.FC<{
 NavItem.displayName = 'NavItem';
 
 const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) => {
+  const { t } = useTranslation();
+
   const mainNavItems = [
-    { view: 'dashboard' as ActiveView, label: 'Control Center', icon: <DashboardIcon /> },
-    { view: 'replicas' as ActiveView, label: 'Replicas', icon: <ReplicaIcon /> },
-    { view: 'tools' as ActiveView, label: 'Mental Tools', icon: <ToolIcon /> },
-    { view: 'memory' as ActiveView, label: 'Memory Explorer', icon: <BookOpenIcon /> },
-    { view: 'evolution' as ActiveView, label: 'Evolution Chamber', icon: <DnaIcon /> },
-    { view: 'analysis' as ActiveView, label: 'Analysis Lab', icon: <MagnifyingGlassIcon /> },
-    { view: 'architecture' as ActiveView, label: 'Architecture', icon: <ArchIcon /> },
+    { view: 'dashboard' as ActiveView, label: t('sidebar.controlCenter'), icon: <DashboardIcon /> },
+    { view: 'replicas' as ActiveView, label: t('sidebar.replicas'), icon: <ReplicaIcon /> },
+    { view: 'tools' as ActiveView, label: t('sidebar.mentalTools'), icon: <ToolIcon /> },
+    { view: 'memory' as ActiveView, label: t('sidebar.memoryExplorer'), icon: <BookOpenIcon /> },
+    { view: 'evolution' as ActiveView, label: t('sidebar.evolutionChamber'), icon: <DnaIcon /> },
+    { view: 'dreaming' as ActiveView, label: t('sidebar.dreamingChamber'), icon: <SparklesIcon /> },
+    { view: 'analysis' as ActiveView, label: t('sidebar.analysisLab'), icon: <MagnifyingGlassIcon /> },
+    { view: 'architecture' as ActiveView, label: t('sidebar.architecture'), icon: <ArchIcon /> },
   ];
 
-  const settingsNavItem = { view: 'settings' as ActiveView, label: 'Settings', icon: <CogIcon /> };
+  const settingsNavItem = { view: 'settings' as ActiveView, label: t('sidebar.settings'), icon: <CogIcon /> };
 
   return (
-    <nav className="w-64 bg-nexus-dark p-4 flex flex-col border-r border-nexus-surface">
+    <nav className="w-64 bg-nexus-dark p-4 flex flex-col border-e border-nexus-surface">
       <div className="text-center py-4 mb-4">
-        <span className="text-lg font-bold text-nexus-text tracking-widest">NEXUS_AI</span>
+        <span className="text-lg font-bold text-nexus-text tracking-widest">{t('sidebar.nexus_ai')}</span>
       </div>
       <ul className="flex-grow">
         {mainNavItems.map(item => (
@@ -74,8 +78,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) => {
       </div>
 
       <div className="text-center text-xs text-nexus-text-muted pt-4">
-        <p>System Ver. 2.718</p>
-        <p>Cognitive Core: Synced</p>
+        <p>{t('sidebar.systemVer')}</p>
+        <p>{t('sidebar.cognitiveCore')}</p>
       </div>
     </nav>
   );

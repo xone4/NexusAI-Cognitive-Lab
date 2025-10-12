@@ -35,7 +35,7 @@ const ConstitutionManager: React.FC<ConstitutionManagerProps> = ({ constitutions
                 value={activeId ?? ''}
                 onChange={(e) => onSelect(e.target.value)}
                 disabled={isThinking}
-                className="mt-1 block w-full rounded-md border-0 py-2 pl-3 pr-10 bg-nexus-dark text-nexus-text ring-1 ring-inset ring-nexus-surface focus:ring-2 focus:ring-nexus-primary sm:text-sm sm:leading-6 disabled:opacity-60"
+                className="mt-1 block w-full rounded-xl border-0 py-2 pl-3 pr-10 bg-nexus-dark text-nexus-text ring-1 ring-inset ring-nexus-surface focus:ring-2 focus:ring-nexus-primary sm:text-sm sm:leading-6 disabled:opacity-60"
             >
                 {constitutions.map(c => (
                     <option key={c.id} value={c.id}>
@@ -45,7 +45,7 @@ const ConstitutionManager: React.FC<ConstitutionManagerProps> = ({ constitutions
             </select>
         </div>
         
-        <div className="flex-grow p-3 bg-nexus-dark/50 rounded-md border border-nexus-surface/50 overflow-y-auto">
+        <div className="flex-grow p-3 bg-nexus-dark/50 rounded-xl border border-nexus-surface/50 overflow-y-auto">
             {activeConstitution ? (
                 <div className="space-y-2">
                     <p className="text-sm text-nexus-text-muted italic">"{activeConstitution.description}"</p>

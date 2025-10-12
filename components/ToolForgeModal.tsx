@@ -36,7 +36,7 @@ const ToolForgeModal: React.FC<ToolForgeModalProps> = ({ onClose, onForge }) => 
 
     return (
         <div className="fixed inset-0 bg-nexus-dark/80 backdrop-blur-sm flex items-center justify-center z-50 animate-spawn-in">
-            <div className="bg-nexus-surface p-6 rounded-lg shadow-2xl w-full max-w-lg border border-nexus-primary/50 relative">
+            <div className="bg-nexus-surface p-6 rounded-xl shadow-2xl w-full max-w-lg border border-nexus-primary/50 relative">
                  <button onClick={onClose} className="absolute top-3 right-3 text-nexus-text-muted hover:text-white">&times;</button>
                  <form onSubmit={handleForge}>
                     <div className="flex items-center gap-3 mb-4">
@@ -58,7 +58,7 @@ const ToolForgeModal: React.FC<ToolForgeModalProps> = ({ onClose, onForge }) => 
                                     id="purpose"
                                     value={purpose}
                                     onChange={(e) => setPurpose(e.target.value)}
-                                    className="w-full mt-1 h-24 p-3 bg-nexus-dark/70 border border-nexus-surface rounded-md focus:outline-none focus:ring-2 focus:ring-nexus-primary text-nexus-text resize-none font-mono text-sm"
+                                    className="w-full mt-1 h-24 p-3 bg-nexus-dark/70 border border-nexus-surface rounded-xl focus:outline-none focus:ring-2 focus:ring-nexus-primary text-nexus-text resize-none font-mono text-sm"
                                     placeholder="e.g., 'Analyze real-time market data to predict short-term volatility.'"
                                 />
                              </div>
@@ -69,7 +69,7 @@ const ToolForgeModal: React.FC<ToolForgeModalProps> = ({ onClose, onForge }) => 
                                     id="capabilities"
                                     value={capabilities}
                                     onChange={(e) => setCapabilities(e.target.value)}
-                                    className="w-full mt-1 p-3 bg-nexus-dark/70 border border-nexus-surface rounded-md focus:outline-none focus:ring-2 focus:ring-nexus-primary text-nexus-text font-mono text-sm"
+                                    className="w-full mt-1 p-3 bg-nexus-dark/70 border border-nexus-surface rounded-xl focus:outline-none focus:ring-2 focus:ring-nexus-primary text-nexus-text font-mono text-sm"
                                     placeholder="e.g., 'data analysis, prediction, financial modeling'"
                                 />
                              </div>
@@ -80,8 +80,8 @@ const ToolForgeModal: React.FC<ToolForgeModalProps> = ({ onClose, onForge }) => 
                     {error && <p className="text-red-400 text-sm mt-4 text-center">{error}</p>}
                     
                     <div className="flex justify-end space-x-3 mt-6">
-                        <button type="button" onClick={onClose} disabled={isLoading} className="py-2 px-4 rounded-md text-nexus-text-muted hover:bg-nexus-dark disabled:opacity-50">Cancel</button>
-                        <button type="submit" disabled={isLoading} className="py-2 px-6 rounded-md bg-nexus-primary text-nexus-dark font-bold hover:bg-nexus-secondary flex items-center gap-2 disabled:bg-nexus-surface/50 disabled:text-nexus-text-muted disabled:cursor-not-allowed">
+                        <button type="button" onClick={onClose} disabled={isLoading} className="py-2 px-4 rounded-full text-nexus-text-muted hover:bg-nexus-dark disabled:opacity-50">Cancel</button>
+                        <button type="submit" disabled={isLoading} className="py-2 px-6 rounded-full bg-nexus-primary text-nexus-dark font-bold hover:bg-nexus-secondary flex items-center gap-2 disabled:bg-nexus-surface/50 disabled:text-nexus-text-muted disabled:cursor-not-allowed">
                             <FireIcon className="w-5 h-5"/>
                             Forge Tool
                         </button>

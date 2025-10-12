@@ -1,4 +1,5 @@
 import React, { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { AffectiveState } from '../types';
 import { LightBulbIcon } from './Icons';
 
@@ -7,11 +8,12 @@ interface AffectiveStateVisualizerProps {
 }
 
 const AffectiveStateVisualizer: React.FC<AffectiveStateVisualizerProps> = ({ activeState }) => {
+    const { t } = useTranslation();
     if (!activeState) {
         return (
             <div className="flex flex-col items-center justify-center h-full text-center text-nexus-text-muted">
                 <LightBulbIcon className="w-10 h-10" />
-                <p className="mt-2 text-sm">Affective State Dormant</p>
+                <p className="mt-2 text-sm">{t('traceInspector.affectiveStateDormant')}</p>
             </div>
         );
     }
@@ -19,7 +21,7 @@ const AffectiveStateVisualizer: React.FC<AffectiveStateVisualizerProps> = ({ act
     return (
         <div className="flex flex-col items-center justify-center h-full space-y-4">
             <div className="text-center">
-                <p className="text-xs text-nexus-text-muted uppercase">Mood at Synthesis</p>
+                <p className="text-xs text-nexus-text-muted uppercase">{t('commandCenter.currentMood')}</p>
                 <p className="text-2xl font-bold text-nexus-secondary">{activeState.mood}</p>
             </div>
             <div className="w-full text-xs space-y-1 px-4">

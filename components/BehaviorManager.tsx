@@ -18,7 +18,7 @@ const BehaviorCard: React.FC<{ behavior: Behavior; onEdit: (behavior: Behavior) 
     };
 
     return (
-        <div className="bg-nexus-dark/50 p-4 rounded-lg border border-nexus-surface/50 transition-all duration-300 hover:border-nexus-primary/70 animate-spawn-in">
+        <div className="bg-nexus-dark/50 p-4 rounded-xl border border-nexus-surface/50 transition-all duration-300 hover:border-nexus-primary/70 animate-spawn-in">
             <div className="flex justify-between items-start">
                 <div>
                     <h4 className="font-semibold text-nexus-text flex items-center gap-2">
@@ -42,7 +42,7 @@ const BehaviorCard: React.FC<{ behavior: Behavior; onEdit: (behavior: Behavior) 
                 </div>
                 <div>
                     <h5 className="text-xs font-semibold text-nexus-primary uppercase tracking-wider mb-1">Strategy</h5>
-                    <p className="text-sm text-nexus-text-muted whitespace-pre-wrap font-mono bg-nexus-dark/50 p-2 rounded-md max-h-24 overflow-y-auto">
+                    <p className="text-sm text-nexus-text-muted whitespace-pre-wrap font-mono bg-nexus-dark/50 p-2 rounded-xl max-h-24 overflow-y-auto">
                         {behavior.strategy}
                     </p>
                 </div>

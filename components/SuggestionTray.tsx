@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, memo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { CognitiveProcess, SuggestionProfile } from '../types';
 import { nexusAIService } from '../services/nexusAIService';
 import { RefreshIcon, ChatBubbleBottomCenterTextIcon } from './Icons';
@@ -10,6 +11,7 @@ interface SuggestionTrayProps {
 }
 
 const SuggestionTray: React.FC<SuggestionTrayProps> = ({ process, permissions, onSubmitQuery }) => {
+  const { t } = useTranslation();
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(true);
   const [suggestionProfile, setSuggestionProfile] = useState<SuggestionProfile>('medium');
@@ -80,13 +82,19 @@ const SuggestionTray: React.FC<SuggestionTrayProps> = ({ process, permissions, o
     return null;
   }
 
+  const profileLabels: Record<SuggestionProfile, string> = {
+    short: t('dashboard.short'),
+    medium: t('dashboard.medium'),
+    long: t('dashboard.long'),
+  };
+
   return (
     <div className="absolute bottom-0 left-0 right-0 p-4 z-10 bg-gradient-to-t from-nexus-bg to-transparent">
-        <div className="bg-nexus-surface/80 backdrop-blur-md rounded-lg p-3 border border-nexus-surface shadow-lg animate-spawn-in">
+        <div className="bg-nexus-surface/80 backdrop-blur-md rounded-xl p-3 border border-nexus-surface shadow-lg animate-spawn-in">
             <div className="flex justify-between items-center mb-2">
                 <h4 className="text-xs font-semibold text-nexus-primary uppercase tracking-wider flex items-center gap-2">
                     <ChatBubbleBottomCenterTextIcon className="w-5 h-5" />
-                    Query Suggestions
+                    {t('dashboard.querySuggestions')}
                 </h4>
                 <div className="flex items-center gap-1">
                     {(['short', 'medium', 'long'] as SuggestionProfile[]).map(p => (
@@ -99,16 +107,16 @@ const SuggestionTray: React.FC<SuggestionTrayProps> = ({ process, permissions, o
                             onContextMenu={(e) => e.preventDefault()}
                             className={`px-2 py-0.5 text-xs rounded-full transition-colors ${suggestionProfile === p ? 'bg-nexus-primary text-nexus-dark font-bold' : 'bg-nexus-dark/50 hover:bg-nexus-surface'}`}
                          >
-                           {p.charAt(0).toUpperCase() + p.slice(1)}
+                           {profileLabels[p]}
                          </button>
                     ))}
-                    <button type="button" onClick={handleRegenerate} className="p-1 text-nexus-text-muted hover:text-nexus-primary" title="Regenerate Suggestions">
+                    <button type="button" onClick={handleRegenerate} className="p-1 text-nexus-text-muted hover:text-nexus-primary" title={t('dashboard.regenerateSuggestions')}>
                         <RefreshIcon className="w-4 h-4" />
                     </button>
                 </div>
             </div>
             {loadingSuggestions ? (
-               <div className="text-sm text-center py-4 text-nexus-text-muted animate-pulse">Generating creative starting points...</div>
+               <div className="text-sm text-center py-4 text-nexus-text-muted animate-pulse">{t('dashboard.generatingSuggestions')}</div>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {suggestions.map((s, i) => (
@@ -116,7 +124,7 @@ const SuggestionTray: React.FC<SuggestionTrayProps> = ({ process, permissions, o
                     key={i}
                     type="button"
                     onClick={() => handleSuggestionClick(s)}
-                    className="text-sm bg-nexus-surface px-3 py-1.5 rounded-md text-nexus-text-muted hover:bg-nexus-primary hover:text-nexus-dark transition-all duration-200"
+                    className="text-sm bg-nexus-surface px-3 py-1.5 rounded-full text-nexus-text-muted hover:bg-nexus-primary hover:text-nexus-dark transition-all duration-200"
                   >
                     {s}
                   </button>

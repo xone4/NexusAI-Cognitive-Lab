@@ -11,7 +11,7 @@ interface InsightCardProps {
 
 const InsightCard: React.FC<InsightCardProps> = memo(({ insight, toolsMap, onUse }) => {
     return (
-        <div className="bg-nexus-dark/50 p-4 rounded-lg border border-nexus-surface/50 transition-all duration-300 hover:border-nexus-accent/70 animate-spawn-in">
+        <div className="bg-nexus-dark/50 p-4 rounded-xl border border-nexus-surface/50 transition-all duration-300 hover:border-nexus-accent/70 animate-spawn-in">
             <div className="flex items-start gap-3">
                 <LightBulbIcon className="w-8 h-8 text-nexus-accent flex-shrink-0 mt-1" />
                 <div>
@@ -29,7 +29,7 @@ const InsightCard: React.FC<InsightCardProps> = memo(({ insight, toolsMap, onUse
                     <LinkIcon className="w-4 h-4" />
                     Suggested Workflow
                 </h5>
-                <div className="flex flex-wrap items-center gap-2 text-sm bg-nexus-dark/50 p-2 rounded-md">
+                <div className="flex flex-wrap items-center gap-2 text-sm bg-nexus-dark/50 p-2 rounded-xl">
                    {insight.actionableToolchain.toolIds.map((tid, i, arr) => (
                        <React.Fragment key={`${tid}-${i}`}>
                            <span className="font-mono">{toolsMap.get(tid)?.name || 'Unknown'}</span>
@@ -40,7 +40,7 @@ const InsightCard: React.FC<InsightCardProps> = memo(({ insight, toolsMap, onUse
                 <div className="flex justify-end mt-3">
                     <button 
                         onClick={() => onUse(insight.actionableToolchain)}
-                        className="text-xs bg-nexus-accent/20 text-nexus-accent font-bold py-1 px-3 rounded-md border border-nexus-accent/50 hover:bg-nexus-accent/40 hover:text-white transition-all">
+                        className="text-xs bg-nexus-accent/20 text-nexus-accent font-bold py-1 px-3 rounded-full border border-nexus-accent/50 hover:bg-nexus-accent/40 hover:text-white transition-all">
                         Promote to Toolchain
                     </button>
                 </div>

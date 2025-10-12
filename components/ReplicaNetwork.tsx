@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Replica } from '../types';
 import { CubeTransparentIcon, BrainCircuitIcon } from './Icons';
 
@@ -22,6 +23,7 @@ interface Link {
 }
 
 const ReplicaNetwork: React.FC<ReplicaNetworkProps> = ({ rootReplica }) => {
+    const { t } = useTranslation();
     const { nodes, links } = useMemo(() => {
         const flatReplicas: Replica[] = [];
         const traverse = (r: Replica) => {
@@ -126,7 +128,7 @@ const ReplicaNetwork: React.FC<ReplicaNetworkProps> = ({ rootReplica }) => {
                     const isActive = node.status === 'Active';
                     return (
                         <g key={node.id} transform={`translate(${node.x},${node.y})`} className="cursor-pointer group">
-                             <title>{`${node.name} (Status: ${node.status})`}</title>
+                             <title>{t('replicas.tooltipTitle', {name: node.name, status: node.status})}</title>
                             <circle
                                 r={r}
                                 fill="#18213a"

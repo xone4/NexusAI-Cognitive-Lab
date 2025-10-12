@@ -1,6 +1,6 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
 import type { CognitiveProcess, ChatMessage, PlanStep, CognitiveConstitution, GeneratedImage } from '../types';
-import { BrainCircuitIcon, UserIcon, BookOpenIcon, CogIcon, CheckCircleIcon, CubeTransparentIcon, PlayIcon, PencilIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, PlusCircleIcon, CodeBracketIcon, LightBulbIcon, LinkIcon, ArrowRightIcon, PhotographIcon, SparklesIcon, ArchiveBoxArrowDownIcon, RefreshIcon, GlobeAltIcon, DocumentTextIcon } from './Icons';
+import { BrainCircuitIcon, UserIcon, BookOpenIcon, CogIcon, CheckCircleIcon, CubeTransparentIcon, PlayIcon, PencilIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, PlusCircleIcon, CodeBracketIcon, LightBulbIcon, LinkIcon, ArrowRightIcon, PhotographIcon, SparklesIcon, ArchiveBoxArrowDownIcon, RefreshIcon, GlobeAltIcon, DocumentTextIcon, ShareIcon } from './Icons';
 
 interface CognitiveProcessVisualizerProps {
   process: CognitiveProcess;
@@ -72,12 +72,12 @@ UserMessage.displayName = 'UserMessage';
 
 const GeneratedImageViewer: React.FC<{ image: GeneratedImage }> = memo(({ image }) => {
     return (
-        <div className="mt-2 p-3 bg-nexus-dark/50 rounded-md border border-nexus-surface/50">
+        <div className="mt-2 p-3 bg-nexus-dark/50 rounded-xl border border-nexus-surface/50">
             <p className="text-xs text-nexus-text-muted font-mono mb-2">Generated Image: {image.id}</p>
             <img 
                 src={`data:image/jpeg;base64,${image.base64Image}`} 
                 alt={image.concept}
-                className="w-full rounded border-2 border-nexus-surface shadow-lg"
+                className="w-full rounded-lg border-2 border-nexus-surface shadow-lg"
             />
             <p className="text-xs text-nexus-text-muted mt-2 italic">
                 <span className="font-bold">Prompt:</span> "{image.concept}"
@@ -115,7 +115,8 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
         switch (step.status) {
             case 'pending': return <div className="w-5 h-5 rounded-full border-2 border-nexus-text-muted/50" title="Pending" />;
             case 'executing': return <div className="w-5 h-5 relative"><div className="nexus-loader"></div></div>;
-            case 'complete': return <CheckCircleIcon className="w-5 h-5 text-nexus-secondary" title="Complete"/>;
+            // FIX: Wrap icon in a div with title prop to fix invalid prop error.
+            case 'complete': return <div title="Complete"><CheckCircleIcon className="w-5 h-5 text-nexus-secondary"/></div>;
             case 'error': return <div className="w-5 h-5 rounded-full bg-red-500" title="Error"/>;
             default: return null;
         }
@@ -124,6 +125,7 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
     const getStepIcon = () => {
         switch(step.tool) {
             case 'google_search': return <CubeTransparentIcon className="w-4 h-4 text-blue-400" />;
+            case 'delegate_task_to_replica': return <ShareIcon className="w-4 h-4 text-green-400" />;
             case 'code_interpreter': return <CodeBracketIcon className="w-4 h-4 text-purple-400" />;
             case 'recall_memory': return <BookOpenIcon className="w-4 h-4 text-yellow-400" />;
             case 'induce_emotion': return <LightBulbIcon className="w-4 h-4 text-orange-400" />;
@@ -154,7 +156,7 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
     const isCodeEditable = ['code_interpreter', 'google_search', 'recall_memory', 'generate_image', 'analyze_image_input', 'induce_emotion', 'translate_text', 'summarize_text', 'replan'].includes(step.tool);
 
     return (
-        <li className={`p-2 rounded-md transition-all duration-300 ${isCurrent ? 'bg-nexus-primary/10' : ''} ${isEditable ? 'hover:bg-nexus-surface/50' : ''}`}>
+        <li className={`p-2 rounded-xl transition-all duration-300 ${isCurrent ? 'bg-nexus-primary/10' : ''} ${isEditable ? 'hover:bg-nexus-surface/50' : ''}`}>
              <div className="flex items-center gap-3">
                  <div className="pt-0.5">{statusIcon()}</div>
                  <div className="flex-grow min-w-0">
@@ -181,20 +183,20 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
                             <textarea
                                 value={editContent}
                                 onChange={(e) => setEditContent(e.target.value)}
-                                className="w-full p-2 bg-nexus-dark/70 border border-nexus-surface rounded-md focus:outline-none focus:ring-2 focus:ring-nexus-primary text-nexus-text font-mono text-sm"
+                                className="w-full p-2 bg-nexus-dark/70 border border-nexus-surface rounded-xl focus:outline-none focus:ring-2 focus:ring-nexus-primary text-nexus-text font-mono text-sm"
                                 placeholder="Edit step description..."
                             />
                             {isCodeEditable && (
                                 <textarea
                                     value={editCode}
                                     onChange={(e) => setEditCode(e.target.value)}
-                                    className="w-full h-20 p-2 bg-nexus-dark/70 border border-nexus-surface rounded-md focus:outline-none focus:ring-2 focus:ring-nexus-primary text-nexus-text font-mono text-sm"
+                                    className="w-full h-20 p-2 bg-nexus-dark/70 border border-nexus-surface rounded-xl focus:outline-none focus:ring-2 focus:ring-nexus-primary text-nexus-text font-mono text-sm"
                                     placeholder="Edit query, code, or concept..."
                                 />
                             )}
                             <div className="flex justify-end gap-2">
-                                <button onClick={() => setIsEditing(false)} className="text-xs px-2 py-1 rounded bg-nexus-surface">Cancel</button>
-                                <button onClick={handleSave} className="text-xs px-2 py-1 rounded bg-nexus-primary text-nexus-dark">Save</button>
+                                <button onClick={() => setIsEditing(false)} className="text-xs px-2 py-1 rounded-full bg-nexus-surface">Cancel</button>
+                                <button onClick={handleSave} className="text-xs px-2 py-1 rounded-full bg-nexus-primary text-nexus-dark">Save</button>
                             </div>
                         </div>
                     ) : (
@@ -222,23 +224,51 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
     const [isPlanOpen, setIsPlanOpen] = useState(true);
     const [isResponseCollapsed, setIsResponseCollapsed] = useState(true);
     const [translatedText, setTranslatedText] = useState<string | null>(null);
-    const [isTranslating, setIsTranslating] = useState(false);
+    const [isActionLoading, setIsActionLoading] = useState<'archive' | 'extract' | 'rerun' | 'translate' | null>(null);
 
     const activeConstitution = constitutions.find(c => c.id === message.constitutionId);
 
     const handleTranslate = async () => {
         if (!message.text) return;
-        setIsTranslating(true);
+        setIsActionLoading('translate');
         setTranslatedText(null);
         try {
-            const translation = await onTranslate(message.text, props.language === 'English' ? 'Arabic' : 'English');
+            const translation = await onTranslate(message.text, props.language === 'en' ? 'ar' : 'en');
             setTranslatedText(translation);
         } catch (e) {
             setTranslatedText("Translation failed.");
         } finally {
-            setIsTranslating(false);
+            setIsActionLoading(null);
         }
     };
+
+    const handleArchive = async () => {
+        setIsActionLoading('archive');
+        try {
+            await onArchiveTrace(message.id);
+        } catch (e) {
+            console.error("Archiving failed", e);
+        } finally {
+            setIsActionLoading(null);
+        }
+    };
+    
+    const handleExtract = async () => {
+        setIsActionLoading('extract');
+        try {
+            await onExtractBehavior(message.id);
+        } catch (e) {
+            console.error("Extraction failed", e);
+        } finally {
+            setIsActionLoading(null);
+        }
+    };
+
+    const handleRerun = () => {
+        setIsActionLoading('rerun');
+        onRerunTrace(message);
+    }
+
 
     const renderContent = () => {
         if (message.state === 'planning') {
@@ -270,7 +300,7 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
                             </div>
                         )}
                          {message.isPlanFinalized && (
-                            <button onClick={() => onSavePlanAsToolchain(message.plan!)} title="Save as Toolchain" className="flex items-center gap-1 text-xs bg-nexus-surface px-2 py-1 rounded text-nexus-text-muted hover:bg-nexus-primary hover:text-nexus-dark transition-all">
+                            <button onClick={() => onSavePlanAsToolchain(message.plan!)} title="Save as Toolchain" className="flex items-center gap-1 text-xs bg-nexus-surface px-2 py-1 rounded-full text-nexus-text-muted hover:bg-nexus-primary hover:text-nexus-dark transition-all">
                                 <LinkIcon className="w-3 h-3"/> Save as Toolchain
                             </button>
                          )}
@@ -306,7 +336,7 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
                          <div className="pt-4 border-t border-nexus-surface/50 flex justify-center">
                              <button
                                 onClick={() => onExecutePlan(message.id)}
-                                className="w-1/2 flex items-center justify-center gap-2 bg-nexus-primary/90 text-nexus-dark font-bold py-3 px-4 rounded-md border border-nexus-primary/80 hover:bg-nexus-secondary transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-nexus-secondary animate-load-pulse"
+                                className="w-1/2 flex items-center justify-center gap-2 bg-nexus-primary/90 text-nexus-dark font-bold py-3 px-4 rounded-full border border-nexus-primary/80 hover:bg-nexus-secondary transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-nexus-secondary animate-load-pulse"
                             >
                                 <PlayIcon className="w-6 h-6"/> Execute Plan
                              </button>
@@ -322,8 +352,9 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
                             <div className="flex justify-between items-center mb-2">
                                 <h4 className="font-bold text-nexus-primary uppercase tracking-wider text-sm">Synthesizing Answer</h4>
                                 {process.activeAffectiveState && (
-                                     <div className="relative group">
-                                         <LightBulbIcon className="w-5 h-5 text-yellow-400" title={`Influenced by mood: ${process.activeAffectiveState.mood}`} />
+                                     // FIX: Moved title prop from icon to parent div to fix invalid prop error.
+                                     <div className="relative group" title={`Influenced by mood: ${process.activeAffectiveState.mood}`}>
+                                         <LightBulbIcon className="w-5 h-5 text-yellow-400" />
                                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-nexus-dark text-white text-xs rounded-md p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">
                                              Influenced by active Affective State.
                                              <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-nexus-dark"></div>
@@ -344,8 +375,9 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
                                 <h4 className="font-bold text-nexus-primary uppercase tracking-wider text-sm">Synthesized Answer</h4>
                                 <div className="flex items-center gap-2">
                                 {message.affectiveStateSnapshot && (
-                                     <div className="relative group">
-                                         <LightBulbIcon className="w-5 h-5 text-yellow-400" title={`Influenced by mood: ${message.affectiveStateSnapshot.mood}`} />
+                                     // FIX: Moved title prop from icon to parent div to fix invalid prop error.
+                                     <div className="relative group" title={`Influenced by mood: ${message.affectiveStateSnapshot.mood}`}>
+                                         <LightBulbIcon className="w-5 h-5 text-yellow-400" />
                                          <div className="absolute bottom-full right-0 mb-2 w-48 bg-nexus-dark text-white text-xs rounded-md p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">
                                              Influenced by Affective State at time of synthesis.
                                              <div className="absolute top-full right-3 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-nexus-dark"></div>
@@ -369,33 +401,36 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
                              )}
                             <div className="flex justify-center items-center gap-2 flex-wrap mt-4">
                                 <button 
-                                    onClick={() => onArchiveTrace(message.id)}
+                                    onClick={handleArchive}
+                                    disabled={!!isActionLoading}
                                     className="action-btn bg-blue-500/20 text-blue-400 border-blue-500/50 hover:bg-blue-500/40"
                                 >
                                     <ArchiveBoxArrowDownIcon className="w-5 h-5" />
-                                    Archive
+                                    {isActionLoading === 'archive' ? 'Archiving...' : 'Archive'}
                                 </button>
                                 <button 
-                                    onClick={() => onExtractBehavior(message.id)}
+                                    onClick={handleExtract}
+                                    disabled={!!isActionLoading}
                                     className="action-btn bg-pink-500/20 text-pink-400 border-pink-500/50 hover:bg-pink-500/40"
                                 >
                                     <SparklesIcon className="w-5 h-5" />
-                                    Extract Behavior
+                                    {isActionLoading === 'extract' ? 'Extracting...' : 'Extract Behavior'}
                                 </button>
                                 <button 
-                                    onClick={() => onRerunTrace(message)}
+                                    onClick={handleRerun}
+                                    disabled={!!isActionLoading}
                                     className="action-btn bg-green-500/20 text-green-400 border-green-500/50 hover:bg-green-500/40"
                                 >
                                     <RefreshIcon className="w-5 h-5" />
-                                    Rerun
+                                     {isActionLoading === 'rerun' ? 'Rerunning...' : 'Rerun'}
                                 </button>
                                 <button 
                                     onClick={handleTranslate}
-                                    disabled={isTranslating}
-                                    className="action-btn bg-purple-500/20 text-purple-400 border-purple-500/50 hover:bg-purple-500/40 disabled:opacity-50"
+                                    disabled={!!isActionLoading}
+                                    className="action-btn bg-purple-500/20 text-purple-400 border-purple-500/50 hover:bg-purple-500/40"
                                 >
                                     <GlobeAltIcon className="w-5 h-5" />
-                                    {isTranslating ? '...' : 'Translate'}
+                                    {isActionLoading === 'translate' ? 'Translating...' : 'Translate'}
                                 </button>
                             </div>
                         </div>
@@ -444,10 +479,14 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
                     gap: 0.5rem;
                     font-weight: bold;
                     padding: 0.5rem 1rem;
-                    border-radius: 0.375rem;
+                    border-radius: 9999px;
                     border-width: 1px;
                     transition: all 0.3s;
                     color: white;
+                }
+                .action-btn:disabled {
+                    cursor: not-allowed;
+                    opacity: 0.6;
                 }
                 .action-btn:focus {
                     outline: none;

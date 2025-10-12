@@ -17,7 +17,7 @@ const DashboardCard: React.FC<DashboardCardProps> = ({ title, children, classNam
     <Disclosure defaultOpen={defaultOpen} as="div">
       {({ open }) => (
         <div
-          className={`bg-nexus-surface rounded-lg border border-nexus-surface/50 shadow-lg flex flex-col backdrop-blur-sm bg-opacity-50 transition-all duration-300 group ${fullHeight && open ? 'h-full' : ''} ${className}`}
+          className={`bg-nexus-surface rounded-xl border border-nexus-surface/50 shadow-lg flex flex-col backdrop-blur-sm bg-opacity-50 transition-all duration-300 group ${fullHeight && open ? 'h-full' : ''} ${className}`}
         >
           <Disclosure.Button as="div" className={`p-4 ${isCollapsible ? 'cursor-pointer' : ''}`}>
             <div className="flex items-center">

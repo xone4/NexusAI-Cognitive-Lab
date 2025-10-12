@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Replica, MentalTool, CognitiveProcess, AppSettings, ActiveView } from '../types';
 import DashboardCard from './DashboardCard';
 import { 
     ArchIcon, BrainCircuitIcon, CodeBracketIcon, CubeTransparentIcon, GlobeAltIcon, 
-    UserGroupIcon, CircleStackIcon, ViewColumnsIcon, ArrowsRightLeftIcon, FireIcon, LightBulbIcon
+    UserGroupIcon, CircleStackIcon, ArrowsRightLeftIcon, FireIcon, LightBulbIcon
 } from './Icons';
 
 type ViewMode = 'structural' | 'data_flow' | 'cognitive_load';
@@ -20,7 +21,7 @@ interface ArchitectureDiagramProps {
 const ArchBox: React.FC<{ title: string; items?: string[]; icon: React.ReactNode; className?: string; onClick?: () => void; isInteractive?: boolean; isGlowing?: boolean, children?: React.ReactNode }> = 
 ({ title, items, icon, className, onClick, isInteractive, isGlowing, children }) => (
   <div 
-    className={`bg-nexus-surface/50 border border-nexus-primary/30 p-4 rounded-lg text-center flex flex-col items-center justify-center transition-all duration-300 relative overflow-hidden
+    className={`bg-nexus-surface/50 border border-nexus-primary/30 p-4 rounded-xl text-center flex flex-col items-center justify-center transition-all duration-300 relative overflow-hidden
     ${isInteractive ? 'cursor-pointer hover:border-nexus-secondary hover:bg-nexus-surface' : ''}
     ${isGlowing ? 'animate-load-pulse border-nexus-accent' : ''}
     ${className}`}
@@ -209,12 +210,13 @@ const CognitiveLoadView: React.FC<ArchitectureDiagramProps> = ({ replicas, tools
 
 
 const ArchitectureDiagram: React.FC<ArchitectureDiagramProps> = (props) => {
+    const { t } = useTranslation();
     const [viewMode, setViewMode] = useState<ViewMode>('structural');
 
     const viewModes: { id: ViewMode, label: string, icon: React.ReactNode }[] = [
-        { id: 'structural', label: 'Structural', icon: <ViewColumnsIcon /> },
-        { id: 'data_flow', label: 'Data Flow', icon: <ArrowsRightLeftIcon /> },
-        { id: 'cognitive_load', label: 'Cognitive Load', icon: <FireIcon /> },
+        { id: 'structural', label: t('architecture.structural'), icon: <ArchIcon /> },
+        { id: 'data_flow', label: t('architecture.dataFlow'), icon: <ArrowsRightLeftIcon /> },
+        { id: 'cognitive_load', label: t('architecture.cognitiveLoad'), icon: <FireIcon /> },
     ];
     
     const renderView = () => {
@@ -227,9 +229,9 @@ const ArchitectureDiagram: React.FC<ArchitectureDiagramProps> = (props) => {
     }
 
     return (
-        <DashboardCard title="Live System Architecture" icon={<ArchIcon />} fullHeight className="flex flex-col">
-            <div className="flex justify-center p-2 bg-nexus-dark/50 rounded-t-lg">
-                <div className="inline-flex rounded-md shadow-sm" role="group">
+        <DashboardCard title={t('architecture.title')} icon={<ArchIcon />} fullHeight className="flex flex-col">
+            <div className="flex justify-center p-2 bg-nexus-dark/50 rounded-t-xl">
+                <div className="inline-flex rounded-full shadow-sm" role="group">
                     {viewModes.map(mode => (
                         <button
                             key={mode.id}
@@ -240,7 +242,7 @@ const ArchitectureDiagram: React.FC<ArchitectureDiagramProps> = (props) => {
                                     ? 'bg-nexus-primary text-nexus-dark border-nexus-primary z-10' 
                                     : 'bg-nexus-surface text-nexus-text-muted border-nexus-surface/50 hover:bg-nexus-surface/80 hover:text-nexus-text'
                                 }
-                                first:rounded-l-lg last:rounded-r-lg`}
+                                first:rounded-l-full last:rounded-r-full`}
                         >
                             <div className="w-5 h-5">{mode.icon}</div>
                             {mode.label}
@@ -248,7 +250,7 @@ const ArchitectureDiagram: React.FC<ArchitectureDiagramProps> = (props) => {
                     ))}
                 </div>
             </div>
-            <div className="flex-grow bg-nexus-bg rounded-b-lg">
+            <div className="flex-grow bg-nexus-bg rounded-b-xl">
                 {renderView()}
             </div>
         </DashboardCard>

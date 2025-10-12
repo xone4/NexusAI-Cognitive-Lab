@@ -42,7 +42,7 @@ const LogStream: React.FC<LogStreamProps> = ({ logs }) => {
   }, [logs]);
 
   return (
-    <div ref={scrollRef} className="h-full overflow-y-auto bg-nexus-dark/50 rounded-md p-3 font-mono text-xs">
+    <div ref={scrollRef} className="h-full overflow-y-auto bg-nexus-dark/50 rounded-xl p-3 font-mono text-xs">
       {logs.map(log => (
         <LogItem key={log.id} log={log} />
       ))}

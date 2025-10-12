@@ -26,7 +26,7 @@ const ToolchainItem: React.FC<{
     }
     
     return (
-        <div className="bg-nexus-dark/50 p-4 rounded-lg border border-nexus-surface/50 transition-all duration-300 hover:border-nexus-primary/70 animate-spawn-in">
+        <div className="bg-nexus-dark/50 p-4 rounded-xl border border-nexus-surface/50 transition-all duration-300 hover:border-nexus-primary/70 animate-spawn-in">
             <div className="flex justify-between items-start">
                 <div>
                     <h4 className="font-semibold text-nexus-text flex items-center gap-2">
@@ -47,7 +47,7 @@ const ToolchainItem: React.FC<{
                         const tool = toolsMap.get(tid);
                         return (
                             <React.Fragment key={tid}>
-                                <span className="bg-nexus-surface px-2 py-1 rounded text-nexus-text font-mono">
+                                <span className="bg-nexus-surface px-2 py-1 rounded-full text-nexus-text font-mono">
                                     {tool?.name || 'Unknown Tool'}
                                 </span>
                                 {index < toolchain.toolIds.length - 1 && <ArrowRightIcon className="w-5 h-5 text-nexus-secondary" />}
@@ -107,7 +107,7 @@ const ToolchainsManager: React.FC<ToolchainsManagerProps> = ({ allTools, toolcha
                      <button
                         onClick={handleCreateNew}
                         disabled={isThinking}
-                        className="w-full md:w-auto flex-shrink-0 flex items-center justify-center gap-2 bg-purple-500/20 text-purple-400 font-bold py-2 px-4 rounded-md border border-purple-500/50
+                        className="w-full md:w-auto flex-shrink-0 flex items-center justify-center gap-2 bg-purple-500/20 text-purple-400 font-bold py-2 px-4 rounded-full border border-purple-500/50
                                   hover:bg-purple-500/40 hover:text-white transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-purple-400
                                   disabled:opacity-50 disabled:cursor-not-allowed"
                     >

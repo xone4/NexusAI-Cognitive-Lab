@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Replica, MentalTool, LogEntry, SystemSuggestion, AnalysisConfig, SystemAnalysisResult } from '../types';
 import { nexusAIService } from '../services/nexusAIService';
 import DashboardCard from './DashboardCard';
@@ -30,7 +31,7 @@ const SuggestionCard: React.FC<{
     suggestion: SystemSuggestion;
     onExecute: (suggestion: SystemSuggestion) => void;
 }> = ({ suggestion, onExecute }) => (
-    <div className="bg-nexus-dark/50 p-4 rounded-lg border border-nexus-surface/50 transition-all duration-300 hover:border-nexus-primary/70 animate-spawn-in">
+    <div className="bg-nexus-dark/50 p-4 rounded-xl border border-nexus-surface/50 transition-all duration-300 hover:border-nexus-primary/70 animate-spawn-in">
         <div className="flex items-center gap-3 mb-2">
             {suggestion.type === 'action' 
                 ? <CogIcon className="w-5 h-5 text-nexus-accent flex-shrink-0" /> 
@@ -44,7 +45,7 @@ const SuggestionCard: React.FC<{
         <div className="flex justify-end pl-8">
             <button
                 onClick={() => onExecute(suggestion)}
-                className="bg-nexus-primary/20 text-nexus-primary text-sm font-bold py-1.5 px-4 rounded-md border border-nexus-primary/50
+                className="bg-nexus-primary/20 text-nexus-primary text-sm font-bold py-1.5 px-4 rounded-full border border-nexus-primary/50
                            hover:bg-nexus-primary/40 hover:text-white transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-nexus-secondary"
             >
                 {suggestion.type === 'action' ? 'Execute Action' : 'Run Query'}
@@ -55,6 +56,7 @@ const SuggestionCard: React.FC<{
 
 
 const AnalysisLab: React.FC<AnalysisLabProps> = (props) => {
+    const { t } = useTranslation();
     const { replicas, tools, logs, isThinking } = props;
     const [config, setConfig] = useState<AnalysisConfig>({
         scope: { replicas: true, tools: true, logs: true },
@@ -106,27 +108,27 @@ const AnalysisLab: React.FC<AnalysisLabProps> = (props) => {
         }
     };
     
-    const loadingMessage = isLoading ? 'AI is analyzing system state...' : 'Analysis complete.';
+    const loadingMessage = isLoading ? t('analysis.loadingMessage') : t('analysis.noSuggestions');
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* --- Configuration Panel --- */}
             <div className="lg:col-span-1 flex flex-col gap-6">
-                <DashboardCard title="Analysis Configuration" icon={<CogIcon />}>
+                <DashboardCard title={t('analysis.configTitle')} icon={<CogIcon />}>
                     <div className="space-y-6">
                         {/* Scope */}
                         <div>
-                            <h4 className="font-semibold text-nexus-text mb-3">Analysis Scope</h4>
+                            <h4 className="font-semibold text-nexus-text mb-3">{t('analysis.scope')}</h4>
                             <div className="space-y-3">
-                                <ConfigToggle label="Replicas" checked={config.scope.replicas} onChange={c => setConfig(p => ({ ...p, scope: {...p.scope, replicas: c}}))} disabled={isLoading || isThinking} />
-                                <ConfigToggle label="Mental Tools" checked={config.scope.tools} onChange={c => setConfig(p => ({ ...p, scope: {...p.scope, tools: c}}))} disabled={isLoading || isThinking}/>
-                                <ConfigToggle label="System Logs" checked={config.scope.logs} onChange={c => setConfig(p => ({ ...p, scope: {...p.scope, logs: c}}))} disabled={isLoading || isThinking}/>
+                                <ConfigToggle label={t('analysis.replicas')} checked={config.scope.replicas} onChange={c => setConfig(p => ({ ...p, scope: {...p.scope, replicas: c}}))} disabled={isLoading || isThinking} />
+                                <ConfigToggle label={t('analysis.mentalTools')} checked={config.scope.tools} onChange={c => setConfig(p => ({ ...p, scope: {...p.scope, tools: c}}))} disabled={isLoading || isThinking}/>
+                                <ConfigToggle label={t('analysis.systemLogs')} checked={config.scope.logs} onChange={c => setConfig(p => ({ ...p, scope: {...p.scope, logs: c}}))} disabled={isLoading || isThinking}/>
                             </div>
                         </div>
                         {/* Depth */}
                         <div>
-                             <h4 className="font-semibold text-nexus-text mb-3">Analysis Depth</h4>
-                             <div className="flex rounded-md shadow-sm">
+                             <h4 className="font-semibold text-nexus-text mb-3">{t('analysis.depth')}</h4>
+                             <div className="flex rounded-full shadow-sm">
                                 {(['Quick', 'Standard', 'Deep'] as const).map((depth, idx, arr) => (
                                      <button
                                         key={depth}
@@ -134,11 +136,11 @@ const AnalysisLab: React.FC<AnalysisLabProps> = (props) => {
                                         disabled={isLoading || isThinking}
                                         className={`relative inline-flex items-center justify-center w-full px-4 py-2 text-sm font-semibold ring-1 ring-inset ring-nexus-surface focus:z-10
                                             ${config.depth === depth ? 'bg-nexus-primary text-nexus-dark' : 'bg-nexus-bg text-nexus-text-muted hover:bg-nexus-surface'}
-                                            ${idx === 0 ? 'rounded-l-md' : ''}
-                                            ${idx === arr.length - 1 ? 'rounded-r-md' : '-ml-px'}
+                                            ${idx === 0 ? 'rounded-l-full' : ''}
+                                            ${idx === arr.length - 1 ? 'rounded-r-full' : '-ml-px'}
                                             disabled:opacity-50 disabled:cursor-not-allowed`}
                                      >
-                                         {depth}
+                                         {t(`analysis.${depth.toLowerCase()}`)}
                                      </button>
                                 ))}
                              </div>
@@ -148,14 +150,14 @@ const AnalysisLab: React.FC<AnalysisLabProps> = (props) => {
                              <button
                                 onClick={handleRunAnalysis}
                                 disabled={isLoading || isThinking}
-                                className="w-full flex items-center justify-center gap-2 bg-nexus-primary/90 text-nexus-dark font-bold py-3 px-4 rounded-md border border-nexus-primary/80
+                                className="w-full flex items-center justify-center gap-2 bg-nexus-primary/90 text-nexus-dark font-bold py-3 px-4 rounded-full border border-nexus-primary/80
                                           hover:bg-nexus-secondary transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-nexus-secondary
                                           disabled:bg-nexus-surface/50 disabled:text-nexus-text-muted disabled:cursor-not-allowed"
                              >
                                 <MagnifyingGlassIcon className="w-5 h-5"/>
-                                {isLoading ? 'Analyzing...' : 'Run Analysis'}
+                                {isLoading ? t('analysis.analyzing') : t('analysis.runAnalysis')}
                              </button>
-                             {isThinking && <p className="text-xs text-center mt-2 text-nexus-accent">Analysis is disabled while the AI is thinking.</p>}
+                             {isThinking && <p className="text-xs text-center mt-2 text-nexus-accent">{t('analysis.disabledWhileThinking')}</p>}
                         </div>
                     </div>
                 </DashboardCard>
@@ -163,33 +165,33 @@ const AnalysisLab: React.FC<AnalysisLabProps> = (props) => {
 
             {/* --- Results Panel --- */}
             <div className="lg:col-span-2 flex flex-col gap-6">
-                <DashboardCard title="Analysis Results" icon={<BrainCircuitIcon />} fullHeight>
+                <DashboardCard title={t('analysis.resultsTitle')} icon={<BrainCircuitIcon />} fullHeight>
                     <div className="h-full overflow-y-auto pr-2">
                         {isLoading && (
                              <div className="flex flex-col items-center justify-center h-full text-center text-nexus-text-muted">
                                 <div className="w-16 h-16 mb-4 relative"><div className="nexus-loader"></div></div>
-                                <p className="font-semibold text-lg">{loadingMessage}</p>
-                                <p className="text-sm">Please wait while the AI examines the system...</p>
+                                <p className="font-semibold text-lg">{t('analysis.loadingMessage')}</p>
+                                <p className="text-sm">{t('analysis.loadingMessageDesc')}</p>
                              </div>
                         )}
                         {!isLoading && !analysisResult && (
                              <div className="flex flex-col items-center justify-center h-full text-center text-nexus-text-muted">
                                 <MagnifyingGlassIcon className="w-16 h-16" />
-                                <p className="mt-4 font-semibold text-lg">Ready for Analysis</p>
-                                <p className="text-sm">Configure your analysis options and click "Run Analysis" to generate insights.</p>
+                                <p className="mt-4 font-semibold text-lg">{t('analysis.readyMessage')}</p>
+                                <p className="text-sm">{t('analysis.readyMessageDesc')}</p>
                              </div>
                         )}
                         {!isLoading && analysisResult && (
                              <div className="space-y-6">
-                                <DashboardCard title="AI Executive Summary" icon={<LightBulbIcon />} className="bg-nexus-dark/30">
+                                <DashboardCard title={t('analysis.summaryTitle')} icon={<LightBulbIcon />} className="bg-nexus-dark/30">
                                     <p className="text-nexus-text-muted italic">"{analysisResult.summary}"</p>
                                 </DashboardCard>
-                                 <h3 className="text-lg font-semibold text-nexus-text border-b border-nexus-surface pb-2">Recommendations</h3>
+                                 <h3 className="text-lg font-semibold text-nexus-text border-b border-nexus-surface pb-2">{t('analysis.recommendations')}</h3>
                                 <div className="space-y-4">
                                     {analysisResult.suggestions.length > 0 ? (
                                         analysisResult.suggestions.map((s, i) => <SuggestionCard key={i} suggestion={s} onExecute={handleExecuteSuggestion} />)
                                     ) : (
-                                        <p className="text-nexus-text-muted text-center py-4">Analysis complete. No specific suggestions at this time.</p>
+                                        <p className="text-nexus-text-muted text-center py-4">{t('analysis.noSuggestions')}</p>
                                     )}
                                 </div>
                              </div>

@@ -22,7 +22,7 @@ const TabButton: React.FC<{ active: boolean; onClick: () => void; children: Reac
 );
 
 const DetailCard: React.FC<{ label: string; children: React.ReactNode; className?: string }> = ({ label, children, className }) => (
-    <div className={`bg-nexus-dark/50 p-3 rounded-md ${className}`}>
+    <div className={`bg-nexus-dark/50 p-3 rounded-xl ${className}`}>
         <h5 className="text-xs font-semibold text-nexus-primary uppercase tracking-wider">{label}</h5>
         <div className="mt-1 text-sm text-nexus-text">{children}</div>
     </div>
@@ -42,18 +42,18 @@ const DetailedPlanStep: React.FC<{ step: PlanStep }> = ({ step }) => {
     
     const renderResult = () => {
         if (step.status === 'error') {
-            return <pre className="text-xs whitespace-pre-wrap text-red-400 font-mono bg-red-500/10 p-2 rounded-md">{String(step.result)}</pre>;
+            return <pre className="text-xs whitespace-pre-wrap text-red-400 font-mono bg-red-500/10 p-2 rounded-xl">{String(step.result)}</pre>;
         }
         if (!step.result) return <p className="text-xs text-nexus-text-muted italic">No result recorded.</p>;
         
         if (typeof step.result === 'object' && step.result.id?.startsWith('img-')) {
             const image = step.result as GeneratedImage;
             return (
-                 <div className="mt-2 p-2 bg-nexus-dark/70 rounded-md border border-nexus-surface">
+                 <div className="mt-2 p-2 bg-nexus-dark/70 rounded-xl border border-nexus-surface">
                     <img 
                         src={`data:image/jpeg;base64,${image.base64Image}`} 
                         alt={image.concept}
-                        className="w-full rounded border-2 border-nexus-surface"
+                        className="w-full rounded-lg border-2 border-nexus-surface"
                     />
                     <p className="text-xs text-nexus-text-muted mt-2 italic">
                         Prompt: "{image.concept}"
@@ -62,11 +62,11 @@ const DetailedPlanStep: React.FC<{ step: PlanStep }> = ({ step }) => {
             )
         }
         
-        return <pre className="text-xs whitespace-pre-wrap text-green-400 font-mono bg-green-500/10 p-2 rounded-md">{String(step.result)}</pre>;
+        return <pre className="text-xs whitespace-pre-wrap text-green-400 font-mono bg-green-500/10 p-2 rounded-xl">{String(step.result)}</pre>;
     };
 
     return (
-        <div className="bg-nexus-dark/50 p-4 rounded-lg">
+        <div className="bg-nexus-dark/50 p-4 rounded-xl">
             <div className="flex items-center gap-3 mb-2">
                 {step.status === 'complete' ? <CheckCircleIcon className="w-5 h-5 text-nexus-secondary"/> : <XCircleIcon className="w-5 h-5 text-red-500" />}
                 <h4 className="font-semibold text-nexus-text flex-grow flex items-center gap-2">{getStepIcon()} {step.description}</h4>
@@ -76,7 +76,7 @@ const DetailedPlanStep: React.FC<{ step: PlanStep }> = ({ step }) => {
                 {(step.query || step.code || step.concept) && (
                     <div>
                         <h5 className="text-xs font-bold text-nexus-text-muted">Input:</h5>
-                        <pre className="text-xs whitespace-pre-wrap text-nexus-text-muted font-mono bg-nexus-dark/70 p-2 rounded-md">{step.query || step.code || step.concept}</pre>
+                        <pre className="text-xs whitespace-pre-wrap text-nexus-text-muted font-mono bg-nexus-dark/70 p-2 rounded-xl">{step.query || step.code || step.concept}</pre>
                     </div>
                 )}
                 <div>
@@ -91,34 +91,44 @@ const DetailedPlanStep: React.FC<{ step: PlanStep }> = ({ step }) => {
 
 const CognitiveTraceInspector: React.FC<CognitiveTraceInspectorProps> = ({ trace, onClose }) => {
     const [activeTab, setActiveTab] = useState<InspectorTab>('summary');
-    const [reflection, setReflection] = useState<string | null>(null);
+    const [details, setDetails] = useState(() => nexusAIService.getArchivedTraceDetails(trace.id));
     const [isLoadingReflection, setIsLoadingReflection] = useState(false);
-    const [discussionHistory, setDiscussionHistory] = useState<{ role: 'user' | 'model', text: string }[]>([]);
     const [discussionInput, setDiscussionInput] = useState('');
     const [isDiscussing, setIsDiscussing] = useState(false);
 
     const handleGenerateReflection = async () => {
         setIsLoadingReflection(true);
-        const result = await nexusAIService.generateReflectionResponse(trace);
-        setReflection(result);
-        setIsLoadingReflection(false);
+        try {
+            const result = await nexusAIService.generateReflectionResponse(trace);
+            setDetails(prev => ({ ...prev, reflection: result }));
+        } catch(e) {
+            console.error(e);
+            setDetails(prev => ({ ...prev, reflection: `Error generating reflection: ${e instanceof Error ? e.message : 'Unknown error'}` }));
+        } finally {
+            setIsLoadingReflection(false);
+        }
     };
 
     const handleSendDiscussionMessage = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!discussionInput.trim() || isDiscussing) return;
 
-        const newUserMessage = { role: 'user' as const, text: discussionInput.trim() };
-        const newHistory = [...discussionHistory, newUserMessage];
+        const query = discussionInput.trim();
+        const newUserMessage = { role: 'user' as const, text: query };
         
-        setDiscussionHistory(newHistory);
         setDiscussionInput('');
         setIsDiscussing(true);
+        setDetails(prev => ({...prev, discussion: [...(prev.discussion || []), newUserMessage]}));
 
-        const modelResponseText = await nexusAIService.generateDiscussionResponse(trace, newHistory, newUserMessage.text);
-
-        setDiscussionHistory(prev => [...prev, { role: 'model' as const, text: modelResponseText }]);
-        setIsDiscussing(false);
+        try {
+            const newHistory = await nexusAIService.generateDiscussionResponse(trace, query);
+            setDetails(prev => ({ ...prev, discussion: newHistory }));
+        } catch (error) {
+            const errorText = `[SYSTEM_ERROR: Failed to get a response. ${error instanceof Error ? error.message : ''}]`;
+             setDetails(prev => ({...prev, discussion: [...(prev.discussion || []), { role: 'model', text: errorText }]}));
+        } finally {
+            setIsDiscussing(false);
+        }
     };
 
     const DiscussionUserMessage: React.FC<{text: string}> = ({ text }) => (
@@ -147,7 +157,7 @@ const CognitiveTraceInspector: React.FC<CognitiveTraceInspectorProps> = ({ trace
                             <p className="italic">"{trace.userQuery}"</p>
                         </DetailCard>
                          <DetailCard label="Final Answer" className="md:col-span-2">
-                            <pre className="text-sm whitespace-pre-wrap font-sans text-nexus-text bg-nexus-dark/50 p-3 rounded-md max-h-64 overflow-y-auto">{String(trace.text || '')}</pre>
+                            <pre className="text-sm whitespace-pre-wrap font-sans text-nexus-text bg-nexus-dark/50 p-3 rounded-xl max-h-64 overflow-y-auto">{String(trace.text || '')}</pre>
                         </DetailCard>
                          <DetailCard label="Metrics">
                             <p>Plan Steps: {trace.plan?.length || 0}</p>
@@ -169,15 +179,15 @@ const CognitiveTraceInspector: React.FC<CognitiveTraceInspectorProps> = ({ trace
             case 'reflection':
                  return (
                     <div className="text-center py-4">
-                        {!reflection && !isLoadingReflection && (
-                             <button onClick={handleGenerateReflection} className="flex items-center gap-2 mx-auto bg-nexus-primary text-nexus-dark font-bold py-2 px-4 rounded-md hover:bg-nexus-secondary">
+                        {!details.reflection && !isLoadingReflection && (
+                             <button onClick={handleGenerateReflection} className="flex items-center gap-2 mx-auto bg-nexus-primary text-nexus-dark font-bold py-2 px-4 rounded-full hover:bg-nexus-secondary">
                                  <BrainCircuitIcon className="w-5 h-5"/> Generate AI Self-Reflection
                             </button>
                         )}
                         {isLoadingReflection && <p className="text-nexus-text-muted animate-pulse">AI is reflecting on its performance...</p>}
-                        {reflection && (
-                             <pre className="text-sm whitespace-pre-wrap font-sans text-nexus-text text-left bg-nexus-dark/50 p-4 rounded-md overflow-y-auto">
-                                 {String(reflection || '')}
+                        {details.reflection && (
+                             <pre className="text-sm whitespace-pre-wrap font-sans text-nexus-text text-left bg-nexus-dark/50 p-4 rounded-xl overflow-y-auto">
+                                 {String(details.reflection || '')}
                              </pre>
                         )}
                     </div>
@@ -189,7 +199,7 @@ const CognitiveTraceInspector: React.FC<CognitiveTraceInspectorProps> = ({ trace
 
     return (
         <div className="fixed inset-0 bg-nexus-dark/80 backdrop-blur-sm flex items-center justify-center z-50 animate-spawn-in">
-            <div className="bg-nexus-surface p-6 rounded-lg shadow-2xl w-full max-w-4xl border border-nexus-primary/50 flex flex-col max-h-[90vh]">
+            <div className="bg-nexus-surface p-6 rounded-xl shadow-2xl w-full max-w-4xl border border-nexus-primary/50 flex flex-col max-h-[90vh]">
                  <div className="flex-shrink-0 flex justify-between items-start">
                     <div className="flex items-center gap-3 mb-4">
                         <DocumentMagnifyingGlassIcon className="w-8 h-8 text-nexus-primary"/>
@@ -216,14 +226,14 @@ const CognitiveTraceInspector: React.FC<CognitiveTraceInspectorProps> = ({ trace
                 {activeTab === 'discuss' ? (
                     <div className="flex-grow flex flex-col overflow-hidden">
                         <div className="flex-grow overflow-y-auto p-2 pr-4 space-y-2">
-                             {discussionHistory.length === 0 && (
+                             {(details.discussion || []).length === 0 && (
                                  <div className="flex flex-col items-center justify-center h-full text-center text-nexus-text-muted">
                                     <ChatBubbleLeftRightIcon className="w-16 h-16"/>
                                     <p className="mt-4 font-semibold text-lg">Discussion Hub</p>
                                     <p className="text-sm">Ask questions about the AI's plan, reasoning, or final answer.</p>
                                  </div>
                              )}
-                            {discussionHistory.map((msg, index) => (
+                            {(details.discussion || []).map((msg, index) => (
                                 msg.role === 'user'
                                     ? <DiscussionUserMessage key={index} text={msg.text} />
                                     : <DiscussionModelMessage key={index} text={msg.text} />
@@ -244,12 +254,12 @@ const CognitiveTraceInspector: React.FC<CognitiveTraceInspectorProps> = ({ trace
                                 onChange={(e) => setDiscussionInput(e.target.value)}
                                 placeholder="Ask about this trace..."
                                 disabled={isDiscussing}
-                                className="flex-grow bg-nexus-dark/70 border border-nexus-surface rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-nexus-primary text-nexus-text text-sm"
+                                className="flex-grow bg-nexus-dark/70 border border-nexus-surface rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-nexus-primary text-nexus-text text-sm"
                             />
                             <button
                                 type="submit"
                                 disabled={isDiscussing || !discussionInput.trim()}
-                                className="bg-nexus-primary text-nexus-dark font-bold py-2 px-4 rounded-md hover:bg-nexus-secondary disabled:opacity-50"
+                                className="bg-nexus-primary text-nexus-dark font-bold py-2 px-4 rounded-full hover:bg-nexus-secondary disabled:opacity-50"
                             >
                                 Send
                             </button>

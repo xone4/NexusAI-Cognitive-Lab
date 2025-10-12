@@ -1,5 +1,5 @@
-
 import React, { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import type { PerformanceDataPoint } from '../types';
 
@@ -8,6 +8,7 @@ interface PerformanceChartsProps {
 }
 
 const PerformanceCharts: React.FC<PerformanceChartsProps> = ({ data }) => {
+  const { t } = useTranslation();
   if (data.length === 0) {
     return <div className="flex items-center justify-center h-full text-nexus-text-muted">Initializing performance data...</div>;
   }
@@ -23,14 +24,14 @@ const PerformanceCharts: React.FC<PerformanceChartsProps> = ({ data }) => {
             contentStyle={{
                 backgroundColor: 'rgba(10, 15, 31, 0.8)',
                 borderColor: '#18213a',
-                borderRadius: '0.5rem',
+                borderRadius: '0.75rem',
                 backdropFilter: 'blur(5px)',
             }}
             labelStyle={{ color: '#e0e0e0' }}
         />
         <Legend wrapperStyle={{fontSize: "14px"}} />
-        <Line yAxisId="left" type="monotone" dataKey="cpu" name="CPU Load" stroke="#00aaff" strokeWidth={2} dot={false} />
-        <Line yAxisId="left" type="monotone" dataKey="memory" name="Memory" stroke="#00e5ff" strokeWidth={2} dot={false} />
+        <Line yAxisId="left" type="monotone" dataKey="cpu" name={t('replicas.cpu')} stroke="#00aaff" strokeWidth={2} dot={false} />
+        <Line yAxisId="left" type="monotone" dataKey="memory" name={t('replicas.memory')} stroke="#00e5ff" strokeWidth={2} dot={false} />
         <Line yAxisId="right" type="monotone" dataKey="rsiCycles" name="RSI Cycles" stroke="#ff00aa" strokeWidth={2} dot={false} />
       </LineChart>
     </ResponsiveContainer>

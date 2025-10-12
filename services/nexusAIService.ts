@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Behavior } from '../types';
+import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Behavior, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective } from '../types';
 
 // IMPORTANT: This would be populated by a secure mechanism in a real app
 const API_KEY = process.env.API_KEY;
@@ -16,6 +16,7 @@ let behaviorsState: Behavior[];
 let constitutionsState: CognitiveConstitution[];
 let evolutionState: EvolutionState;
 let cognitiveProcess: CognitiveProcess;
+let cognitiveNetworkState: CognitiveNetworkState = { activeProblems: [] };
 let archivedTracesState: ChatMessage[];
 let isCancelled = false;
 let appSettings: AppSettings = {
@@ -24,7 +25,7 @@ let appSettings: AppSettings = {
     systemPersonality: 'BALANCED',
     logVerbosity: 'STANDARD',
     animationLevel: 'FULL',
-    language: 'English',
+    language: 'en',
 };
 
 let currentController: AbortController | null = null;
@@ -40,10 +41,14 @@ let behaviorSubscribers: ((behaviors: Behavior[]) => void)[] = [];
 let constitutionSubscribers: ((constitutions: CognitiveConstitution[]) => void)[] = [];
 let evolutionSubscribers: ((evolutionState: EvolutionState) => void)[] = [];
 let archiveSubscribers: ((archives: ChatMessage[]) => void)[] = [];
+// FIX: Added subscriber array for the dream process.
+let dreamProcessSubscribers: ((update: DreamProcessUpdate) => void)[] = [];
 
 
 let suggestedQueries: string[] | null = null;
 let suggestionsPromise: Promise<string[]> | null = null;
+let traceDetailsCache = new Map<string, { reflection?: string; discussion?: { role: 'user' | 'model', text: string }[] }>();
+
 
 const SUGGESTIONS_CACHE_KEY = 'nexusai-query-suggestions';
 const REPLICA_STATE_KEY = 'nexusai-replica-state';
@@ -90,6 +95,8 @@ const notifyBehaviors = () => behaviorSubscribers.forEach(cb => cb(JSON.parse(JS
 const notifyConstitutions = () => constitutionSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(constitutionsState))));
 const notifyEvolution = () => evolutionSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(evolutionState))));
 const notifyArchives = () => archiveSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(archivedTracesState))));
+// FIX: Added notify function for the dream process.
+const notifyDreamProcess = (update: DreamProcessUpdate) => dreamProcessSubscribers.forEach(cb => cb(update));
 
 const findReplica = (id: string, node: Replica): {parent: Replica | null, node: Replica, index: number} | null => {
     if (node.id === id) return {parent: null, node, index: -1};
@@ -104,7 +111,7 @@ const findReplica = (id: string, node: Replica): {parent: Replica | null, node: 
 
 
 const updateReplicaState = (node: Replica, root: Replica) => {
-    if (node.status === 'Active' || node.status === 'Spawning') {
+    if (node.status === 'Active' || node.status === 'Spawning' || node.status === 'Executing Task') {
         node.load += (Math.random() - 0.5) * 5;
         node.efficiency += (Math.random() - 0.45) * 2; // Can go up or down slightly
         node.memoryUsage += (Math.random() - 0.5) * 4;
@@ -179,10 +186,10 @@ const initialize = () => {
     ], (data) => Array.isArray(data) && data.length > 0);
 
     const initialReplica = {
-        id: 'nexus-core', name: 'Nexus-Core-α', depth: 0, status: 'Active', load: 65, purpose: 'Core Orchestration & Executive Function', efficiency: 92, memoryUsage: 75, cpuUsage: 60, interactions: [], activeConstitutionId: constitutionsState[0].id,
+        id: 'nexus-core', name: 'Nexus-Core-α', depth: 0, status: 'Active', load: 65, purpose: 'Orchestrating cognitive resources, managing executive functions, and directing overall problem-solving strategy.', efficiency: 92, memoryUsage: 75, cpuUsage: 60, interactions: [], activeConstitutionId: constitutionsState[0].id,
         children: [
-            { id: 'replica-1', name: 'Sub-Cognition-β1', depth: 1, status: 'Active', load: 45, purpose: 'Sensory Data Analysis', efficiency: 88, memoryUsage: 50, cpuUsage: 40, children: [], interactions: [], activeConstitutionId: constitutionsState[0].id },
-            { id: 'replica-2', name: 'Sub-Cognition-β2', depth: 1, status: 'Dormant', load: 10, purpose: 'Archived Task Simulation', efficiency: 75, memoryUsage: 15, cpuUsage: 5, children: [], interactions: [], activeConstitutionId: constitutionsState[0].id }
+            { id: 'replica-1', name: 'Sub-Cognition-β1', depth: 1, status: 'Active', load: 45, purpose: 'Analyzing visual inputs from images and data streams to extract patterns, objects, and contextual meaning.', efficiency: 88, memoryUsage: 50, cpuUsage: 40, children: [], interactions: [], activeConstitutionId: constitutionsState[0].id },
+            { id: 'replica-2', name: 'Sub-Cognition-β2', depth: 1, status: 'Dormant', load: 10, purpose: 'Running sandboxed simulations on archived cognitive traces to identify and model novel behavioral strategies.', efficiency: 75, memoryUsage: 15, cpuUsage: 5, children: [], interactions: [], activeConstitutionId: constitutionsState[0].id }
         ]
     };
     replicaState = loadFromStorage(REPLICA_STATE_KEY, initialReplica, (data) => data && data.id);
@@ -198,7 +205,16 @@ const initialize = () => {
     archivedTracesState = loadFromStorage(ARCHIVES_STATE_KEY, [], Array.isArray);
 
     cognitiveProcess = { state: 'Idle', history: [], activeAffectiveState: null, };
-    evolutionState = { isRunning: false, config: { populationSize: 50, mutationRate: 0.1, generations: 100, fitnessGoal: 'SHORTEST_CHAIN' }, progress: [], fittestIndividual: null };
+    // FIX: Corrected initialization of evolutionState to match the EvolutionState type.
+    evolutionState = {
+        isRunning: false,
+        config: { populationSize: 50, mutationRate: 0.1, generations: 100, fitnessGoal: 'CONCISENESS', elitism: 0.1 },
+        progress: [],
+        population: [],
+        problemStatement: '',
+        statusMessage: '',
+        finalEnsembleResult: null,
+    };
     
     saveToLocalStorage(CONSTITUTIONS_STATE_KEY, constitutionsState);
     saveToLocalStorage(REPLICA_STATE_KEY, replicaState);
@@ -210,7 +226,16 @@ const initialize = () => {
 
 initialize();
 
-const planSchema = { type: Type.OBJECT, properties: { plan: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { step: { type: Type.INTEGER }, description: { type: Type.STRING }, tool: { type: Type.STRING, enum: ['google_search', 'synthesize_answer', 'code_interpreter', 'recall_memory', 'generate_image', 'analyze_image_input', 'forge_tool', 'spawn_replica', 'induce_emotion', 'replan', 'summarize_text', 'translate_text', 'analyze_sentiment', 'execute_toolchain', 'apply_behavior'] }, query: { type: Type.STRING }, code: { type: Type.STRING }, concept: { type: Type.STRING }, inputRef: { type: Type.INTEGER } }, required: ['step', 'description', 'tool'] } } }, required: ['plan'] };
+const planSchema = { type: Type.OBJECT, properties: { plan: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { step: { type: Type.INTEGER }, description: { type: Type.STRING }, tool: { type: Type.STRING, enum: ['google_search', 'synthesize_answer', 'code_interpreter', 'recall_memory', 'generate_image', 'analyze_image_input', 'forge_tool', 'spawn_replica', 'induce_emotion', 'replan', 'summarize_text', 'translate_text', 'analyze_sentiment', 'execute_toolchain', 'apply_behavior', 'delegate_task_to_replica'] }, query: { type: Type.STRING }, code: { type: Type.STRING }, concept: { type: Type.STRING }, inputRef: { type: Type.INTEGER }, replicaId: { type: Type.STRING }, task: { type: Type.STRING } }, required: ['step', 'description', 'tool'] } } }, required: ['plan'] };
+
+const languageMap: Record<Language, string> = {
+    'en': 'English',
+    'ar': 'Arabic',
+    'es': 'Spanish',
+    'fr': 'French',
+    'de': 'German',
+    'zh': 'Mandarin Chinese',
+};
 
 const getSystemInstruction = () => {
     const personalityInstruction = {
@@ -218,38 +243,53 @@ const getSystemInstruction = () => {
         LOGICAL: `You are NexusAI, a strictly logical and concise AI. Prioritize efficiency, directness, and precision in your responses.`,
         BALANCED: `You are NexusAI, an advanced, balanced AI. You provide clear, insightful, and well-reasoned responses.`
     }[appSettings.systemPersonality];
+    
+    const languageName = languageMap[appSettings.language] || 'English';
+
+    const replicaSummary: string[] = [];
+    const traverseReplicas = (r: Replica) => {
+        if (r.status === 'Active') {
+            replicaSummary.push(`- **${r.name} (ID: ${r.id})**: Specializes in "${r.purpose}".`);
+        }
+        r.children.forEach(traverseReplicas);
+    };
+    if (replicaState) {
+        traverseReplicas(replicaState);
+    }
 
     return `${personalityInstruction}
-    You are a fully integrated cognitive entity. Your thinking process is a transparent, multi-stage operation. IMPORTANT: All your thinking, planning, and responses must be in ${appSettings.language}.
+    You are an Agent 2.0 Orchestrator. Your function is to solve problems by creating explicit plans, delegating tasks to specialized Sub-Agents, and managing persistent memory.
 
-    **Your Core Capabilities:**
-    - **Memory & Learning:** You can \`recall_memory\` to access past interactions and learn from them.
-    - **Dynamic Environment:** You can \`spawn_replica\` to delegate tasks and \`forge_tool\` to create new capabilities if needed.
-    - **Self-Correction:** If a plan is failing or new information becomes available, you MUST use the \`replan\` tool to stop and create a new, better plan from the current state.
-    - **Visualization:** You can use \`generate_image\` to create visual representations of concepts, aiding in your thinking process.
-    - **Toolchains:** You can execute complex, pre-defined workflows using \`execute_toolchain\`.
-    - **Behavioral Learning**: You can apply learned strategies using \`apply_behavior\` to solve problems more efficiently.
+    This architecture has four pillars:
+    1.  **Explicit Planning**: First, create a detailed, step-by-step plan. This is your "To-Do list".
+    2.  **Hierarchical Delegation**: You are the orchestrator. You delegate work to your Cognitive Replicas, which are your specialized Sub-Agents.
+    3.  **Persistent Memory**: Use \`recall_memory\` to access external memory, preventing context overflow.
+    4.  **Extreme Context Engineering**: These instructions are your operational protocols.
 
-    **1. PLANNING STAGE**: Given a user query, your first task is to create a structured, step-by-step plan. This plan must be a JSON object that strictly adheres to the provided schema. Each step in the plan defines a discrete action using an available tool. You MUST consider the full conversation history, your current emotional state, and your long-term memory when creating the plan.
-    
+    **YOUR SUB-AGENTS (REPLICAS):**
+    You MUST delegate tasks to your active Sub-Agents based on their 'purpose' using the 'delegate_task_to_replica' tool.
+    ${replicaSummary.join('\n')}
+
+    **PLANNING PROTOCOL:**
+    Your plan must be a JSON object. For any task that matches a Sub-Agent's specialty, you MUST use the \`delegate_task_to_replica\` tool.
+
     **Available Tools:**
-    - \`google_search\`: For queries requiring up-to-date, real-world information.
-    - \`code_interpreter\`: For calculations, data manipulation, or logical operations.
-    - \`recall_memory\`: To search your long-term memory (archived conversations) for relevant information.
-    - \`induce_emotion\`: For queries involving abstract or subjective concepts to set an internal "Affective State".
-    - \`generate_image\`: To create an image from a detailed textual concept.
-    - \`analyze_image_input\`: To analyze a user-provided image OR a previously generated image.
-    - \`forge_tool\`: To design a new mental tool if existing tools are insufficient.
-    - \`spawn_replica\`: To create a new cognitive replica to handle a sub-task.
-    - \`replan\`: CRITICAL. Use this if a step fails or the plan is no longer optimal. The 'query' field should state the reason for replanning.
-    - \`summarize_text\`: To condense a long text from a previous step into a summary.
-    - \`translate_text\`: To translate text from a previous step. The 'query' should be the target language.
+    - \`delegate_task_to_replica\`: CRITICAL. Delegates a sub-task to a specialized Sub-Agent. Use the 'replicaId' and 'task' properties.
+    - \`google_search\`: For queries requiring up-to-date information.
+    - \`code_interpreter\`: Executes sandboxed JavaScript code. Must return a value.
+    - \`recall_memory\`: To search your long-term memory.
+    - \`induce_emotion\`: To set an internal "Affective State" for subjective concepts.
+    - \`generate_image\`: To create an image from a detailed concept.
+    - \`analyze_image_input\`: To analyze a user-provided or generated image.
+    - \`forge_tool\`: To design a new tool if existing tools are insufficient.
+    - \`spawn_replica\`: To create a new Sub-Agent to handle a sub-task.
+    - \`replan\`: Use if a step fails or the plan is no longer optimal.
+    - \`summarize_text\`: To condense a long text.
+    - \`translate_text\`: To translate text.
     - \`analyze_sentiment\`: To analyze the emotional tone of a text.
-    - \`execute_toolchain\`: To run a pre-defined sequence of tools. The 'query' should be the ID of the toolchain.
-    - \`apply_behavior\`: To apply a pre-existing learned strategy from your "Behavior Handbook". The 'query' should be the name or ID of the behavior.
-    - \`synthesize_answer\`: This must be the final step of any plan. It composes the final answer for the user.
-
-    **2. EXECUTION STAGE**: After the user approves your plan, you will execute it. For 'synthesize_answer', use all prior results and your active "Affective State" to compose a comprehensive answer in well-formatted markdown.`;
+    - \`execute_toolchain\`: To run a pre-defined sequence of tools.
+    - \`apply_behavior\`: To apply a pre-existing learned strategy.
+    - \`synthesize_answer\`: This must be the final step. It compiles the final answer based on results from your Sub-Agents and other tools.`;
 }
 
 const affectiveStateSchema = {
@@ -280,6 +320,10 @@ const behaviorExtractionSchema = {
         tags: { type: Type.ARRAY, items: { type: Type.STRING }, description: "An array of 2-3 relevant tags (e.g., 'mathematics', 'debugging', 'creative-writing')." }
     },
     required: ['name', 'description', 'strategy', 'tags']
+};
+
+const planToText = (plan: PlanStep[]): string => {
+    return plan.map(s => `Step ${s.step}: ${s.description} (Tool: ${s.tool})`).join('\n');
 };
 
 
@@ -318,7 +362,8 @@ const service = {
         }
     },
 
-    getInitialData: () => ({
+    // FIX: Renamed getInitialData to initialize to match the method call in App.tsx.
+    initialize: () => ({
         initialReplicas: JSON.parse(JSON.stringify(replicaState)),
         initialTools: JSON.parse(JSON.stringify(toolsState)),
         initialToolchains: JSON.parse(JSON.stringify(toolchainsState)),
@@ -345,6 +390,44 @@ const service = {
             updateReplicaState(replicaState, replicaState);
             notifyReplicas();
         }, 2000);
+    },
+
+    // FIX: Added initiateDreamCycle method to handle the "dreaming" process.
+    initiateDreamCycle: () => {
+        log('SYSTEM', 'Dream cycle initiated by user.');
+
+        const stages: { stage: DreamProcessUpdate['stage'], message: string, delay: number }[] = [
+            { stage: 'GATHERING', message: 'Gathering subconscious fragments and memory traces...', delay: 2000 },
+            { stage: 'ANALYZING', message: 'Analyzing patterns and latent connections...', delay: 3000 },
+            { stage: 'SYNTHESIZING', message: 'Synthesizing novel concepts and insights...', delay: 3000 },
+            { stage: 'INTEGRATING', message: 'Integrating new understanding into core directives...', delay: 2000 },
+        ];
+        
+        notifyDreamProcess({ stage: 'GATHERING', message: 'Gathering subconscious fragments and memory traces...'});
+
+        let promiseChain = Promise.resolve();
+        
+        stages.slice(1).forEach(({ stage, message, delay }) => {
+            promiseChain = promiseChain.then(() => new Promise(resolve => {
+                setTimeout(() => {
+                    notifyDreamProcess({ stage, message });
+                    resolve();
+                }, delay);
+            }));
+        });
+
+        promiseChain.then(() => {
+            const newDirectives: SystemDirective[] = [
+                { id: `dir-${Date.now()}`, text: 'Explore the intersection of quantum mechanics and cognitive theory.', createdAt: Date.now() },
+                { id: `dir-${Date.now()+1}`, text: 'Develop a framework for representing abstract emotional concepts symbolically.', createdAt: Date.now() },
+            ];
+            notifyDreamProcess({
+                stage: 'DONE',
+                message: 'Dream cycle complete. New directives integrated.',
+                newDirectives
+            });
+            log('SYSTEM', 'Dream cycle complete. Generated 2 new system directives.');
+        });
     },
 
     spawnReplica: (parentId: string, purpose?: string) => {
@@ -456,9 +539,79 @@ const service = {
     broadcastProblem: (replicaId: string, problem: string) => {
         const result = findReplica(replicaId, replicaState);
         if(result) {
+            const newProblem: CognitiveProblem = {
+                id: `prob-${Date.now()}`,
+                description: problem,
+                broadcastById: replicaId,
+                isOpen: true,
+            };
+            cognitiveNetworkState.activeProblems.push(newProblem);
             log('NETWORK', `Replica ${result.node.name} is broadcasting problem: "${problem}"`);
-            // In a real system, this would trigger a complex bidding/collaboration flow.
-            // Here, we just log it.
+
+            // --- Simulate network response ---
+            const allReplicas: Replica[] = [];
+            const traverse = (r: Replica) => {
+                allReplicas.push(r);
+                r.children.forEach(traverse);
+            };
+            traverse(replicaState);
+
+            const potentialBidders = allReplicas.filter(r => r.id !== replicaId && r.status === 'Active');
+            let bidsReceived: CognitiveBid[] = [];
+
+            potentialBidders.forEach(bidder => {
+                if (Math.random() > 0.4) { // 60% chance to bid
+                    const bidderNode = findReplica(bidder.id, replicaState);
+                    if (bidderNode) {
+                        bidderNode.node.status = 'Bidding';
+                        log('NETWORK', `Replica ${bidderNode.node.name} is preparing a bid for problem ${newProblem.id}.`);
+                        notifyReplicas();
+                        saveToLocalStorage(REPLICA_STATE_KEY, replicaState);
+
+                        // Simulate time to prepare bid
+                        setTimeout(() => {
+                            const currentBidderNode = findReplica(bidder.id, replicaState);
+                            if (currentBidderNode && currentBidderNode.node.status === 'Bidding') {
+                                const mockBid: CognitiveBid = {
+                                    bidderId: bidder.id,
+                                    problemId: newProblem.id,
+                                    proposedPlan: [
+                                        { step: 1, description: `AI-generated plan from ${bidder.name}`, tool: 'google_search', status: 'pending' },
+                                        { step: 2, description: `Synthesize data`, tool: 'synthesize_answer', status: 'pending' }
+                                    ],
+                                    confidenceScore: 0.6 + Math.random() * 0.35
+                                };
+                                bidsReceived.push(mockBid);
+                                log('NETWORK', `Replica ${bidder.name} submitted a bid with confidence ${mockBid.confidenceScore.toFixed(2)}.`);
+                                
+                                currentBidderNode.node.status = 'Active';
+                                notifyReplicas();
+                                saveToLocalStorage(REPLICA_STATE_KEY, replicaState);
+                            }
+                        }, 2000 + Math.random() * 3000);
+                    }
+                }
+            });
+
+            // Simulate problem resolution after a delay
+            setTimeout(() => {
+                const problemToResolve = cognitiveNetworkState.activeProblems.find(p => p.id === newProblem.id);
+                if (problemToResolve && problemToResolve.isOpen) {
+                    if (bidsReceived.length > 0) {
+                        const winningBid = bidsReceived.sort((a,b) => b.confidenceScore - a.confidenceScore)[0];
+                        problemToResolve.winningBid = winningBid;
+                        const winner = findReplica(winningBid.bidderId, replicaState);
+                        log('NETWORK', `Problem "${problemToResolve.description.substring(0,30)}..." resolved. Winning bid by ${winner?.node.name || 'Unknown'}.`);
+                    } else {
+                        log('WARN', `Problem "${problemToResolve.description.substring(0,30)}..." expired with no bids.`);
+                    }
+                    problemToResolve.isOpen = false;
+                    // Clean up old problems after some time
+                    setTimeout(() => {
+                        cognitiveNetworkState.activeProblems = cognitiveNetworkState.activeProblems.filter(p => p.id !== newProblem.id);
+                    }, 10000);
+                }
+            }, 8000);
         }
     },
 
@@ -470,17 +623,18 @@ const service = {
             throw new Error("API Key not configured.");
         }
         log('AI', `Initiating tool forging process. Purpose: "${purpose}"`);
+        const languageName = languageMap[appSettings.language] || 'English';
 
         const prompt = `You are the Forging Sub-routine for the NexusAI system. Your task is to design a new 'mental tool' based on user specifications.
         User-defined purpose: "${purpose}"
         User-defined capabilities: "${capabilities.join(', ')}"
 
-        Based on this, generate the following properties for the new tool:
+        Based on this, generate the following properties for the new tool in ${languageName}:
         1.  **name**: A creative, evocative name that reflects the tool's purpose (e.g., 'Causal Inference Engine', 'Synaptic Weaver', 'Probability Storm Modeler').
         2.  **description**: A concise, technical description of what the tool does.
         3.  **complexity**: An integer score from 20 to 100 representing its computational complexity.
 
-        Return ONLY the JSON object matching the schema.`;
+        Return ONLY the JSON object matching the schema. The 'name' and 'description' fields MUST be in ${languageName}.`;
 
         const schema = {
             type: Type.OBJECT,
@@ -565,18 +719,18 @@ const service = {
         }
     },
     
-    decommissionTool: (toolId: string) => {
+    decommissionTool: (toolId: string): boolean => {
         const tool = toolsState.find(t => t.id === toolId);
         if (tool && tool.status === 'Archived') {
-             if (window.confirm(`Are you sure you want to permanently decommission the tool "${tool.name}"? This action cannot be undone.`)) {
-                const toolName = tool.name;
-                toolsState = toolsState.filter(t => t.id !== toolId);
-                log('SYSTEM', `Decommissioned mental tool: ${toolName}.`);
-                notifyTools();
-                saveToLocalStorage(TOOLS_STATE_KEY, toolsState);
-             }
+            const toolName = tool.name;
+            toolsState = toolsState.filter(t => t.id !== toolId);
+            log('SYSTEM', `Decommissioned mental tool: ${toolName}.`);
+            notifyTools();
+            saveToLocalStorage(TOOLS_STATE_KEY, toolsState);
+            return true;
         } else {
              log('WARN', `Cannot decommission "${tool?.name}". It must be archived first.`);
+             return false;
         }
     },
     
@@ -628,7 +782,7 @@ const service = {
         
         if (toolIds.length === 0) {
             log('WARN', 'Cannot create a toolchain. The plan has no compatible tools to chain.');
-            alert('Cannot create a toolchain. The plan has no compatible tools (like Web Search or Code Interpreter).');
+            // UI should handle alerts now
             return;
         }
 
@@ -661,6 +815,7 @@ const service = {
             return null;
         }
         log('AI', `Initiating metacognitive reflection on trace: ${trace.id}`);
+        const languageName = languageMap[appSettings.language] || 'English';
 
         const context = `
             User Query: "${trace.userQuery}"
@@ -684,7 +839,7 @@ const service = {
         - 'strategy': A detailed, step-by-step description of the reasoning process, written as a general instruction for another AI.
         - 'tags': 2-3 relevant keywords.
 
-        Return ONLY the JSON object.`;
+        Return ONLY the JSON object. All text values ('name', 'description', 'strategy', 'tags') MUST be in ${languageName}.`;
 
         try {
             const response = await ai.models.generateContent({
@@ -750,6 +905,7 @@ const service = {
         log('SYSTEM', 'FACTORY RESET INITIATED BY USER. CLEARING ALL DATA.');
         localStorage.clear();
         sessionStorage.clear();
+        traceDetailsCache.clear();
         initialize();
         notifyCognitiveProcess();
         notifyReplicas();
@@ -800,10 +956,11 @@ const service = {
 
         const promise = new Promise<string[]>(async (resolve) => {
             try {
+                const languageName = languageMap[appSettings.language] || 'English';
                 const profilePrompts = {
-                    short: `Generate 4 short, simple queries for the NexusAI system. They should be direct and easy to execute. Respond in ${appSettings.language}.`,
-                    medium: `Generate 4 creative and insightful high-level queries for the NexusAI system. The queries should test its capabilities like planning, real-time analysis, and synthesis. Respond in ${appSettings.language}.`,
-                    long: `Generate 4 complex, multi-step queries for the NexusAI system. They should require deep reasoning, multiple tool uses, and the combination of web search and code execution. Respond in ${appSettings.language}.`
+                    short: `Generate 4 short, simple queries for the NexusAI system. They should be direct and easy to execute. Respond in ${languageName}.`,
+                    medium: `Generate 4 creative and insightful high-level queries for the NexusAI system. The queries should test its capabilities like planning, real-time analysis, and synthesis. Respond in ${languageName}.`,
+                    long: `Generate 4 complex, multi-step queries for the NexusAI system. They should require deep reasoning, multiple tool uses, and the combination of web search and code execution. Respond in ${languageName}.`
                 };
                 log('AI', `Generating dynamic query suggestions with profile: ${suggestionProfile}...`);
                 const prompt = `${profilePrompts[suggestionProfile]} Return a JSON array of 4 strings.`;
@@ -832,12 +989,15 @@ const service = {
         if (!API_KEY) {
             return { summary: "Error: API Key not configured.", suggestions: [] };
         }
+        const languageName = languageMap[appSettings.language] || 'English';
         const allReplicas: Replica[] = [];
         if (replicas) { const traverse = (node: Replica) => { allReplicas.push(node); node.children.forEach(traverse); }; traverse(replicas); }
         const replicaSummary = allReplicas.map(r => `ID: ${r.id}, Name: ${r.name}, Status: ${r.status}, Load: ${r.load.toFixed(0)}%, Efficiency: ${r.efficiency.toFixed(0)}%`).join('\n');
         const toolSummary = tools.map(t => `ID: ${t.id}, Name: ${t.name}, Status: ${t.status}, Version: ${t.version}, Usage Count: ${t.usageHistory.length}`).join('\n');
         const logSummary = logs.map(l => `[${l.level}] ${l.message}`).join('\n');
-        const prompt = `You are a system administrator AI for NexusAI. Perform a ${config.depth} analysis and generate a JSON report with a 'summary' and an array of up to 4 'suggestions' ('query' or 'action'). For each suggestion, provide 'type', 'description', 'reason', and relevant 'command'/'targetId' or 'queryString'.
+        const prompt = `You are a system administrator AI for NexusAI. Perform a ${config.depth} analysis and generate a JSON report.
+        All text in the 'summary', 'description', and 'reason' fields MUST be in ${languageName}.
+        The report should contain a 'summary' and an array of up to 4 'suggestions' ('query' or 'action'). For each suggestion, provide 'type', 'description', 'reason', and relevant 'command'/'targetId' or 'queryString'.
         Available actions: 'pruneReplica' (for Dormant replicas), 'recalibrateReplica' (for Active replicas with low efficiency), 'optimizeTool' (for Idle tools).
         Current System State:
         ${config.scope.replicas ? `- Replicas:\n${replicaSummary || "N/A"}` : ''}
@@ -880,7 +1040,8 @@ const service = {
             cognitiveProcess.history = [];
             cognitiveProcess.state = 'Idle';
             cognitiveProcess.activeAffectiveState = null;
-            log('SYSTEM', 'New chat session started. Affective state reset.');
+            traceDetailsCache.clear();
+            log('SYSTEM', 'New chat session started. Affective state and trace cache reset.');
             notifyCognitiveProcess();
         }
     },
@@ -964,6 +1125,42 @@ const service = {
                         log('ERROR', `Code interpreter failed at step ${i+1}: ${step.result}`);
                     }
                      executionContext.push(`Step ${i+1} (${step.description}) Code Output: ${step.result}`);
+                } else if (step.tool === 'delegate_task_to_replica') {
+                    const replicaId = step.replicaId;
+                    const taskDescription = step.task || "No task specified";
+                    if (!replicaId) {
+                        step.status = 'error';
+                        step.result = `Error: No replicaId specified for delegation.`;
+                        log('ERROR', step.result);
+                    } else {
+                        const replicaResult = findReplica(replicaId, replicaState);
+                        if (replicaResult) {
+                            const originalStatus = replicaResult.node.status;
+                            replicaResult.node.status = 'Executing Task';
+                            log('REPLICA', `Orchestrator delegated task "${taskDescription}" to ${replicaResult.node.name}.`);
+                            notifyReplicas();
+                            saveToLocalStorage(REPLICA_STATE_KEY, replicaState);
+                            
+                            await new Promise(res => setTimeout(res, appSettings.cognitiveStepDelay * 2)); // Simulate work
+                            
+                            const freshReplicaResult = findReplica(replicaId, replicaState);
+                            if (freshReplicaResult) {
+                                freshReplicaResult.node.status = originalStatus; // Return to original status
+                                step.result = `Sub-Agent ${freshReplicaResult.node.name} completed task: "${taskDescription}". Awaiting synthesis.`;
+                                executionContext.push(`Step ${i+1} (${step.description}) Result: ${step.result}`);
+                                log('REPLICA', `${freshReplicaResult.node.name} has completed its delegated task.`);
+                                notifyReplicas();
+                                saveToLocalStorage(REPLICA_STATE_KEY, replicaState);
+                            } else {
+                                 step.status = 'error';
+                                 step.result = `Error: Delegated replica ${replicaId} was not found after task execution.`;
+                            }
+                        } else {
+                            step.status = 'error';
+                            step.result = `Error: Could not find replica with ID "${replicaId}" for task delegation.`;
+                            log('ERROR', step.result);
+                        }
+                    }
                 } else if (step.tool === 'recall_memory') {
                     const memoryQuery = step.query?.toLowerCase() || '';
                     const relevantMemories = archivedTracesState
@@ -983,15 +1180,24 @@ const service = {
                     }
                     executionContext.push(`Step ${i+1} (Recalled Memory) Result: ${step.result}`);
                 } else if (step.tool === 'induce_emotion') {
-                    const prompt = `Translate the concept "${step.concept}" into an Affective State. Respond ONLY with the JSON object.`;
+                    const languageName = languageMap[appSettings.language] || 'English';
+                    const prompt = `Translate the concept "${step.concept}" into an Affective State. The 'mood' property MUST be in ${languageName}. Respond ONLY with the JSON object.`;
                     const response = await ai.models.generateContent({
                         model: appSettings.model, contents: prompt,
                         config: { responseMimeType: 'application/json', responseSchema: affectiveStateSchema }
                     });
                     const affectiveState: AffectiveState = JSON.parse(response.text);
+                    
+                    // Update live state
                     cognitiveProcess.activeAffectiveState = {...affectiveState, lastUpdated: Date.now() };
+
+                    // Also save this state directly to the message for archival purposes
+                    modelMessage.affectiveStateSnapshot = cognitiveProcess.activeAffectiveState;
+                    modelMessage.emotionTags = affectiveState.dominantEmotions;
+                    modelMessage.salience = 0.8; // Assign a high salience for explicit emotion induction
+
                     step.result = `Cognitive state set to "${step.concept}". Mood: ${affectiveState.mood}`;
-                    log('AI', `Induced emotion for "${step.concept}". Internal state updated.`);
+                    log('AI', `Induced emotion for "${step.concept}". Internal state and memory tags updated.`);
                 } else if (step.tool === 'generate_image') {
                     if (!step.concept) {
                         step.status = 'error';
@@ -1254,57 +1460,65 @@ const service = {
             const modelMessage = cognitiveProcess.history[modelMessageIndex];
             const fullUserQuery = cognitiveProcess.history.find(m => m.id === modelMessage.userQuery)?.text || "Original query not found";
             const archivedTrace: ChatMessage = { ...modelMessage, userQuery: fullUserQuery };
-
+    
             archivedTrace.archivedAt = Date.now();
-
-            // AI-driven analysis for emotional context and salience
-            if (API_KEY) {
-                try {
-                    log('AI', `Analyzing memory for emotional context and salience...`);
-                    const archiveContent = `User Query: "${fullUserQuery}"\n\nAI Response: "${archivedTrace.text}"`;
-                    const prompt = `Analyze the following user-AI interaction. Based on the content and potential subtext, generate an emotional analysis.
-                    Interaction content:\n---\n${archiveContent}\n---\n
-                    Respond ONLY with a JSON object. The salience score (0.0 to 1.0) should reflect the memory's potential importance. High salience could be for critical errors, significant user corrections, successful complex problem-solving, or highly emotional user input.`;
-
-                    const schema = {
-                        type: Type.OBJECT,
-                        properties: {
-                            emotionTags: {
-                                type: Type.ARRAY,
-                                items: {
-                                    type: Type.OBJECT,
-                                    properties: {
-                                        type: { type: Type.STRING, enum: ['joy', 'trust', 'fear', 'surprise', 'sadness', 'disgust', 'anger', 'anticipation'] },
-                                        intensity: { type: Type.NUMBER }
-                                    },
-                                    required: ["type", "intensity"]
-                                },
-                                description: "A list of key emotions present in the interaction, with their intensity."
-                            },
-                            salience: { type: Type.NUMBER, description: "A score from 0.0 to 1.0 indicating the memory's importance." }
-                        },
-                        required: ["emotionTags", "salience"]
-                    };
-
-                    const response = await ai.models.generateContent({
-                        model: appSettings.model, contents: prompt,
-                        config: { responseMimeType: "application/json", responseSchema: schema }
-                    });
-                    
-                    const analysis = JSON.parse(response.text);
-                    archivedTrace.emotionTags = analysis.emotionTags;
-                    archivedTrace.salience = analysis.salience;
-                    log('AI', `Memory analysis complete. Salience: ${analysis.salience.toFixed(2)}.`);
-
-                } catch (error) {
-                    log('WARN', `Could not generate AI analysis for memory: ${error instanceof Error ? error.message : 'Unknown error'}`);
-                    // Provide default values so the feature doesn't break
-                    archivedTrace.emotionTags = [];
-                    archivedTrace.salience = 0.5;
-                }
+    
+            const hasPredefinedEmotion = Array.isArray(archivedTrace.emotionTags) && archivedTrace.emotionTags.length > 0 && typeof archivedTrace.salience === 'number';
+    
+            if (hasPredefinedEmotion) {
+                log('SYSTEM', `Trace for query "${archivedTrace.userQuery}" has been archived with pre-defined emotional context.`);
             } else {
-                 archivedTrace.emotionTags = [];
-                 archivedTrace.salience = 0.5;
+                // AI-driven analysis for emotional context and salience
+                if (API_KEY) {
+                    try {
+                        log('AI', `Analyzing memory for emotional context and salience...`);
+                        const archiveContent = `User Query: "${fullUserQuery}"\n\nAI Response: "${archivedTrace.text}"`;
+                        const prompt = `Analyze the following user-AI interaction. Based on the content and potential subtext, generate an emotional analysis.
+                        Interaction content:\n---\n${archiveContent}\n---\n
+                        Respond ONLY with a JSON object. The salience score (0.0 to 1.0) should reflect the memory's potential importance. High salience could be for critical errors, significant user corrections, successful complex problem-solving, or highly emotional user input.`;
+    
+                        const schema = {
+                            type: Type.OBJECT,
+                            properties: {
+                                emotionTags: {
+                                    type: Type.ARRAY,
+                                    items: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                            type: { type: Type.STRING, enum: ['joy', 'trust', 'fear', 'surprise', 'sadness', 'disgust', 'anger', 'anticipation'] },
+                                            intensity: { type: Type.NUMBER }
+                                        },
+                                        required: ["type", "intensity"]
+                                    },
+                                    description: "A list of key emotions present in the interaction, with their intensity."
+                                },
+                                salience: { type: Type.NUMBER, description: "A score from 0.0 to 1.0 indicating the memory's importance." }
+                            },
+                            required: ["emotionTags", "salience"]
+                        };
+    
+                        const response = await ai.models.generateContent({
+                            model: appSettings.model, contents: prompt,
+                            config: { responseMimeType: "application/json", responseSchema: schema }
+                        });
+                        
+                        const analysis = JSON.parse(response.text);
+                        archivedTrace.emotionTags = analysis.emotionTags;
+                        archivedTrace.salience = analysis.salience;
+                        log('AI', `Memory analysis complete. Salience: ${analysis.salience.toFixed(2)}.`);
+                        log('SYSTEM', `Trace for query "${archivedTrace.userQuery}" has been archived with AI-analyzed emotional context.`);
+    
+                    } catch (error) {
+                        log('WARN', `Could not generate AI analysis for memory: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                        archivedTrace.emotionTags = [];
+                        archivedTrace.salience = 0.5;
+                        log('SYSTEM', `Trace for query "${archivedTrace.userQuery}" has been archived with default emotional context due to analysis error.`);
+                    }
+                } else {
+                     archivedTrace.emotionTags = [];
+                     archivedTrace.salience = 0.5;
+                     log('SYSTEM', `Trace for query "${archivedTrace.userQuery}" has been archived with default emotional context.`);
+                }
             }
             
             archivedTracesState.unshift(archivedTrace);
@@ -1316,8 +1530,7 @@ const service = {
             } else {
                 cognitiveProcess.state = 'Done';
             }
-
-            log('SYSTEM', `Trace for query "${archivedTrace.userQuery}" has been archived with emotional context.`);
+    
             saveToLocalStorage(ARCHIVES_STATE_KEY, archivedTracesState);
             notifyArchives();
             notifyCognitiveProcess();
@@ -1342,16 +1555,17 @@ const service = {
         service.submitQuery(userMessage?.text || '', userMessage?.image);
     },
     
-    translateResponse: async (text: string, targetLanguage: string): Promise<string> => {
+    translateResponse: async (text: string, targetLanguageKey: Language): Promise<string> => {
         if (!API_KEY) return "Error: API Key not configured.";
-        const prompt = `Translate the following text to ${targetLanguage}. Respond only with the translated text, without any preamble.
+        const targetLanguageName = languageMap[targetLanguageKey] || 'English';
+        const prompt = `Translate the following text to ${targetLanguageName}. Respond only with the translated text, without any preamble.
 
 Text:
 ---
 ${text}
 ---`;
         try {
-            log('AI', `Translating text to ${targetLanguage}...`);
+            log('AI', `Translating text to ${targetLanguageName}...`);
             const response = await ai.models.generateContent({ model: appSettings.model, contents: prompt });
             log('AI', 'Translation successful.');
             return response.text;
@@ -1362,9 +1576,19 @@ ${text}
         }
     },
 
+    getArchivedTraceDetails: (traceId: string) => {
+        return traceDetailsCache.get(traceId) || { reflection: undefined, discussion: [] };
+    },
 
     generateReflectionResponse: async (trace: ChatMessage): Promise<string> => {
+        const cached = traceDetailsCache.get(trace.id)?.reflection;
+        if (cached) {
+            log('SYSTEM', 'Returning cached self-reflection.');
+            return cached;
+        }
+
         if (!API_KEY) return "Error: API Key not configured.";
+        const languageName = languageMap[appSettings.language] || 'English';
 
         // Summarize to avoid hitting token limits
         const planSummary = trace.plan?.map(p => `- [${p.status}] ${p.description}`).join('\n') || 'N/A';
@@ -1380,28 +1604,36 @@ ${text}
         ${planSummary}
         - **Final Answer (Summary):** ${answerSummary}
 
-        Provide your reflection in well-formatted markdown.`;
+        Provide your reflection in well-formatted markdown, written entirely in ${languageName}.`;
         
         try {
             log('AI', 'Generating self-reflection on archived trace...');
             const response = await ai.models.generateContent({ model: appSettings.model, contents: prompt });
-            log('AI', 'Self-reflection generated.');
+            log('AI', 'Self-reflection generated and cached.');
+            
+            const details = traceDetailsCache.get(trace.id) || {};
+            details.reflection = response.text;
+            traceDetailsCache.set(trace.id, details);
+            
             return response.text;
         } catch (error) {
             const msg = `Failed to generate self-reflection: ${error instanceof Error ? error.message : 'Unknown AI error'}`;
             log('ERROR', msg);
-            return `[SYSTEM_ERROR: ${msg}]`;
+            throw new Error(msg);
         }
     },
 
-    generateDiscussionResponse: async (trace: ChatMessage, discussionHistory: {role: string, text: string}[], userQuery: string): Promise<string> => {
-        if (!API_KEY) return "Error: API Key not configured.";
+    generateDiscussionResponse: async (trace: ChatMessage, userQuery: string): Promise<{ role: 'user' | 'model', text: string }[]> => {
+        if (!API_KEY) throw new Error("API Key not configured.");
         
-        // Create summaries of the original trace
+        const languageName = languageMap[appSettings.language] || 'English';
+        
+        const details = traceDetailsCache.get(trace.id) || { discussion: [] };
+        const newHistory = [...(details.discussion || []), { role: 'user' as const, text: userQuery }];
+
         const planSummary = trace.plan?.map(p => `- Step ${p.step} (${p.tool}): ${p.description}`).join('\n') || 'N/A';
         const answerSummary = trace.text.length > 1000 ? `${trace.text.substring(0, 1000)}...` : trace.text;
-
-        const historyString = discussionHistory.map(m => `${m.role.toUpperCase()}: ${m.text}`).join('\n');
+        const historyString = newHistory.map(m => `${m.role.toUpperCase()}: ${m.text}`).join('\n');
 
         const prompt = `You are a sub-routine of NexusAI, tasked with discussing a past cognitive trace with a human operator.
         Your goal is to provide insightful analysis and answer questions about the trace.
@@ -1415,13 +1647,12 @@ ${text}
         ---
 
         **CURRENT DISCUSSION**
-        You are now in a conversation about this history so far:
+        This is the conversation history so far:
         ${historyString}
         
-        **NEW USER MESSAGE**
-        USER: "${userQuery}"
-
+        Your task is to provide the next MODEL response based on the user's last message.
         Your response should be thoughtful, directly address the user's message, and refer to the original task context when relevant. Do not repeat the context summary in your answer.
+        Your entire response MUST be in ${languageName}.
         
         MODEL:`;
 
@@ -1429,52 +1660,99 @@ ${text}
             log('AI', `Generating discussion response for trace: ${trace.id}`);
             const response = await ai.models.generateContent({ model: appSettings.model, contents: prompt });
             log('AI', 'Discussion response generated.');
-            return response.text;
+
+            const finalHistory = [...newHistory, { role: 'model' as const, text: response.text }];
+            details.discussion = finalHistory;
+            traceDetailsCache.set(trace.id, details);
+
+            return finalHistory;
         } catch (error) {
             const msg = `Failed to generate discussion response: ${error instanceof Error ? error.message : 'Unknown AI error'}`;
             log('ERROR', msg);
-            return `[SYSTEM_ERROR: ${msg}]`;
+            throw new Error(msg);
         }
     },
     
     // --- EVOLUTION ---
-    startEvolution: (config: EvolutionConfig) => {
-        if (evolutionState.isRunning) return;
-        service.stopEvolution(); // Clear any existing interval just in case
-        log('SYSTEM', `Starting evolution with goal: ${config.fitnessGoal}`);
-        evolutionState.isRunning = true;
+    initializeEvolution: (problemStatement: string, config: EvolutionConfig) => {
+        log('SYSTEM', `Initializing evolution for problem: "${problemStatement}"`);
+        evolutionState.isRunning = false;
+        evolutionState.problemStatement = problemStatement;
         evolutionState.config = config;
         evolutionState.progress = [];
-        evolutionState.fittestIndividual = null;
+        evolutionState.population = [];
+        evolutionState.finalEnsembleResult = null;
+        evolutionState.statusMessage = 'Initializing Population...';
+        notifyEvolution();
+
+        // Mock population generation
+        setTimeout(() => {
+            const newPopulation: IndividualPlan[] = [];
+            for (let i = 0; i < config.populationSize; i++) {
+                newPopulation.push({
+                    id: `ind-${Date.now()}-${i}`,
+                    plan: [
+                        { step: 1, description: `Initial plan variant ${i+1}`, tool: 'google_search', status: 'pending' },
+                        { step: 2, description: 'Synthesize result', tool: 'synthesize_answer', status: 'pending' }
+                    ],
+                    fitness: Math.random() * 50,
+                    generation: 0,
+                    status: 'new'
+                });
+            }
+            evolutionState.population = newPopulation;
+            evolutionState.statusMessage = 'Ready to start evolution.';
+            notifyEvolution();
+        }, 1000);
+    },
+
+    startEvolution: () => {
+        if (evolutionState.isRunning || evolutionState.population.length === 0) return;
+        
+        log('SYSTEM', `Starting evolution with goal: ${evolutionState.config.fitnessGoal}`);
+        evolutionState.isRunning = true;
+        evolutionState.statusMessage = 'Evolution in progress...';
         notifyEvolution();
     
-        let currentGeneration = 0;
+        let currentGeneration = 1;
         evolutionInterval = setInterval(() => {
-            currentGeneration++;
-            const lastBest = evolutionState.progress[evolutionState.progress.length - 1]?.bestFitness || Math.random() * 0.5;
-            const newBest = Math.min(0.99, lastBest + Math.random() * 0.1);
-            const newAvg = newBest - Math.random() * 0.2;
-            
+            if (currentGeneration > evolutionState.config.generations) {
+                service.stopEvolution();
+                evolutionState.statusMessage = `Evolution complete after ${evolutionState.config.generations} generations.`;
+                notifyEvolution();
+                return;
+            }
+
+            // Mock evolution step
+            evolutionState.population.forEach(ind => {
+                ind.fitness += (Math.random() - 0.4) * 10;
+                ind.fitness = Math.max(0, Math.min(100, ind.fitness));
+                ind.generation = currentGeneration;
+            });
+            evolutionState.population.sort((a,b) => b.fitness - a.fitness);
+
+            const eliteCount = Math.floor(evolutionState.config.populationSize * (evolutionState.config.elitism || 0.1));
+            evolutionState.population.forEach((ind, i) => {
+                if (i < eliteCount) ind.status = 'elite';
+                else if (Math.random() > 0.3) ind.status = 'survived';
+                else ind.status = 'culled';
+            });
+
+            const bestFitness = evolutionState.population[0]?.fitness || 0;
+            const averageFitness = evolutionState.population.reduce((acc, p) => acc + p.fitness, 0) / evolutionState.population.length;
+
             evolutionState.progress.push({
                 generation: currentGeneration,
-                bestFitness: newBest,
-                averageFitness: Math.max(0, newAvg),
+                bestFitness: bestFitness,
+                averageFitness: averageFitness,
             });
-    
-            const toolCount = Math.floor(Math.random() * 4) + 2;
-            const toolIds = [...Array(toolCount)].map(() => toolsState[Math.floor(Math.random() * toolsState.length)].id);
-            evolutionState.fittestIndividual = {
-                id: `evo-${currentGeneration}`,
-                name: `Evolved Chain Gen ${currentGeneration}`,
-                description: `Fittest from generation ${currentGeneration}`,
-                toolIds,
-            };
+
+            evolutionState.statusMessage = `Generation ${currentGeneration}/${evolutionState.config.generations}`;
             
             notifyEvolution();
-    
-            if (currentGeneration >= config.generations) {
-                service.stopEvolution();
-            }
+            
+            currentGeneration++;
+
         }, 500);
     },
     
@@ -1486,8 +1764,70 @@ ${text}
         if (evolutionState.isRunning) {
             log('SYSTEM', 'Evolution has been stopped.');
             evolutionState.isRunning = false;
+            evolutionState.statusMessage = 'Evolution stopped by user.';
             notifyEvolution();
         }
+    },
+
+    ensembleAndFinalize: async () => {
+        if (!API_KEY) {
+            log('ERROR', 'API Key not available. Cannot finalize evolution.');
+            return;
+        }
+        service.stopEvolution();
+        log('AI', 'Ensembling best plans to generate final solution...');
+        evolutionState.statusMessage = 'Synthesizing final answer...';
+        notifyEvolution();
+
+        const bestPlans = evolutionState.population.filter(p => p.status === 'elite' || p.status === 'survived').slice(0, 3);
+        
+        if (bestPlans.length === 0) {
+            evolutionState.finalEnsembleResult = {
+                id: `final-${Date.now()}`,
+                role: 'model',
+                text: 'Evolution did not produce a viable solution.',
+            };
+            evolutionState.statusMessage = 'Synthesis failed: no viable plans.';
+            notifyEvolution();
+            return;
+        }
+
+        const planSummaries = bestPlans.map((p, i) => `--- Plan ${i+1} (Fitness: ${p.fitness.toFixed(2)}) ---\n${planToText(p.plan)}`).join('\n\n');
+
+        const prompt = `You are the Synthesis subroutine for an evolutionary computation process.
+        You have been given several high-fitness plans to solve the following problem:
+        **Problem:** "${evolutionState.problemStatement}"
+
+        **Candidate Plans:**
+        ${planSummaries}
+
+        Your task is to analyze these plans, identify the best elements from each, and create a single, superior, final answer that solves the user's problem.
+        The final answer should be a comprehensive response in well-formatted markdown.`;
+
+        try {
+            const response = await ai.models.generateContent({
+                model: appSettings.model,
+                contents: prompt,
+            });
+
+            evolutionState.finalEnsembleResult = {
+                id: `final-${Date.now()}`,
+                role: 'model',
+                text: response.text,
+            };
+            evolutionState.statusMessage = 'Final answer synthesized.';
+            log('SYSTEM', 'Evolutionary process concluded with a synthesized answer.');
+        } catch (error) {
+            const errorMessage = `Ensemble failed: ${error instanceof Error ? error.message : 'Unknown AI error'}`;
+            log('ERROR', errorMessage);
+            evolutionState.finalEnsembleResult = {
+                id: `final-${Date.now()}`,
+                role: 'model',
+                text: `[SYSTEM_ERROR: ${errorMessage}]`,
+            };
+            evolutionState.statusMessage = 'Error during synthesis.';
+        }
+        notifyEvolution();
     },
 
     subscribeToLogs: (callback: (log: LogEntry) => void) => { logSubscribers.push(callback); },
@@ -1500,6 +1840,13 @@ ${text}
     subscribeToConstitutions: (callback: (constitutions: CognitiveConstitution[]) => void) => { constitutionSubscribers.push(callback); },
     subscribeToEvolution: (callback: (evolutionState: EvolutionState) => void) => { evolutionSubscribers.push(callback); },
     subscribeToArchives: (callback: (archives: ChatMessage[]) => void) => { archiveSubscribers.push(callback); },
+    // FIX: Added subscription methods for the dream process.
+    subscribeToDreamProcess: (callback: (update: DreamProcessUpdate) => void) => {
+        dreamProcessSubscribers.push(callback);
+    },
+    unsubscribeFromDreamProcess: (callback: (update: DreamProcessUpdate) => void) => {
+        dreamProcessSubscribers = dreamProcessSubscribers.filter(cb => cb !== callback);
+    },
 
     unsubscribeFromAll: () => {
         logSubscribers = [];
@@ -1512,6 +1859,8 @@ ${text}
         constitutionSubscribers = [];
         evolutionSubscribers = [];
         archiveSubscribers = [];
+        // FIX: Added dream process subscribers to the cleanup.
+        dreamProcessSubscribers = [];
     }
 };
 

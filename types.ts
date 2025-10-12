@@ -8,7 +8,7 @@ export interface Replica {
   id: string;
   name: string;
   depth: number;
-  status: 'Active' | 'Dormant' | 'Evolving' | 'Spawning' | 'Pruning' | 'Recalibrating' | 'Bidding';
+  status: 'Active' | 'Dormant' | 'Evolving' | 'Spawning' | 'Pruning' | 'Recalibrating' | 'Bidding' | 'Executing Task';
   children: Replica[];
   load: number;
   purpose: string;
@@ -84,12 +84,13 @@ export interface LogEntry {
   source?: string; // Optional Replica ID
 }
 
-export type ActiveView = 'dashboard' | 'replicas' | 'tools' | 'architecture' | 'analysis' | 'settings' | 'evolution' | 'memory';
+export type ActiveView = 'dashboard' | 'replicas' | 'tools' | 'architecture' | 'analysis' | 'settings' | 'evolution' | 'memory' | 'dreaming';
 
 export type LogVerbosity = 'STANDARD' | 'VERBOSE';
 export type SystemPersonality = 'BALANCED' | 'CREATIVE' | 'LOGICAL';
 export type AnimationLevel = 'FULL' | 'MINIMAL' | 'NONE';
 export type SuggestionProfile = 'short' | 'medium' | 'long';
+export type Language = 'en' | 'ar' | 'es' | 'fr' | 'de' | 'zh';
 
 export interface AppSettings {
   model: string;
@@ -97,7 +98,7 @@ export interface AppSettings {
   systemPersonality: SystemPersonality;
   logVerbosity: LogVerbosity;
   animationLevel: AnimationLevel;
-  language: string;
+  language: Language;
 }
 
 // Types for Autonomous Cognitive Processing
@@ -106,7 +107,7 @@ export type ThinkingState = 'Idle' | 'Receiving' | 'Planning' | 'AwaitingExecuti
 export interface PlanStep {
     step: number;
     description: string;
-    tool: 'google_search' | 'synthesize_answer' | 'code_interpreter' | 'recall_memory' | 'generate_image' | 'analyze_image_input' | 'forge_tool' | 'spawn_replica' | 'induce_emotion' | 'replan' | 'summarize_text' | 'translate_text' | 'analyze_sentiment' | 'execute_toolchain' | 'apply_behavior';
+    tool: 'google_search' | 'synthesize_answer' | 'code_interpreter' | 'recall_memory' | 'generate_image' | 'analyze_image_input' | 'forge_tool' | 'spawn_replica' | 'induce_emotion' | 'replan' | 'summarize_text' | 'translate_text' | 'analyze_sentiment' | 'execute_toolchain' | 'apply_behavior' | 'delegate_task_to_replica';
     query?: string;
     code?: string;
     concept?: string; // For induce_emotion & generate_image
@@ -114,6 +115,8 @@ export interface PlanStep {
     status: 'pending' | 'executing' | 'complete' | 'error';
     result?: any; // Can be complex objects like images or text
     citations?: any[];
+    replicaId?: string; // For delegate_task_to_replica
+    task?: string; // For delegate_task_to_replica
 }
 
 // --- Affective Core Types ---
@@ -188,13 +191,23 @@ export interface GeneratedImage {
 
 
 // Types for The Evolution Chamber
-export type FitnessGoal = 'SHORTEST_CHAIN' | 'LOWEST_COMPLEXITY' | 'HIGHEST_COMPLEXITY' | 'FEWEST_TOOLS' | 'MAXIMIZE_VISUAL_BALANCE';
+export type FitnessGoal = 'EFFICIENCY' | 'CREATIVITY' | 'ROBUSTNESS' | 'CONCISENESS';
 
 export interface EvolutionConfig {
     populationSize: number;
     mutationRate: number; // 0 to 1
     generations: number;
     fitnessGoal: FitnessGoal;
+    elitism: number; // 0 to 1, percentage of top individuals to keep
+}
+
+export interface IndividualPlan {
+    id: string;
+    plan: PlanStep[];
+    fitness: number; // 0 to 100
+    generation: number;
+    parents?: string[];
+    status: 'elite' | 'survived' | 'new' | 'culled';
 }
 
 export interface EvolutionProgress {
@@ -207,8 +220,12 @@ export interface EvolutionState {
     isRunning: boolean;
     config: EvolutionConfig;
     progress: EvolutionProgress[];
-    fittestIndividual: Toolchain | null;
+    population: IndividualPlan[];
+    problemStatement: string;
+    statusMessage: string; // e.g., "Initializing Population...", "Generation 5/100"
+    finalEnsembleResult: ChatMessage | null;
 }
+
 
 // Types for Proactive Insights & Curiosity
 export interface CuriosityConstitution extends CognitiveConstitution {
@@ -250,4 +267,17 @@ export interface CognitiveProblem {
 
 export interface CognitiveNetworkState {
     activeProblems: CognitiveProblem[];
+}
+
+// --- Dreaming Types ---
+export interface SystemDirective {
+    id: string;
+    text: string;
+    createdAt: number;
+}
+
+export interface DreamProcessUpdate {
+    stage: 'IDLE' | 'GATHERING' | 'ANALYZING' | 'SYNTHESIZING' | 'INTEGRATING' | 'DONE' | 'ERROR';
+    message: string;
+    newDirectives?: SystemDirective[];
 }

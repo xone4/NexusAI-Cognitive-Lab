@@ -44,13 +44,13 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
                         
                         <button
                             onClick={() => window.location.reload()}
-                            className="mt-6 bg-red-500/20 text-red-400 font-bold py-2 px-6 rounded-md border border-red-500/50
+                            className="mt-6 bg-red-500/20 text-red-400 font-bold py-2 px-6 rounded-full border border-red-500/50
                                        hover:bg-red-500/40 hover:text-white transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-red-400"
                         >
                             Reload Application
                         </button>
 
-                        <details className="mt-6 bg-nexus-dark/50 p-3 rounded-md text-left text-xs font-mono text-nexus-text-muted">
+                        <details className="mt-6 bg-nexus-dark/50 p-3 rounded-xl text-left text-xs font-mono text-nexus-text-muted">
                             <summary className="cursor-pointer text-nexus-primary font-semibold">Technical Details</summary>
                             <pre className="mt-2 whitespace-pre-wrap break-all">
                                 <strong className="text-nexus-text">Error:</strong> {this.state.error?.toString()}

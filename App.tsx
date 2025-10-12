@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, ActiveView, CognitiveProcess, AppSettings, Toolchain, ChatMessage, PlanStep, CognitiveConstitution, EvolutionState, Behavior } from './types';
 import { nexusAIService } from './services/nexusAIService';
 import Header from './components/Header';
@@ -17,24 +18,27 @@ import CognitiveTraceInspector from './components/CognitiveTraceInspector';
 import CognitiveCommandCenter from './components/CognitiveCommandCenter';
 import VitalsPanel from './components/VitalsPanel';
 import SuggestionTray from './components/SuggestionTray';
+import DreamingView from './components/DreamingView';
 
 type SystemStatus = 'Online' | 'Degraded' | 'Offline' | 'Initializing';
 
 const App: React.FC = () => {
+  const { t, i18n } = useTranslation();
   const [activeView, setActiveView] = useState<ActiveView>('dashboard');
   const [replicas, setReplicas] = useState<Replica | null>(null);
   const [tools, setTools] = useState<MentalTool[]>([]);
   const [toolchains, setToolchains] = useState<Toolchain[]>([]);
   const [behaviors, setBehaviors] = useState<Behavior[]>([]);
   const [constitutions, setConstitutions] = useState<CognitiveConstitution[]>([]);
-  const [evolutionState, setEvolutionState] = useState<EvolutionState>(nexusAIService.getInitialData().initialEvolutionState);
+  const [evolutionState, setEvolutionState] = useState<EvolutionState | null>(null);
   const [archivedTraces, setArchivedTraces] = useState<ChatMessage[]>([]);
   const [performanceData, setPerformanceData] = useState<PerformanceDataPoint[]>([]);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [systemStatus, setSystemStatus] = useState<SystemStatus>('Initializing');
-  const [cognitiveProcess, setCognitiveProcess] = useState<CognitiveProcess>(nexusAIService.getInitialData().initialCognitiveProcess);
+  const [cognitiveProcess, setCognitiveProcess] = useState<CognitiveProcess | null>(null);
   const [isRawIntrospectionOpen, setIsRawIntrospectionOpen] = useState(false);
   const [activeTrace, setActiveTrace] = useState<ChatMessage | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const [settings, setSettings] = useState<AppSettings>(() => {
     const defaultSettings: AppSettings = {
@@ -43,7 +47,7 @@ const App: React.FC = () => {
       systemPersonality: 'BALANCED',
       logVerbosity: 'STANDARD',
       animationLevel: 'FULL',
-      language: 'English',
+      language: 'en',
     };
 
     try {
@@ -66,6 +70,15 @@ const App: React.FC = () => {
     const originalClasses = ['bg-nexus-dark', 'text-nexus-text', 'font-sans'];
     document.body.className = `${originalClasses.join(' ')} ${animationClass}`;
   }, [settings.animationLevel]);
+
+  useEffect(() => {
+    const currentLang = settings.language || 'en';
+    if (i18n.language !== currentLang) {
+      i18n.changeLanguage(currentLang);
+    }
+    document.documentElement.lang = currentLang;
+    document.documentElement.dir = i18n.dir(currentLang);
+  }, [settings.language, i18n]);
 
 
   const handleLog = useCallback((newLog: LogEntry) => {
@@ -115,50 +128,58 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    nexusAIService.updateSettings(settings);
+    const initializeApp = async () => {
+      nexusAIService.updateSettings(settings);
+  
+      const { initialReplicas, initialTools, initialToolchains, initialBehaviors, initialConstitutions, initialEvolutionState, initialLogs, initialPerfData, initialCognitiveProcess, initialArchives } = await nexusAIService.initialize();
+      setReplicas(initialReplicas);
+      setTools(initialTools);
+      setToolchains(initialToolchains);
+      setBehaviors(initialBehaviors);
+      setConstitutions(initialConstitutions);
+      setEvolutionState(initialEvolutionState);
+      setArchivedTraces(initialArchives);
+      setLogs(initialLogs);
+      setPerformanceData(initialPerfData);
+      setCognitiveProcess(initialCognitiveProcess);
+      setSystemStatus('Online');
+      setIsInitialized(true);
+  
+      nexusAIService.subscribeToLogs(handleLog);
+      nexusAIService.subscribeToPerformance(handlePerformanceUpdate);
+      nexusAIService.subscribeToReplicas(handleReplicaUpdate);
+      nexusAIService.subscribeToTools(handleToolsUpdate);
+      nexusAIService.subscribeToToolchains(handleToolchainsUpdate);
+      nexusAIService.subscribeToBehaviors(handleBehaviorsUpdate);
+      nexusAIService.subscribeToConstitutions(handleConstitutionsUpdate);
+      nexusAIService.subscribeToEvolution(handleEvolutionUpdate);
+      nexusAIService.subscribeToCognitiveProcess(handleCognitiveProcessUpdate);
+      nexusAIService.subscribeToArchives(handleArchivesUpdate);
+  
+      const serviceInterval = nexusAIService.start();
+  
+      return () => {
+        clearInterval(serviceInterval);
+        nexusAIService.unsubscribeFromAll();
+      };
+    };
 
-    const { initialReplicas, initialTools, initialToolchains, initialBehaviors, initialConstitutions, initialEvolutionState, initialLogs, initialPerfData, initialCognitiveProcess, initialArchives } = nexusAIService.getInitialData();
-    setReplicas(initialReplicas);
-    setTools(initialTools);
-    setToolchains(initialToolchains);
-    setBehaviors(initialBehaviors);
-    setConstitutions(initialConstitutions);
-    setEvolutionState(initialEvolutionState);
-    setArchivedTraces(initialArchives);
-    setLogs(initialLogs);
-    setPerformanceData(initialPerfData);
-    setCognitiveProcess(initialCognitiveProcess);
-    setSystemStatus('Online');
-
-    nexusAIService.subscribeToLogs(handleLog);
-    nexusAIService.subscribeToPerformance(handlePerformanceUpdate);
-    nexusAIService.subscribeToReplicas(handleReplicaUpdate);
-    nexusAIService.subscribeToTools(handleToolsUpdate);
-    nexusAIService.subscribeToToolchains(handleToolchainsUpdate);
-    nexusAIService.subscribeToBehaviors(handleBehaviorsUpdate);
-    nexusAIService.subscribeToConstitutions(handleConstitutionsUpdate);
-    nexusAIService.subscribeToEvolution(handleEvolutionUpdate);
-    nexusAIService.subscribeToCognitiveProcess(handleCognitiveProcessUpdate);
-    nexusAIService.subscribeToArchives(handleArchivesUpdate);
-
-
-    const serviceInterval = nexusAIService.start();
+    const cleanupPromise = initializeApp();
 
     return () => {
-      clearInterval(serviceInterval);
-      nexusAIService.unsubscribeFromAll();
+        cleanupPromise.then(cleanup => cleanup && cleanup());
     };
-  }, [handleLog, handlePerformanceUpdate, handleReplicaUpdate, handleToolsUpdate, handleToolchainsUpdate, handleBehaviorsUpdate, handleConstitutionsUpdate, handleEvolutionUpdate, handleCognitiveProcessUpdate, handleArchivesUpdate, settings]);
+}, [handleLog, handlePerformanceUpdate, handleReplicaUpdate, handleToolsUpdate, handleToolchainsUpdate, handleBehaviorsUpdate, handleConstitutionsUpdate, handleEvolutionUpdate, handleCognitiveProcessUpdate, handleArchivesUpdate, settings]);
 
   const spawnReplica = useCallback((parentId: string) => {
     nexusAIService.spawnReplica(parentId);
   }, []);
   
   const pruneReplica = useCallback((replicaId: string) => {
-    if (window.confirm('Are you sure you want to prune this replica and all its children? This action is permanent.')) {
+    if (window.confirm(t('replicas.pruneConfirmation'))) {
         nexusAIService.pruneReplica(replicaId);
     }
-  }, []);
+  }, [t]);
 
   const assignReplicaPurpose = useCallback((replicaId: string, purpose: string) => {
     nexusAIService.assignReplicaPurpose(replicaId, purpose);
@@ -210,12 +231,12 @@ const App: React.FC = () => {
   }, []);
   
   const handleSavePlanAsToolchain = useCallback((plan: PlanStep[]) => {
-      const name = prompt("Enter a name for the new toolchain:", "My Saved Plan");
+      const name = prompt(t('toolchains.promptName'), t('toolchains.promptNameDefault'));
       if (!name) return;
-      const description = prompt("Enter a short description:", `Created from plan with ${plan.length} steps.`);
+      const description = prompt(t('toolchains.promptDesc'), t('toolchains.promptDescDefault', { count: plan.length }));
       if (description === null) return;
       nexusAIService.createToolchainFromPlan(plan, name, description);
-  }, []);
+  }, [t]);
 
   const handleArchiveTrace = useCallback(async (messageId: string) => {
       const archivedTrace = await nexusAIService.archiveTrace(messageId);
@@ -225,6 +246,7 @@ const App: React.FC = () => {
   }, []);
 
   const handleExtractBehavior = useCallback(async (messageId: string) => {
+      if (!cognitiveProcess) return;
       const trace = cognitiveProcess.history.find(m => m.id === messageId);
       if (trace) {
           try {
@@ -235,7 +257,7 @@ const App: React.FC = () => {
               // Consider showing an error toast/notification here
           }
       }
-  }, [cognitiveProcess.history]);
+  }, [cognitiveProcess]);
 
   const handleRerunTrace = useCallback((trace: ChatMessage) => {
     nexusAIService.rerunTrace(trace);
@@ -269,7 +291,7 @@ const App: React.FC = () => {
     <div className="flex h-full relative overflow-hidden">
         <div className="flex-1 flex flex-col h-full bg-nexus-bg">
             <div className="flex-grow h-full overflow-hidden relative">
-                 <CognitiveProcessVisualizer
+                 {cognitiveProcess && <CognitiveProcessVisualizer
                   process={cognitiveProcess}
                   constitutions={constitutions}
                   onExecutePlan={executePlan}
@@ -283,7 +305,7 @@ const App: React.FC = () => {
                   onRerunTrace={handleRerunTrace}
                   onTranslate={nexusAIService.translateResponse}
                   language={settings.language}
-                />
+                />}
                 <SuggestionTray
                   process={cognitiveProcess}
                   permissions={cognitivePermissions}
@@ -301,6 +323,7 @@ const App: React.FC = () => {
                   onSpawnReplica={() => spawnReplica(replicas?.id || 'nexus-core')} 
                   onGoToForge={() => setActiveView('tools')}
                   onOpenIntrospection={() => setIsRawIntrospectionOpen(true)}
+                  onGoToDreaming={() => setActiveView('dreaming')}
                 />
             </div>
         </div>
@@ -318,6 +341,9 @@ const App: React.FC = () => {
   );
 
   const renderView = () => {
+    if (!isInitialized) {
+        return <div className="flex items-center justify-center h-full text-nexus-text-muted">Initializing Cognitive Core...</div>;
+    }
     switch (activeView) {
       case 'replicas':
         return replicas && <ReplicasView 
@@ -350,7 +376,7 @@ const App: React.FC = () => {
                   onDeleteBehavior={nexusAIService.deleteBehavior}
                 />;
       case 'architecture':
-        return <ArchitectureDiagram 
+        return cognitiveProcess && <ArchitectureDiagram 
                   replicas={replicas}
                   tools={tools}
                   cognitiveProcess={cognitiveProcess}
@@ -372,10 +398,8 @@ const App: React.FC = () => {
       case 'settings':
         return <SettingsView settings={settings} onSettingsChange={handleSettingsChange} />;
       case 'evolution':
-        return <EvolutionChamber
+        return evolutionState && <EvolutionChamber
                  evolutionState={evolutionState}
-                 allTools={tools}
-                 onCreateToolchain={nexusAIService.createToolchain}
                />;
       case 'memory':
         return <MemoryExplorerView
@@ -383,6 +407,8 @@ const App: React.FC = () => {
                   onViewTrace={setActiveTrace}
                   onDeleteTrace={nexusAIService.deleteTrace}
                 />;
+      case 'dreaming':
+        return <DreamingView />;
       case 'dashboard':
       default:
         return renderDashboard();
