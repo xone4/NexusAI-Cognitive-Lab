@@ -43,6 +43,7 @@ const App: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings>(() => {
     const defaultSettings: AppSettings = {
       model: 'gemini-2.5-flash',
+      modelProfile: 'flash',
       cognitiveStepDelay: 1000,
       coreAgentPersonality: { energyFocus: 'EXTROVERSION', informationProcessing: 'INTUITION', decisionMaking: 'THINKING', worldApproach: 'PERCEIVING' }, // ENTP Default
       logVerbosity: 'STANDARD',
@@ -77,19 +78,33 @@ const App: React.FC = () => {
   });
 
   useEffect(() => {
-    const animationClass = `animations-${settings.animationLevel.toLowerCase()}`;
-    const originalClasses = ['bg-nexus-dark', 'text-nexus-text', 'font-sans'];
-    document.body.className = `${originalClasses.join(' ')} ${animationClass}`;
-  }, [settings.animationLevel]);
-
-  useEffect(() => {
+    // Handle language and direction on <html>
     const currentLang = settings.language || 'en';
     if (i18n.language !== currentLang) {
       i18n.changeLanguage(currentLang);
     }
     document.documentElement.lang = currentLang;
-    document.documentElement.dir = i18n.dir(currentLang);
-  }, [settings.language, i18n]);
+    const direction = i18n.dir(currentLang);
+    document.documentElement.dir = direction;
+
+    // Manage body classes for animations and fonts
+    const body = document.body;
+    
+    // Clean up old classes first.
+    body.classList.remove('animations-full', 'animations-minimal', 'animations-none');
+    
+    // Add animation class
+    body.classList.add(`animations-${settings.animationLevel.toLowerCase()}`);
+
+    // Manage font classes
+    if (direction === 'rtl') {
+      body.classList.remove('font-sans');
+      body.classList.add('font-arabic');
+    } else {
+      body.classList.remove('font-arabic');
+      body.classList.add('font-sans');
+    }
+  }, [settings.language, settings.animationLevel, i18n]);
 
 
   const handleLog = useCallback((newLog: LogEntry) => {
@@ -376,7 +391,7 @@ const App: React.FC = () => {
 
   const renderView = () => {
     if (!isInitialized) {
-        return <div className="flex items-center justify-center h-full text-nexus-text-muted">Initializing Cognitive Core...</div>;
+        return <div className="flex items-center justify-center h-full text-nexus-text-muted">{t('app.initializing')}</div>;
     }
     switch (activeView) {
       case 'replicas':

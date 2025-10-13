@@ -179,26 +179,14 @@
     "archive": "أرشفة",
     "decommission": "إيقاف التشغيل",
     "tags": "العلامات",
-    "noTags": "لم يتم تعيين علامات.",
-    "toolForgeTitle": "صياغة أداة عقلية جديدة",
-    "forgingInProgress": "الذكاء الاصطناعي يصوغ...",
-    "forgingInProgressDesc": "توليف أداة معرفية جديدة بناءً على تصميمك...",
-    "purposeDesc": "الغرض / الوصف",
-    "purposePlaceholder": "مثال: 'تحليل بيانات السوق في الوقت الفعلي للتنبؤ بالتقلبات قصيرة الأجل.'",
-    "capabilities": "القدرات الرئيسية (مفصولة بفاصلة)",
-    "capabilitiesPlaceholder": "مثال: 'تحليل البيانات، التنبؤ، النمذجة المالية'",
-    "forgeTool": "صياغة الأداة",
-    "purposeRequired": "وصف الغرض مطلوب.",
-    "modifyToolTitle": "تعديل الأداة العقلية",
-    "toolName": "اسم الأداة",
-    "description": "الوصف",
-    "saveChanges": "حفظ التغييرات"
+    "noTags": "لم يتم تعيين علامات."
   },
   "toolchains": {
     "promptName": "أدخل اسمًا لسلسلة الأدوات الجديدة:",
     "promptNameDefault": "خطتي المحفوظة",
     "promptDesc": "أدخل وصفًا موجزًا:",
     "promptDescDefault": "تم إنشاؤها من خطة تحتوي على {{count}} خطوات.",
+    "deleteConfirm": "هل أنت متأكد أنك تريد حذف سلسلة الأدوات \"{{name}}\"؟",
     "managementTitle": "إدارة سلاسل الأدوات",
     "workflowsTitle": "مسارات العمل المعرفية",
     "workflowsDesc": "أنشئ وعدّل وانشر تسلسلات من الأدوات العقلية للمهام المعقدة والآلية.",
@@ -215,7 +203,8 @@
     "availableTools": "الأدوات المتاحة",
     "noMoreTools": "لا توجد أدوات أخرى متاحة.",
     "chainSequence": "تسلسل السلسلة",
-    "addToolsHint": "أضف أدوات من اللوحة اليسرى لبناء سلسلتك."
+    "addToolsHint": "أضف أدوات من اللوحة اليسرى لبناء سلسلتك.",
+    "create": "إنشاء سلسلة أدوات"
   },
   "behaviors": {
     "handbookTitle": "دليل السلوك ما وراء المعرفي",
@@ -224,8 +213,8 @@
     "emptyHandbook": "الدليل فارغ",
     "emptyHandbookHint": "أكمل مهمة معرفية واستخدم إجراء \"استخراج السلوك\" لبدء بناء هذه المكتبة.",
     "strategy": "الاستراتيجية",
-    "usageCount": "عدد الاستخدامات: ",
-    "lastUsed": "آخر استخدام: ",
+    "usageCount": "عدد الاستخدامات:",
+    "lastUsed": "آخر استخدام:",
     "editBehavior": "تعديل السلوك",
     "deleteBehavior": "حذف السلوك",
     "deleteConfirm": "هل أنت متأكد من أنك تريد حذف السلوك \"{{name}}\"؟",
@@ -249,9 +238,11 @@
     "longTermMemory": "الذاكرة طويلة المدى",
     "archiveOfTraces": "أرشيف الآثار",
     "replicas": "النسخ المتماثلة",
-    "replicaInstances": "{{count}} نسخة نشطة",
+    "replicaInstances_one": "{{count}} نسخة نشطة",
+    "replicaInstances_other": "{{count}} نسخ نشطة",
     "mentalTools": "الأدوات العقلية",
-    "toolsAvailable": "{{count}} أداة متاحة",
+    "toolsAvailable_one": "{{count}} أداة متاحة",
+    "toolsAvailable_other": "{{count}} أدوات متاحة",
     "externalIntegrations": "التكاملات الخارجية",
     "model": "النموذج: {{model}}",
     "ui_ux": "واجهة المستخدم",
@@ -290,9 +281,11 @@
     "cognitiveCore": "النواة المعرفية",
     "agentPersonality": "شخصية الوكيل الأساسي",
     "agentPersonalityDesc": "تحدد الأسلوب المعرفي الأساسي للذكاء الاصطناعي بناءً على 4 محاور. يؤثر هذا على التخطيط واتخاذ القرار والتفاعل.",
-    "cognitiveModel": "النموذج المعرفي",
-    "modelDescGemini": "النموذج الموصى به لمعظم حالات الاستخدام، يوازن بين السرعة والذكاء.",
-    "selectModelDesc": "اختر نموذجًا للاطلاع على وصفه.",
+    "cognitiveProfile": "الملف التعريفي المعرفي",
+    "cognitiveProfileDesc": "اختر أداء وأسلوب استجابة الذكاء الاصطناعي. يوفر 'Pro' تحليلًا أعمق، بينما 'Lite' أسرع وأكثر إيجازًا.",
+    "lite": "Lite",
+    "flash": "Flash",
+    "pro": "Pro",
     "cognitiveStepDelay": "تأخير الخطوة المعرفية",
     "cognitiveStepDelayDesc": "يضيف تأخيرًا بين كل خطوة من خطة تنفيذ الذكاء الاصطناعي. القيم الأعلى تمنع أخطاء تحديد المعدل.",
     "interface": "الواجهة",
@@ -368,13 +361,16 @@
     "finalAnswer": "الإجابة النهائية المجمعة",
     "problemRequired": "بيان المشكلة مطلوب لتهيئة السكان.",
     "visualBalance": "تحقيق أقصى توازن بصري",
-    "loadFromMemory": "تحميل من الذاكرة"
+    "loadFromMemory": "تحميل من الذاكرة",
+    "gen": "جيل",
+    "fit": "كفاءة",
+    "emptyPlan": "خطة فارغة"
   },
   "memory": {
     "title": "مستكشف الذاكرة",
     "filtersTitle": "مرشحات الذاكرة",
-    "searchKeyword": "بحث بالكلمة الرئيسية",
-    "searchPlaceholder": "بحث في الاستعلامات أو الردود...",
+    "searchKeyword": "بحث بالكلمة الرئيسية (دلالي)",
+    "searchPlaceholder": "ابحث عن المفاهيم والمعاني...",
     "filterEmotion": "تصفية حسب العاطفة",
     "minSalience": "الحد الأدنى للأهمية",
     "retrievedMemories": "الذكريات المسترجعة",
@@ -386,7 +382,10 @@
     "unknown": "غير معروف",
     "dominantEmotion": "العاطفة السائدة: {{emotion}}",
     "view": "عرض",
-    "deleteConfirm": "هل أنت متأكد من أنك تريد حذف هذه الذاكرة بشكل دائم؟"
+    "deleteConfirm": "هل أنت متأكد من أنك تريد حذف هذه الذاكرة بشكل دائم؟",
+    "match": "مطابقة",
+    "semanticSearchActive": "البحث الدلالي نشط. يتم تعطيل المرشحات الأخرى مؤقتًا.",
+    "searching": "جاري البحث الدلالي..."
   },
   "traceInspector": {
     "title": "مفتش الأثر المعرفي",
@@ -397,13 +396,14 @@
     "userQuery": "استعلام المستخدم",
     "finalAnswer": "الإجابة النهائية",
     "metrics": "المقاييس",
-    "planSteps": "خطوات الخطة: {{count}}",
-    "constitution": "الدستور: {{id}}",
+    "planSteps": "خطوات الخطة",
+    "constitution": "الدستور",
     "default": "افتراضي",
     "affectiveStateSnapshot": "لقطة الحالة العاطفية",
     "noResult": "لم يتم تسجيل أي نتيجة.",
     "input": "المدخل:",
     "result": "النتيجة:",
+    "prompt": "الموجه:",
     "generateReflection": "إنشاء تأمل ذاتي للذكاء الاصطناعي",
     "reflecting": "الذكاء الاصطناعي يتأمل في أدائه...",
     "discussionHub": "مركز المناقشة",
@@ -431,13 +431,60 @@
     "details": "التفاصيل الفنية",
     "error": "خطأ"
   },
-    "dreaming": {
+  "dreaming": {
     "title": "غرفة الأحلام المعرفية",
     "description": "في هذه الحالة، سيقوم الذكاء الاصطناعي بالاستبطان في ذاكرته الجماعية - تحليل النجاحات والإخفاقات والاستراتيجيات السابقة. سيقوم بتوليف هذه التجارب في توجيهات جديدة عالية المستوى لتحسين أدائه في المستقبل.",
     "start": "بدء دورة الحلم",
     "inProgress": "جاري الحلم...",
     "progressTitle": "تسلسل الحلم",
     "resultsTitle": "رؤى ما وراء المعرفية",
-    "newDirectives": "تم دمج التوجيهات الجديدة التالية في النواة المعرفية:"
+    "newDirectives": "تم دمج التوجيهات الجديدة التالية في النواة المعرفية:",
+    "idleMessage": "لم تبدأ دورة الحلم بعد."
+  },
+  "app": {
+    "initializing": "جاري تهيئة النواة المعرفية..."
+  },
+  "performanceCharts": {
+    "initializing": "جاري تهيئة بيانات الأداء...",
+    "rsiCycles": "دورات RSI"
+  },
+  "toolForge": {
+    "title": "صياغة أداة عقلية جديدة",
+    "inProgress": "الذكاء الاصطناعي يصوغ...",
+    "inProgressDesc": "توليف أداة معرفية جديدة بناءً على تصميمك...",
+    "purposeDesc": "الغرض / الوصف",
+    "capabilities": "القدرات الرئيسية (مفصولة بفاصلة)",
+    "forgeTool": "صياغة الأداة",
+    "purposeRequired": "وصف الغرض مطلوب.",
+    "unknownError": "حدث خطأ غير معروف أثناء الصياغة."
+  },
+  "modifyTool": {
+    "title": "تعديل الأداة العقلية",
+    "toolName": "اسم الأداة",
+    "description": "الوصف",
+    "tagsCommaSeparated": "العلامات (مفصولة بفاصلة)"
+  },
+  "common": {
+    "cancel": "إلغاء",
+    "saveChanges": "حفظ التغييرات",
+    "description": "الوصف",
+    "name": "الاسم"
+  },
+  "replicaNetwork": {
+    "noData": "لا توجد بيانات لرسم الشبكة."
+  },
+  "constitutionManager": {
+    "title": "الدستور المعرفي النشط",
+    "activeRules": "القواعد النشطة:",
+    "noRules": "لا توجد قواعد خاصة. يتم العمل وفقًا للمعايير الافتراضية.",
+    "selectHint": "اختر دستورًا لعرض قواعده."
+  },
+  "memorySelector": {
+    "title": "تحميل مشكلة من الذاكرة",
+    "description": "اختر تجربة سابقة لاستخدامها كأساس للتطور.",
+    "archivedMemories": "الذكريات المؤرشفة ({{count}})",
+    "learnedBehaviors": "السلوكيات المكتسبة ({{count}})",
+    "queryPrefix": "الاستعلام:",
+    "close": "إغلاق"
   }
 }

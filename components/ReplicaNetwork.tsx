@@ -76,7 +76,7 @@ const ReplicaNetwork: React.FC<ReplicaNetworkProps> = ({ rootReplica }) => {
     }, [rootReplica]);
 
     if (!rootReplica) {
-        return <div className="text-nexus-text-muted">No data for network graph.</div>;
+        return <div className="text-nexus-text-muted">{t('replicaNetwork.noData')}</div>;
     }
 
     return (
@@ -128,7 +128,7 @@ const ReplicaNetwork: React.FC<ReplicaNetworkProps> = ({ rootReplica }) => {
                     const isActive = node.status === 'Active';
                     return (
                         <g key={node.id} transform={`translate(${node.x},${node.y})`} className="cursor-pointer group">
-                             <title>{t('replicas.tooltipTitle', {name: node.name, status: node.status})}</title>
+                             <title>{t('replicas.tooltipTitle', {name: node.name, status: t(`replicas.status_${node.status.replace(' ', '')}`, node.status)})}</title>
                             <circle
                                 r={r}
                                 fill="#18213a"

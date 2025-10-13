@@ -28,6 +28,7 @@ const IndividualPlanCard: React.FC<{
     isSelected: boolean,
     onSelect: (id: string | null) => void,
 }> = memo(({ individual, style, isSelected, onSelect }) => {
+    const { t } = useTranslation();
     const statusClasses: Record<IndividualPlan['status'], string> = {
         elite: 'border-nexus-accent ring-2 ring-nexus-accent',
         survived: 'border-nexus-secondary',
@@ -35,7 +36,7 @@ const IndividualPlanCard: React.FC<{
         culled: 'border-gray-600 opacity-50',
     };
 
-    const shortPlan = individual.plan.length > 0 ? `1. ${individual.plan[0].description}` : 'Empty Plan';
+    const shortPlan = individual.plan.length > 0 ? `1. ${individual.plan[0].description}` : t('evolution.emptyPlan');
 
     return (
         <div 
@@ -44,8 +45,8 @@ const IndividualPlanCard: React.FC<{
             onClick={() => onSelect(isSelected ? null : individual.id)}
         >
             <div className="flex justify-between text-xs font-mono">
-                <span className="text-nexus-text">Gen: {individual.generation}</span>
-                <span className="font-bold text-nexus-primary">Fit: {individual.fitness.toFixed(2)}</span>
+                <span className="text-nexus-text">{t('evolution.gen')}: {individual.generation}</span>
+                <span className="font-bold text-nexus-primary">{t('evolution.fit')}: {individual.fitness.toFixed(2)}</span>
             </div>
             <p className="text-xs text-nexus-text-muted truncate mt-1" title={shortPlan}>{shortPlan}</p>
         </div>

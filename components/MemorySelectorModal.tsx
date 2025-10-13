@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Tab } from '@headlessui/react';
 import type { ChatMessage, Behavior } from '../types';
 import { BookOpenIcon, BrainCircuitIcon } from './Icons';
@@ -20,6 +21,7 @@ const tabClasses = ({ selected }: { selected: boolean }) => `
 `;
 
 const MemorySelectorModal: React.FC<MemorySelectorModalProps> = ({ archivedTraces, behaviors, onClose, onSelect }) => {
+    const { t } = useTranslation();
     
     const sortedTraces = [...archivedTraces].sort((a, b) => (b.archivedAt || 0) - (a.archivedAt || 0));
     const sortedBehaviors = [...behaviors].sort((a, b) => b.lastUsed - a.lastUsed);
@@ -31,8 +33,8 @@ const MemorySelectorModal: React.FC<MemorySelectorModalProps> = ({ archivedTrace
                     <div className="flex items-center gap-3">
                         <BookOpenIcon className="w-8 h-8 text-nexus-primary"/>
                         <div>
-                            <h3 className="text-xl font-bold text-nexus-text">Load Problem from Memory</h3>
-                            <p className="text-sm text-nexus-text-muted">Select a past experience to use as a foundation for evolution.</p>
+                            <h3 className="text-xl font-bold text-nexus-text">{t('memorySelector.title')}</h3>
+                            <p className="text-sm text-nexus-text-muted">{t('memorySelector.description')}</p>
                         </div>
                     </div>
                      <button onClick={onClose} className="text-nexus-text-muted hover:text-white text-2xl font-bold">&times;</button>
@@ -42,10 +44,10 @@ const MemorySelectorModal: React.FC<MemorySelectorModalProps> = ({ archivedTrace
                     <Tab.Group>
                         <Tab.List className="flex space-x-1 rounded-xl bg-nexus-dark/50 p-1">
                             <Tab className={tabClasses}>
-                                <div className="flex items-center justify-center gap-2"><BookOpenIcon className="w-5 h-5"/> Archived Memories ({sortedTraces.length})</div>
+                                <div className="flex items-center justify-center gap-2"><BookOpenIcon className="w-5 h-5"/> {t('memorySelector.archivedMemories', { count: sortedTraces.length })}</div>
                             </Tab>
                             <Tab className={tabClasses}>
-                                <div className="flex items-center justify-center gap-2"><BrainCircuitIcon className="w-5 h-5"/> Learned Behaviors ({sortedBehaviors.length})</div>
+                                <div className="flex items-center justify-center gap-2"><BrainCircuitIcon className="w-5 h-5"/> {t('memorySelector.learnedBehaviors', { count: sortedBehaviors.length })}</div>
                             </Tab>
                         </Tab.List>
                         <Tab.Panels className="mt-2 h-[calc(100%-44px)]">
@@ -54,7 +56,7 @@ const MemorySelectorModal: React.FC<MemorySelectorModalProps> = ({ archivedTrace
                                     {sortedTraces.map(trace => (
                                         <div key={trace.id} onClick={() => onSelect(trace)} className="p-3 bg-nexus-surface/50 rounded-lg cursor-pointer hover:bg-nexus-primary/20 hover:border-nexus-primary border border-transparent">
                                             <p className="text-xs text-nexus-text-muted">{new Date(trace.archivedAt!).toLocaleString()}</p>
-                                            <p className="font-semibold text-nexus-text truncate">Query: <span className="italic font-normal">"{trace.userQuery}"</span></p>
+                                            <p className="font-semibold text-nexus-text truncate">{t('memorySelector.queryPrefix')} <span className="italic font-normal">"{trace.userQuery}"</span></p>
                                         </div>
                                     ))}
                                 </div>
@@ -74,7 +76,7 @@ const MemorySelectorModal: React.FC<MemorySelectorModalProps> = ({ archivedTrace
                 </div>
 
                 <div className="flex-shrink-0 flex justify-end mt-4">
-                    <button onClick={onClose} className="py-2 px-6 rounded-full bg-nexus-surface text-nexus-text-muted font-bold hover:bg-nexus-dark">Close</button>
+                    <button onClick={onClose} className="py-2 px-6 rounded-full bg-nexus-surface text-nexus-text-muted font-bold hover:bg-nexus-dark">{t('memorySelector.close')}</button>
                 </div>
             </div>
         </div>

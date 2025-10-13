@@ -55,7 +55,7 @@ GroundingCitations.displayName = 'GroundingCitations';
 
 const UserMessage: React.FC<{ message: ChatMessage }> = memo(({ message }) => (
     <div className="flex justify-end my-2 animate-spawn-in">
-        <div className="bg-nexus-primary/80 text-nexus-dark rounded-xl rounded-br-none max-w-lg p-3 shadow-md">
+        <div className="bg-nexus-primary/80 text-nexus-dark rounded-xl rounded-ee-none max-w-lg p-3 shadow-md">
             {message.image && (
                  <img 
                     src={`data:${message.image.mimeType};base64,${message.image.data}`} 
@@ -65,7 +65,7 @@ const UserMessage: React.FC<{ message: ChatMessage }> = memo(({ message }) => (
             )}
             <p className="text-sm">{String(message.text || '')}</p>
         </div>
-        <UserIcon className="w-8 h-8 text-nexus-primary ml-3 flex-shrink-0" />
+        <UserIcon className="w-8 h-8 text-nexus-primary ms-3 flex-shrink-0" />
     </div>
 ));
 UserMessage.displayName = 'UserMessage';
@@ -177,7 +177,7 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
                  </button>
             </div>
             {isDetailsOpen && (
-                <div className="pl-8 pt-2 animate-spawn-in space-y-2">
+                <div className="ps-8 pt-2 animate-spawn-in space-y-2">
                     {isEditing ? (
                         <div className="space-y-2">
                             <textarea
@@ -275,7 +275,7 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
         if (message.state === 'planning') {
             return (
                 <div className="flex items-center text-nexus-text-muted italic">
-                    <div className="w-5 h-5 mr-2 relative"><div className="nexus-loader"></div></div>
+                    <div className="w-5 h-5 me-2 relative"><div className="nexus-loader"></div></div>
                     NexusAI is formulating a cognitive plan...
                 </div>
             );
@@ -365,7 +365,7 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
                              </div>
                             <div className="text-nexus-text">
                                 <pre className="text-sm whitespace-pre-wrap font-sans">{message.text}</pre>
-                                <span className="inline-block w-2 h-4 bg-nexus-primary animate-pulse ml-1 align-bottom"></span>
+                                <span className="inline-block w-2 h-4 bg-nexus-primary animate-pulse ms-1 align-bottom"></span>
                             </div>
                         </div>
                     )}
@@ -379,9 +379,9 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
                                      // FIX: Moved title prop from icon to parent div to fix invalid prop error.
                                      <div className="relative group" title={`Influenced by mood: ${message.affectiveStateSnapshot.mood}`}>
                                          <LightBulbIcon className="w-5 h-5 text-yellow-400" />
-                                         <div className="absolute bottom-full right-0 mb-2 w-48 bg-nexus-dark text-white text-xs rounded-md p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">
+                                         <div className="absolute bottom-full end-0 mb-2 w-48 bg-nexus-dark text-white text-xs rounded-md p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">
                                              Influenced by Affective State at time of synthesis.
-                                             <div className="absolute top-full right-3 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-nexus-dark"></div>
+                                             <div className="absolute top-full end-3 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-nexus-dark"></div>
                                          </div>
                                      </div>
                                 )}
@@ -460,9 +460,9 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
 
     return (
         <div className="flex justify-start my-2 animate-spawn-in">
-            <div className="w-8 h-8 mr-3 flex-shrink-0">{getModelIcon()}</div>
+            <div className="w-8 h-8 me-3 flex-shrink-0">{getModelIcon()}</div>
             
-            <div className="bg-nexus-surface/80 border border-nexus-surface rounded-xl rounded-bl-none max-w-2xl p-4 shadow-lg w-full">
+            <div className="bg-nexus-surface/80 border border-nexus-surface rounded-xl rounded-es-none max-w-2xl p-4 shadow-lg w-full">
                 <div className="text-sm text-nexus-text space-y-2">
                    {renderContent()}
                 </div>

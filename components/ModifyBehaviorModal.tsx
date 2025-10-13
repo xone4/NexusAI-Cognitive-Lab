@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Behavior } from '../types';
 import { WrenchScrewdriverIcon } from './Icons';
 
@@ -9,6 +10,7 @@ interface ModifyBehaviorModalProps {
 }
 
 const ModifyBehaviorModal: React.FC<ModifyBehaviorModalProps> = ({ behavior, onClose, onSave }) => {
+    const { t } = useTranslation();
     const [name, setName] = useState(behavior.name);
     const [description, setDescription] = useState(behavior.description);
     const [tags, setTags] = useState(behavior.tags.join(', '));
@@ -27,12 +29,12 @@ const ModifyBehaviorModal: React.FC<ModifyBehaviorModalProps> = ({ behavior, onC
                  <form onSubmit={handleSave}>
                      <div className="flex items-center gap-3 mb-4">
                         <WrenchScrewdriverIcon className="w-8 h-8 text-nexus-secondary"/>
-                        <h3 className="text-xl font-bold text-nexus-text">Modify Behavior</h3>
+                        <h3 className="text-xl font-bold text-nexus-text">{t('behaviors.modifyTitle')}</h3>
                     </div>
                     
                     <div className="space-y-4">
                         <div>
-                            <label htmlFor="bhv-name" className="block text-sm font-medium text-nexus-text-muted">Behavior Name</label>
+                            <label htmlFor="bhv-name" className="block text-sm font-medium text-nexus-text-muted">{t('behaviors.behaviorName')}</label>
                             <input
                                 type="text"
                                 id="bhv-name"
@@ -42,7 +44,7 @@ const ModifyBehaviorModal: React.FC<ModifyBehaviorModalProps> = ({ behavior, onC
                             />
                         </div>
                         <div>
-                            <label htmlFor="bhv-description" className="block text-sm font-medium text-nexus-text-muted">Description</label>
+                            <label htmlFor="bhv-description" className="block text-sm font-medium text-nexus-text-muted">{t('common.description')}</label>
                             <textarea
                                 id="bhv-description"
                                 value={description}
@@ -51,7 +53,7 @@ const ModifyBehaviorModal: React.FC<ModifyBehaviorModalProps> = ({ behavior, onC
                             />
                         </div>
                         <div>
-                            <label htmlFor="bhv-tags" className="block text-sm font-medium text-nexus-text-muted">Tags (comma-separated)</label>
+                            <label htmlFor="bhv-tags" className="block text-sm font-medium text-nexus-text-muted">{t('modifyTool.tagsCommaSeparated')}</label>
                             <input
                                 type="text"
                                 id="bhv-tags"
@@ -63,8 +65,8 @@ const ModifyBehaviorModal: React.FC<ModifyBehaviorModalProps> = ({ behavior, onC
                     </div>
                     
                     <div className="flex justify-end space-x-3 mt-6">
-                        <button type="button" onClick={onClose} className="py-2 px-4 rounded-full text-nexus-text-muted hover:bg-nexus-dark">Cancel</button>
-                        <button type="submit" className="py-2 px-6 rounded-full bg-nexus-primary text-nexus-dark font-bold hover:bg-nexus-secondary">Save Changes</button>
+                        <button type="button" onClick={onClose} className="py-2 px-4 rounded-full text-nexus-text-muted hover:bg-nexus-dark">{t('common.cancel')}</button>
+                        <button type="submit" className="py-2 px-6 rounded-full bg-nexus-primary text-nexus-dark font-bold hover:bg-nexus-secondary">{t('common.saveChanges')}</button>
                     </div>
                 </form>
             </div>

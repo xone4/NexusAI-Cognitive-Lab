@@ -1,5 +1,6 @@
 import React, { Fragment } from 'react';
 import { Disclosure, Transition } from '@headlessui/react';
+import { useTranslation } from 'react-i18next';
 import { ChevronDownIcon } from './Icons';
 
 interface DashboardCardProps {
@@ -13,6 +14,9 @@ interface DashboardCardProps {
 }
 
 const DashboardCard: React.FC<DashboardCardProps> = ({ title, children, className = '', icon, fullHeight = false, isCollapsible = true, defaultOpen = true }) => {
+  const { i18n } = useTranslation();
+  const isRtl = i18n.dir() === 'rtl';
+
   return (
     <Disclosure defaultOpen={defaultOpen} as="div">
       {({ open }) => (
@@ -21,8 +25,8 @@ const DashboardCard: React.FC<DashboardCardProps> = ({ title, children, classNam
         >
           <Disclosure.Button as="div" className={`p-4 ${isCollapsible ? 'cursor-pointer' : ''}`}>
             <div className="flex items-center">
-              {icon && <div className="w-6 h-6 mr-3 text-nexus-primary">{icon}</div>}
-              <h3 className="text-lg font-semibold text-nexus-text flex-grow">{title}</h3>
+              {icon && <div className="w-6 h-6 me-3 text-nexus-primary">{icon}</div>}
+              <h3 className={`text-lg font-semibold text-nexus-text flex-grow ${isRtl ? 'font-tahoma' : ''}`}>{title}</h3>
               {isCollapsible && (
                 <ChevronDownIcon className={`w-5 h-5 text-nexus-text-muted transition-transform duration-300 opacity-0 group-hover:opacity-100 ${open ? '' : '-rotate-90'}`} />
               )}

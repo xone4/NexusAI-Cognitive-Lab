@@ -15,6 +15,8 @@ const NavItem: React.FC<{
   activeView: ActiveView;
   onClick: (view: ActiveView) => void;
 }> = memo(({ view, label, icon, activeView, onClick }) => {
+  const { i18n } = useTranslation();
+  const isRtl = i18n.dir() === 'rtl';
   const isActive = activeView === view;
   return (
     <li
@@ -26,14 +28,15 @@ const NavItem: React.FC<{
         }`}
     >
       <div className="w-6 h-6 me-4">{icon}</div>
-      <span className="font-semibold">{label}</span>
+      <span className={`font-semibold ${isRtl ? 'font-tahoma' : ''}`}>{label}</span>
     </li>
   );
 });
 NavItem.displayName = 'NavItem';
 
 const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isRtl = i18n.dir() === 'rtl';
 
   const mainNavItems = [
     { view: 'dashboard' as ActiveView, label: t('sidebar.controlCenter'), icon: <DashboardIcon /> },
@@ -51,7 +54,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) => {
   return (
     <nav className="w-64 bg-nexus-dark p-4 flex flex-col border-e border-nexus-surface">
       <div className="text-center py-4 mb-4">
-        <span className="text-lg font-bold text-nexus-text tracking-widest">{t('sidebar.nexus_ai')}</span>
+        <span className={`text-lg font-bold text-nexus-text tracking-widest ${isRtl ? 'font-tahoma' : ''}`}>{t('sidebar.nexus_ai')}</span>
       </div>
       <ul className="flex-grow">
         {mainNavItems.map(item => (

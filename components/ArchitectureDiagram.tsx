@@ -53,6 +53,7 @@ const Connector: React.FC<{ type?: 'x' | 'y'; isAnimated?: boolean }> = ({ type 
 //======= VIEW MODES =======//
 
 const StructuralView: React.FC<ArchitectureDiagramProps> = ({ replicaCount, tools, settings, cognitiveProcess, setActiveView }) => {
+    const { t } = useTranslation();
     const isThinking = cognitiveProcess.state !== 'Idle' && cognitiveProcess.state !== 'Done' && cognitiveProcess.state !== 'Cancelled';
     
     const lastMessage = cognitiveProcess.history[cognitiveProcess.history.length - 1];
@@ -64,30 +65,31 @@ const StructuralView: React.FC<ArchitectureDiagramProps> = ({ replicaCount, tool
 
     return (
         <div className="h-full w-full flex flex-col items-center justify-center p-4 space-y-2 font-sans">
-            <ArchBox title="User Interface Layer" items={[`Animation: ${settings.animationLevel}`, `Verbosity: ${settings.logVerbosity}`]} icon={<UserGroupIcon />} className="w-full md:w-1/2" isInteractive onClick={() => setActiveView('settings')} />
+            <ArchBox title={t('architecture.userInterfaceLayer')} items={[t('architecture.animation', {level: settings.animationLevel}), t('architecture.verbosity', {level: settings.logVerbosity})]} icon={<UserGroupIcon />} className="w-full md:w-1/2" isInteractive onClick={() => setActiveView('settings')} />
             <Connector />
-            <ArchBox title="Nexus Core Engine" items={[`Personality: ${personalityCode}`, `Status: ${cognitiveProcess.state}`]} icon={<BrainCircuitIcon />} className="w-full md:w-2/3" isGlowing={isThinking && !activeTool}/>
+            <ArchBox title={t('architecture.nexusCoreEngine')} items={[t('architecture.personality', {personality: personalityCode}), t('architecture.status', {status: cognitiveProcess.state})]} icon={<BrainCircuitIcon />} className="w-full md:w-2/3" isGlowing={isThinking && !activeTool}/>
             <div className="w-full flex justify-center items-center">
                 <Connector />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full md:w-5/6">
-                 <ArchBox title="Affective Core" items={[`State: ${cognitiveProcess.activeAffectiveState ? cognitiveProcess.activeAffectiveState.mood : 'Dormant'}`]} icon={<LightBulbIcon />} className="w-full" isGlowing={activeTool === 'induce_emotion'} />
-                 <ArchBox title="Long-Term Memory" items={['Archive of traces']} icon={<CircleStackIcon />} className="w-full" isInteractive onClick={() => setActiveView('memory')} isGlowing={activeTool === 'recall_memory'} />
+                 <ArchBox title={t('architecture.affectiveCore')} items={[t('architecture.state', {state: cognitiveProcess.activeAffectiveState ? cognitiveProcess.activeAffectiveState.mood : t('architecture.dormant')})]} icon={<LightBulbIcon />} className="w-full" isGlowing={activeTool === 'induce_emotion'} />
+                 <ArchBox title={t('architecture.longTermMemory')} items={[t('architecture.archiveOfTraces')]} icon={<CircleStackIcon />} className="w-full" isInteractive onClick={() => setActiveView('memory')} isGlowing={activeTool === 'recall_memory'} />
             </div>
              <div className="w-full flex justify-center items-center">
                 <Connector />
              </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full md:w-5/6">
-                <ArchBox title="Replicas" items={[`${replicaCount} Active Instances`]} icon={<CubeTransparentIcon />} isInteractive onClick={() => setActiveView('replicas')} isGlowing={activeTool === 'spawn_replica'} />
-                <ArchBox title="Mental Tools" items={[`${tools.length} Tools Available`]} icon={<CodeBracketIcon />} isInteractive onClick={() => setActiveView('tools')} isGlowing={!!activeTool && !['induce_emotion', 'recall_memory', 'spawn_replica', 'synthesize_answer'].includes(activeTool)} />
+                <ArchBox title={t('architecture.replicas')} items={[t('architecture.replicaInstances', { count: replicaCount })]} icon={<CubeTransparentIcon />} isInteractive onClick={() => setActiveView('replicas')} isGlowing={activeTool === 'spawn_replica'} />
+                <ArchBox title={t('architecture.mentalTools')} items={[t('architecture.toolsAvailable', { count: tools.length })]} icon={<CodeBracketIcon />} isInteractive onClick={() => setActiveView('tools')} isGlowing={!!activeTool && !['induce_emotion', 'recall_memory', 'spawn_replica', 'synthesize_answer'].includes(activeTool)} />
             </div>
             <Connector />
-            <ArchBox title="External Integrations" items={[`Model: ${settings.model}`, 'Google Search', 'Federated Learning']} icon={<GlobeAltIcon />} className="w-full md:w-2/3" isInteractive onClick={() => setActiveView('settings')} />
+            <ArchBox title={t('architecture.externalIntegrations')} items={[t('architecture.model', {model: settings.model}), 'Google Search', 'Federated Learning']} icon={<GlobeAltIcon />} className="w-full md:w-2/3" isInteractive onClick={() => setActiveView('settings')} />
       </div>
     );
 };
 
 const DataFlowView: React.FC<ArchitectureDiagramProps> = ({ cognitiveProcess }) => {
+    const { t } = useTranslation();
     const isThinking = cognitiveProcess.state !== 'Idle' && cognitiveProcess.state !== 'Done' && cognitiveProcess.state !== 'Cancelled';
     
     const lastMessage = cognitiveProcess.history[cognitiveProcess.history.length - 1];
@@ -96,9 +98,9 @@ const DataFlowView: React.FC<ArchitectureDiagramProps> = ({ cognitiveProcess }) 
 
     return (
         <div className="h-full w-full flex flex-col items-center justify-around p-4 font-sans text-center">
-            <ArchBox title="UI/UX" icon={<UserGroupIcon />} className="w-48"/>
+            <ArchBox title={t('architecture.ui_ux')} icon={<UserGroupIcon />} className="w-48"/>
             <Connector isAnimated={isThinking} />
-            <ArchBox title="Nexus Core" icon={<BrainCircuitIcon />} className="w-48" isGlowing={isThinking} >
+            <ArchBox title={t('architecture.nexusCore')} icon={<BrainCircuitIcon />} className="w-48" isGlowing={isThinking} >
                 {cognitiveProcess.activeAffectiveState && <LightBulbIcon className="absolute w-5 h-5 top-2 right-2 text-yellow-300 animate-pulse" />}
             </ArchBox>
             <div className="w-full flex justify-around items-center my-2">
@@ -106,15 +108,16 @@ const DataFlowView: React.FC<ArchitectureDiagramProps> = ({ cognitiveProcess }) 
                 <Connector type="x" isAnimated={isThinking} />
             </div>
             <div className="w-full flex justify-around">
-                <ArchBox title="Replicas" icon={<CubeTransparentIcon />} className="w-48" isGlowing={activeTool === 'spawn_replica'}/>
-                <ArchBox title="Tools" icon={<CodeBracketIcon />} className="w-48" isGlowing={!!activeTool && !['induce_emotion', 'recall_memory', 'spawn_replica', 'synthesize_answer'].includes(activeTool)}/>
-                <ArchBox title="Memory" icon={<CircleStackIcon />} className="w-48" isGlowing={activeTool === 'recall_memory'}/>
+                <ArchBox title={t('architecture.replicas')} icon={<CubeTransparentIcon />} className="w-48" isGlowing={activeTool === 'spawn_replica'}/>
+                <ArchBox title={t('architecture.tools')} icon={<CodeBracketIcon />} className="w-48" isGlowing={!!activeTool && !['induce_emotion', 'recall_memory', 'spawn_replica', 'synthesize_answer'].includes(activeTool)}/>
+                <ArchBox title={t('architecture.memory')} icon={<CircleStackIcon />} className="w-48" isGlowing={activeTool === 'recall_memory'}/>
             </div>
         </div>
     );
 };
 
 const CognitiveLoadView: React.FC<ArchitectureDiagramProps> = ({ replicas, tools, cognitiveProcess }) => {
+    const { t } = useTranslation();
     const isThinking = cognitiveProcess.state !== 'Idle' && cognitiveProcess.state !== 'Done' && cognitiveProcess.state !== 'Cancelled';
     const lastMessage = cognitiveProcess.history[cognitiveProcess.history.length - 1];
     const currentStep = (lastMessage?.role === 'model' && lastMessage.currentStep !== undefined) ? lastMessage.plan?.[lastMessage.currentStep] : null;
@@ -138,7 +141,7 @@ const CognitiveLoadView: React.FC<ArchitectureDiagramProps> = ({ replicas, tools
                     style={{ transform: `scale(${1 + coreLoad * 0.3})`, boxShadow: `0 0 ${coreLoad * 25}px ${coreLoad * 10}px rgba(0, 170, 255, ${coreLoad * 0.5})` }}
                 >
                     <BrainCircuitIcon className="w-8 h-8 text-nexus-primary" />
-                    <span className="text-xs font-bold mt-1">Core</span>
+                    <span className="text-xs font-bold mt-1">{t('architecture.core')}</span>
                 </div>
                 {/* Affective Core */}
                 <div className="absolute transition-all duration-500"
@@ -245,7 +248,7 @@ const ArchitectureDiagram: React.FC<ArchitectureDiagramProps> = (props) => {
                                     ? 'bg-nexus-primary text-nexus-dark border-nexus-primary z-10' 
                                     : 'bg-nexus-surface text-nexus-text-muted border-nexus-surface/50 hover:bg-nexus-surface/80 hover:text-nexus-text'
                                 }
-                                first:rounded-l-full last:rounded-r-full`}
+                                first:rounded-s-full last:rounded-e-full`}
                         >
                             <div className="w-5 h-5">{mode.icon}</div>
                             {mode.label}

@@ -21,21 +21,22 @@ interface VitalsPanelProps {
 }
 
 const VitalsPanel: React.FC<VitalsPanelProps> = ({ status, onSetStatus, isInteractionDisabled, replicaCount, toolCount, performanceData, logs }) => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const [animationClass, setAnimationClass] = useState('hidden');
+    const isRtl = i18n.dir() === 'rtl';
 
     const handleToggle = () => {
         if (isOpen) {
-            setAnimationClass('animate-slide-out-right');
+            setAnimationClass(isRtl ? 'animate-slide-out-left' : 'animate-slide-out-right');
         } else {
-            setAnimationClass('animate-slide-in-right');
+            setAnimationClass(isRtl ? 'animate-slide-in-left' : 'animate-slide-in-right');
             setIsOpen(true);
         }
     };
     
     const onAnimationEnd = () => {
-        if (animationClass === 'animate-slide-out-right') {
+        if (animationClass === 'animate-slide-out-right' || animationClass === 'animate-slide-out-left') {
             setIsOpen(false);
         }
     };
@@ -43,21 +44,25 @@ const VitalsPanel: React.FC<VitalsPanelProps> = ({ status, onSetStatus, isIntera
     const tabClasses = ({ selected }: { selected: boolean }) => `
         w-full py-2.5 text-sm font-medium leading-5 rounded-full
         ring-white/60 ring-offset-2 ring-offset-nexus-bg focus:outline-none focus:ring-2
+        ${isRtl ? 'font-tahoma' : ''}
         ${selected
             ? 'bg-nexus-primary text-nexus-dark shadow'
             : 'text-nexus-text-muted hover:bg-nexus-dark/30 hover:text-white'
         }
     `;
 
+    const OpenIcon = isRtl ? ChevronLeftIcon : ChevronRightIcon;
+    const CloseIcon = isRtl ? ChevronRightIcon : ChevronLeftIcon;
+
     return (
         <>
-            <div className="absolute top-1/2 -translate-y-1/2 right-0 z-30">
+            <div className="absolute top-1/2 -translate-y-1/2 end-0 z-30">
                 <button 
                     onClick={handleToggle} 
                     className="bg-nexus-surface/80 backdrop-blur-sm p-2 rounded-s-full border-s border-t border-b border-nexus-surface hover:bg-nexus-primary/20"
                     aria-label={isOpen ? t('vitals.closeVitalsPanel') : t('vitals.openVitalsPanel')}
                 >
-                    {isOpen ? <ChevronRightIcon className="w-6 h-6 text-nexus-primary" /> : <ChevronLeftIcon className="w-6 h-6 text-nexus-text-muted" />}
+                    {isOpen ? <OpenIcon className="w-6 h-6 text-nexus-primary" /> : <CloseIcon className="w-6 h-6 text-nexus-text-muted" />}
                 </button>
             </div>
 

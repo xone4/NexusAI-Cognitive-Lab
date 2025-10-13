@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { MentalTool } from '../types';
-import { FireIcon, BrainCircuitIcon } from './Icons';
+import { FireIcon } from './Icons';
 
 interface ToolForgeModalProps {
     onClose: () => void;
@@ -8,6 +9,7 @@ interface ToolForgeModalProps {
 }
 
 const ToolForgeModal: React.FC<ToolForgeModalProps> = ({ onClose, onForge }) => {
+    const { t } = useTranslation();
     const [purpose, setPurpose] = useState('');
     const [capabilities, setCapabilities] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -16,7 +18,7 @@ const ToolForgeModal: React.FC<ToolForgeModalProps> = ({ onClose, onForge }) => 
     const handleForge = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!purpose.trim()) {
-            setError("Purpose description is required.");
+            setError(t('toolForge.purposeRequired'));
             return;
         }
         setError(null);
@@ -28,7 +30,7 @@ const ToolForgeModal: React.FC<ToolForgeModalProps> = ({ onClose, onForge }) => 
             await onForge({ purpose, capabilities: capsArray });
             onClose();
         } catch (err) {
-            setError(err instanceof Error ? err.message : "An unknown error occurred during forging.");
+            setError(err instanceof Error ? err.message : t('toolForge.unknownError'));
         } finally {
             setIsLoading(false);
         }
@@ -41,36 +43,36 @@ const ToolForgeModal: React.FC<ToolForgeModalProps> = ({ onClose, onForge }) => 
                  <form onSubmit={handleForge}>
                     <div className="flex items-center gap-3 mb-4">
                         <FireIcon className="w-8 h-8 text-nexus-accent"/>
-                        <h3 className="text-xl font-bold text-nexus-text">Forge a New Mental Tool</h3>
+                        <h3 className="text-xl font-bold text-nexus-text">{t('toolForge.title')}</h3>
                     </div>
                     
                     {isLoading ? (
                         <div className="flex flex-col items-center justify-center h-48 text-center text-nexus-text-muted">
                             <div className="w-16 h-16 mb-4 relative"><div className="nexus-loader"></div></div>
-                            <p className="font-semibold text-lg">AI is Forging...</p>
-                            <p className="text-sm">Synthesizing a new cognitive instrument based on your design...</p>
+                            <p className="font-semibold text-lg">{t('toolForge.inProgress')}</p>
+                            <p className="text-sm">{t('toolForge.inProgressDesc')}</p>
                         </div>
                     ) : (
                         <div className="space-y-4">
                              <div>
-                                <label htmlFor="purpose" className="block text-sm font-medium text-nexus-text-muted">Purpose / Description</label>
+                                <label htmlFor="purpose" className="block text-sm font-medium text-nexus-text-muted">{t('toolForge.purposeDesc')}</label>
                                 <textarea
                                     id="purpose"
                                     value={purpose}
                                     onChange={(e) => setPurpose(e.target.value)}
                                     className="w-full mt-1 h-24 p-3 bg-nexus-dark/70 border border-nexus-surface rounded-xl focus:outline-none focus:ring-2 focus:ring-nexus-primary text-nexus-text resize-none font-mono text-sm"
-                                    placeholder="e.g., 'Analyze real-time market data to predict short-term volatility.'"
+                                    placeholder={t('tools.purposePlaceholder')}
                                 />
                              </div>
                               <div>
-                                <label htmlFor="capabilities" className="block text-sm font-medium text-nexus-text-muted">Key Capabilities (comma-separated)</label>
+                                <label htmlFor="capabilities" className="block text-sm font-medium text-nexus-text-muted">{t('toolForge.capabilities')}</label>
                                 <input
                                     type="text"
                                     id="capabilities"
                                     value={capabilities}
                                     onChange={(e) => setCapabilities(e.target.value)}
                                     className="w-full mt-1 p-3 bg-nexus-dark/70 border border-nexus-surface rounded-xl focus:outline-none focus:ring-2 focus:ring-nexus-primary text-nexus-text font-mono text-sm"
-                                    placeholder="e.g., 'data analysis, prediction, financial modeling'"
+                                    placeholder={t('tools.capabilitiesPlaceholder')}
                                 />
                              </div>
                         </div>
@@ -80,10 +82,10 @@ const ToolForgeModal: React.FC<ToolForgeModalProps> = ({ onClose, onForge }) => 
                     {error && <p className="text-red-400 text-sm mt-4 text-center">{error}</p>}
                     
                     <div className="flex justify-end space-x-3 mt-6">
-                        <button type="button" onClick={onClose} disabled={isLoading} className="py-2 px-4 rounded-full text-nexus-text-muted hover:bg-nexus-dark disabled:opacity-50">Cancel</button>
+                        <button type="button" onClick={onClose} disabled={isLoading} className="py-2 px-4 rounded-full text-nexus-text-muted hover:bg-nexus-dark disabled:opacity-50">{t('common.cancel')}</button>
                         <button type="submit" disabled={isLoading} className="py-2 px-6 rounded-full bg-nexus-primary text-nexus-dark font-bold hover:bg-nexus-secondary flex items-center gap-2 disabled:bg-nexus-surface/50 disabled:text-nexus-text-muted disabled:cursor-not-allowed">
                             <FireIcon className="w-5 h-5"/>
-                            Forge Tool
+                            {t('toolForge.forgeTool')}
                         </button>
                     </div>
                 </form>

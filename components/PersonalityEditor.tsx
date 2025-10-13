@@ -17,15 +17,17 @@ const TraitToggle: React.FC<{
     onClick: (value: any) => void;
     disabled?: boolean;
 }> = ({ label, description, option1, option2, currentValue, onClick, disabled }) => {
+    const { i18n } = useTranslation();
+    const isRtl = i18n.dir() === 'rtl';
 
     return (
         <div className="bg-nexus-dark/30 p-3 rounded-xl">
             <div className="flex justify-between items-center">
                 <div className="relative group">
-                    <label className="block text-sm font-medium text-nexus-text-muted cursor-help">{label}</label>
-                     <div className="absolute bottom-full left-0 mb-2 w-64 bg-nexus-dark text-white text-xs rounded-md p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">
+                    <label className={`block text-sm font-medium text-nexus-text-muted cursor-help ${isRtl ? 'font-tahoma' : ''}`}>{label}</label>
+                     <div className="absolute bottom-full start-0 mb-2 w-64 bg-nexus-dark text-white text-xs rounded-md p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">
                         {description}
-                        <div className="absolute top-full left-4 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-nexus-dark"></div>
+                        <div className="absolute top-full start-4 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-nexus-dark"></div>
                     </div>
                 </div>
                  <div className="flex rounded-full shadow-sm bg-nexus-bg">
@@ -33,7 +35,7 @@ const TraitToggle: React.FC<{
                         type="button"
                         onClick={() => !disabled && onClick(option1.value)}
                         disabled={disabled}
-                        className={`px-3 py-1 text-sm font-semibold rounded-l-full transition-colors ${currentValue === option1.value ? 'bg-nexus-primary text-nexus-dark' : 'text-nexus-text-muted hover:bg-nexus-surface'}`}
+                        className={`px-3 py-1 text-sm font-semibold rounded-s-full transition-colors ${isRtl ? 'font-tahoma' : ''} ${currentValue === option1.value ? 'bg-nexus-primary text-nexus-dark' : 'text-nexus-text-muted hover:bg-nexus-surface'}`}
                     >
                         {option1.label}
                     </button>
@@ -41,7 +43,7 @@ const TraitToggle: React.FC<{
                         type="button"
                         onClick={() => !disabled && onClick(option2.value)}
                         disabled={disabled}
-                        className={`px-3 py-1 text-sm font-semibold rounded-r-full transition-colors ${currentValue === option2.value ? 'bg-nexus-primary text-nexus-dark' : 'text-nexus-text-muted hover:bg-nexus-surface'}`}
+                        className={`px-3 py-1 text-sm font-semibold rounded-e-full transition-colors ${isRtl ? 'font-tahoma' : ''} ${currentValue === option2.value ? 'bg-nexus-primary text-nexus-dark' : 'text-nexus-text-muted hover:bg-nexus-surface'}`}
                     >
                         {option2.label}
                     </button>

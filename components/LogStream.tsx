@@ -17,7 +17,7 @@ const levelColors: Record<LogEntry['level'], string> = {
 
 const LogItem = memo(({ log }: { log: LogEntry }) => (
     <div className="flex items-start">
-      <span className="text-nexus-text-muted mr-3">
+      <span className="text-nexus-text-muted me-3">
         {new Date(log.timestamp).toLocaleTimeString()}
       </span>
       <span className={`font-bold w-16 ${levelColors[log.level]}`}>

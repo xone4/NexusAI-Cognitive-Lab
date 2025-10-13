@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ChatMessage, PlanStep, GeneratedImage } from '../types';
 import { nexusAIService } from '../services/nexusAIService';
 import AffectiveStateVisualizer from './QualiaVectorVisualizer';
@@ -29,6 +30,7 @@ const DetailCard: React.FC<{ label: string; children: React.ReactNode; className
 );
 
 const DetailedPlanStep: React.FC<{ step: PlanStep }> = ({ step }) => {
+    const { t } = useTranslation();
     const getStepIcon = () => {
         switch(step.tool) {
             case 'google_search': return <CubeTransparentIcon className="w-5 h-5 text-blue-400" />;
@@ -44,7 +46,7 @@ const DetailedPlanStep: React.FC<{ step: PlanStep }> = ({ step }) => {
         if (step.status === 'error') {
             return <pre className="text-xs whitespace-pre-wrap text-red-400 font-mono bg-red-500/10 p-2 rounded-xl">{String(step.result)}</pre>;
         }
-        if (!step.result) return <p className="text-xs text-nexus-text-muted italic">No result recorded.</p>;
+        if (!step.result) return <p className="text-xs text-nexus-text-muted italic">{t('traceInspector.noResult')}</p>;
         
         if (typeof step.result === 'object' && step.result.id?.startsWith('img-')) {
             const image = step.result as GeneratedImage;
@@ -56,7 +58,7 @@ const DetailedPlanStep: React.FC<{ step: PlanStep }> = ({ step }) => {
                         className="w-full rounded-lg border-2 border-nexus-surface"
                     />
                     <p className="text-xs text-nexus-text-muted mt-2 italic">
-                        Prompt: "{image.concept}"
+                        {t('traceInspector.prompt')} "{image.concept}"
                     </p>
                 </div>
             )
@@ -75,12 +77,12 @@ const DetailedPlanStep: React.FC<{ step: PlanStep }> = ({ step }) => {
              <div className="pl-8 space-y-3">
                 {(step.query || step.code || step.concept) && (
                     <div>
-                        <h5 className="text-xs font-bold text-nexus-text-muted">Input:</h5>
+                        <h5 className="text-xs font-bold text-nexus-text-muted">{t('traceInspector.input')}</h5>
                         <pre className="text-xs whitespace-pre-wrap text-nexus-text-muted font-mono bg-nexus-dark/70 p-2 rounded-xl">{step.query || step.code || step.concept}</pre>
                     </div>
                 )}
                 <div>
-                     <h5 className="text-xs font-bold text-nexus-text-muted">Result:</h5>
+                     <h5 className="text-xs font-bold text-nexus-text-muted">{t('traceInspector.result')}</h5>
                      {renderResult()}
                 </div>
              </div>
@@ -90,6 +92,7 @@ const DetailedPlanStep: React.FC<{ step: PlanStep }> = ({ step }) => {
 
 
 const CognitiveTraceInspector: React.FC<CognitiveTraceInspectorProps> = ({ trace, onClose }) => {
+    const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState<InspectorTab>('summary');
     const [details, setDetails] = useState(() => nexusAIService.getArchivedTraceDetails(trace.id));
     const [isLoadingReflection, setIsLoadingReflection] = useState(false);
@@ -153,17 +156,17 @@ const CognitiveTraceInspector: React.FC<CognitiveTraceInspectorProps> = ({ trace
             case 'summary':
                 return (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <DetailCard label="User Query" className="md:col-span-2">
+                        <DetailCard label={t('traceInspector.userQuery')} className="md:col-span-2">
                             <p className="italic">"{trace.userQuery}"</p>
                         </DetailCard>
-                         <DetailCard label="Final Answer" className="md:col-span-2">
+                         <DetailCard label={t('traceInspector.finalAnswer')} className="md:col-span-2">
                             <pre className="text-sm whitespace-pre-wrap font-sans text-nexus-text bg-nexus-dark/50 p-3 rounded-xl max-h-64 overflow-y-auto">{String(trace.text || '')}</pre>
                         </DetailCard>
-                         <DetailCard label="Metrics">
-                            <p>Plan Steps: {trace.plan?.length || 0}</p>
-                            <p>Constitution: {trace.constitutionId || 'Default'}</p>
+                         <DetailCard label={t('traceInspector.metrics')}>
+                            <p>{t('traceInspector.planSteps')}: {trace.plan?.length || 0}</p>
+                            <p>{t('traceInspector.constitution')}: {trace.constitutionId || t('traceInspector.default')}</p>
                          </DetailCard>
-                         <DetailCard label="Affective State Snapshot">
+                         <DetailCard label={t('traceInspector.affectiveStateSnapshot')}>
                              <div className="h-48">
                                 <AffectiveStateVisualizer activeState={trace.affectiveStateSnapshot || null} />
                             </div>
@@ -181,10 +184,10 @@ const CognitiveTraceInspector: React.FC<CognitiveTraceInspectorProps> = ({ trace
                     <div className="text-center py-4">
                         {!details.reflection && !isLoadingReflection && (
                              <button onClick={handleGenerateReflection} className="flex items-center gap-2 mx-auto bg-nexus-primary text-nexus-dark font-bold py-2 px-4 rounded-full hover:bg-nexus-secondary">
-                                 <BrainCircuitIcon className="w-5 h-5"/> Generate AI Self-Reflection
+                                 <BrainCircuitIcon className="w-5 h-5"/> {t('traceInspector.generateReflection')}
                             </button>
                         )}
-                        {isLoadingReflection && <p className="text-nexus-text-muted animate-pulse">AI is reflecting on its performance...</p>}
+                        {isLoadingReflection && <p className="text-nexus-text-muted animate-pulse">{t('traceInspector.reflecting')}</p>}
                         {details.reflection && (
                              <pre className="text-sm whitespace-pre-wrap font-sans text-nexus-text text-left bg-nexus-dark/50 p-4 rounded-xl overflow-y-auto">
                                  {String(details.reflection || '')}
@@ -204,7 +207,7 @@ const CognitiveTraceInspector: React.FC<CognitiveTraceInspectorProps> = ({ trace
                     <div className="flex items-center gap-3 mb-4">
                         <DocumentMagnifyingGlassIcon className="w-8 h-8 text-nexus-primary"/>
                         <div>
-                            <h3 className="text-xl font-bold text-nexus-text">Cognitive Trace Inspector</h3>
+                            <h3 className="text-xl font-bold text-nexus-text">{t('traceInspector.title')}</h3>
                             <p className="text-xs text-nexus-text-muted">{new Date(trace.archivedAt!).toLocaleString()}</p>
                         </div>
                     </div>
@@ -212,13 +215,13 @@ const CognitiveTraceInspector: React.FC<CognitiveTraceInspectorProps> = ({ trace
                  </div>
                 
                  <div className="flex-shrink-0 border-b border-nexus-surface mb-4">
-                    <TabButton active={activeTab === 'summary'} onClick={() => setActiveTab('summary')}>Summary</TabButton>
-                    <TabButton active={activeTab === 'flow'} onClick={() => setActiveTab('flow')}>Execution Flow</TabButton>
-                    <TabButton active={activeTab === 'reflection'} onClick={() => setActiveTab('reflection')}>AI Reflection</TabButton>
+                    <TabButton active={activeTab === 'summary'} onClick={() => setActiveTab('summary')}>{t('traceInspector.summary')}</TabButton>
+                    <TabButton active={activeTab === 'flow'} onClick={() => setActiveTab('flow')}>{t('traceInspector.executionFlow')}</TabButton>
+                    <TabButton active={activeTab === 'reflection'} onClick={() => setActiveTab('reflection')}>{t('traceInspector.aiReflection')}</TabButton>
                     <TabButton active={activeTab === 'discuss'} onClick={() => setActiveTab('discuss')}>
                         <div className="flex items-center gap-2">
                             <ChatBubbleLeftRightIcon className="w-5 h-5"/>
-                            Discuss Trace
+                            {t('traceInspector.discussTrace')}
                         </div>
                     </TabButton>
                  </div>
@@ -229,8 +232,8 @@ const CognitiveTraceInspector: React.FC<CognitiveTraceInspectorProps> = ({ trace
                              {(details.discussion || []).length === 0 && (
                                  <div className="flex flex-col items-center justify-center h-full text-center text-nexus-text-muted">
                                     <ChatBubbleLeftRightIcon className="w-16 h-16"/>
-                                    <p className="mt-4 font-semibold text-lg">Discussion Hub</p>
-                                    <p className="text-sm">Ask questions about the AI's plan, reasoning, or final answer.</p>
+                                    <p className="mt-4 font-semibold text-lg">{t('traceInspector.discussionHub')}</p>
+                                    <p className="text-sm">{t('traceInspector.discussionHubDesc')}</p>
                                  </div>
                              )}
                             {(details.discussion || []).map((msg, index) => (
@@ -242,7 +245,7 @@ const CognitiveTraceInspector: React.FC<CognitiveTraceInspectorProps> = ({ trace
                                 <div className="flex justify-start my-2 animate-spawn-in">
                                      <BrainCircuitIcon className="w-8 h-8 text-nexus-secondary mr-3 flex-shrink-0" />
                                     <div className="bg-nexus-dark rounded-xl rounded-bl-none max-w-lg p-3 shadow-md">
-                                        <p className="text-sm text-nexus-text-muted animate-pulse">Thinking...</p>
+                                        <p className="text-sm text-nexus-text-muted animate-pulse">{t('traceInspector.thinking')}</p>
                                     </div>
                                 </div>
                             )}
@@ -252,7 +255,7 @@ const CognitiveTraceInspector: React.FC<CognitiveTraceInspectorProps> = ({ trace
                                 type="text"
                                 value={discussionInput}
                                 onChange={(e) => setDiscussionInput(e.target.value)}
-                                placeholder="Ask about this trace..."
+                                placeholder={t('traceInspector.discussPlaceholder')}
                                 disabled={isDiscussing}
                                 className="flex-grow bg-nexus-dark/70 border border-nexus-surface rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-nexus-primary text-nexus-text text-sm"
                             />
@@ -261,7 +264,7 @@ const CognitiveTraceInspector: React.FC<CognitiveTraceInspectorProps> = ({ trace
                                 disabled={isDiscussing || !discussionInput.trim()}
                                 className="bg-nexus-primary text-nexus-dark font-bold py-2 px-4 rounded-full hover:bg-nexus-secondary disabled:opacity-50"
                             >
-                                Send
+                                {t('traceInspector.send')}
                             </button>
                         </form>
                     </div>

@@ -1,4 +1,5 @@
 import React, { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { CognitiveConstitution, RuleType } from '../types';
 import { BrainCircuitIcon } from './Icons';
 
@@ -22,13 +23,14 @@ const RuleIcon: React.FC<{ type: RuleType }> = memo(({ type }) => {
 RuleIcon.displayName = 'RuleIcon';
 
 const ConstitutionManager: React.FC<ConstitutionManagerProps> = ({ constitutions, activeId, onSelect, isThinking }) => {
+  const { t } = useTranslation();
   const activeConstitution = constitutions.find(c => c.id === activeId) ?? null;
 
   return (
     <div className="flex flex-col h-full space-y-3">
         <div>
             <label htmlFor="constitution-select" className="block text-sm font-medium text-nexus-text-muted">
-                Active Cognitive Constitution
+                {t('constitutionManager.title')}
             </label>
             <select
                 id="constitution-select"
@@ -50,7 +52,7 @@ const ConstitutionManager: React.FC<ConstitutionManagerProps> = ({ constitutions
                 <div className="space-y-2">
                     <p className="text-sm text-nexus-text-muted italic">"{activeConstitution.description}"</p>
                     <div className="pt-2 border-t border-nexus-surface/30">
-                        <h4 className="font-semibold text-nexus-primary text-xs uppercase tracking-wider mb-2">Active Rules:</h4>
+                        <h4 className="font-semibold text-nexus-primary text-xs uppercase tracking-wider mb-2">{t('constitutionManager.activeRules')}</h4>
                         {activeConstitution.rules.length > 0 ? (
                              <ul className="space-y-1.5 text-sm text-nexus-text">
                                 {activeConstitution.rules.map((rule, i) => (
@@ -61,13 +63,13 @@ const ConstitutionManager: React.FC<ConstitutionManagerProps> = ({ constitutions
                                 ))}
                             </ul>
                         ) : (
-                            <p className="text-xs text-nexus-text-muted text-center py-2">No special rules. Operating under default parameters.</p>
+                            <p className="text-xs text-nexus-text-muted text-center py-2">{t('constitutionManager.noRules')}</p>
                         )}
                     </div>
                 </div>
             ) : (
                 <div className="flex items-center justify-center h-full text-nexus-text-muted">
-                    <p>Select a constitution to view its rules.</p>
+                    <p>{t('constitutionManager.selectHint')}</p>
                 </div>
             )}
         </div>

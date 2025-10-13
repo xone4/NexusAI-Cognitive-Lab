@@ -105,9 +105,11 @@ export type LogVerbosity = 'STANDARD' | 'VERBOSE';
 export type AnimationLevel = 'FULL' | 'MINIMAL' | 'NONE';
 export type SuggestionProfile = 'short' | 'medium' | 'long';
 export type Language = 'en' | 'ar' | 'es' | 'fr' | 'de' | 'zh';
+export type ModelProfile = 'lite' | 'flash' | 'pro';
 
 export interface AppSettings {
   model: string;
+  modelProfile: ModelProfile;
   cognitiveStepDelay: number; // in milliseconds
   coreAgentPersonality: Personality;
   logVerbosity: LogVerbosity;
@@ -178,6 +180,10 @@ export interface ChatMessage {
     
     // For evolved answers
     evolutionProblemStatement?: string;
+
+    // For semantic search
+    embedding?: number[];
+    similarity?: number;
 }
 
 export interface CognitiveProcess {

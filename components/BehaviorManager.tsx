@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Behavior } from '../types';
 import DashboardCard from './DashboardCard';
 import ModifyBehaviorModal from './ModifyBehaviorModal';
@@ -11,8 +12,9 @@ interface BehaviorManagerProps {
 }
 
 const BehaviorCard: React.FC<{ behavior: Behavior; onEdit: (behavior: Behavior) => void; onDelete: (id: string) => void; }> = ({ behavior, onEdit, onDelete }) => {
+    const { t } = useTranslation();
     const handleDelete = () => {
-        if (window.confirm(`Are you sure you want to delete the behavior "${behavior.name}"?`)) {
+        if (window.confirm(t('behaviors.deleteConfirm', { name: behavior.name }))) {
             onDelete(behavior.id);
         }
     };
@@ -27,13 +29,13 @@ const BehaviorCard: React.FC<{ behavior: Behavior; onEdit: (behavior: Behavior) 
                     <p className="text-sm text-nexus-text-muted italic mt-1">"{behavior.description}"</p>
                 </div>
                 <div className="flex gap-2 flex-shrink-0 ml-4">
-                    <button onClick={() => onEdit(behavior)} className="p-1 text-purple-400 hover:text-white" title="Edit Behavior"><WrenchScrewdriverIcon className="w-5 h-5"/></button>
-                    <button onClick={handleDelete} className="p-1 text-red-500 hover:text-white" title="Delete Behavior"><TrashIcon className="w-5 h-5"/></button>
+                    <button onClick={() => onEdit(behavior)} className="p-1 text-purple-400 hover:text-white" title={t('behaviors.editBehavior')}><WrenchScrewdriverIcon className="w-5 h-5"/></button>
+                    <button onClick={handleDelete} className="p-1 text-red-500 hover:text-white" title={t('behaviors.deleteBehavior')}><TrashIcon className="w-5 h-5"/></button>
                 </div>
             </div>
             <div className="mt-3 pt-3 border-t border-nexus-surface/30 space-y-2">
                 <div>
-                    <h5 className="text-xs font-semibold text-nexus-primary uppercase tracking-wider mb-1">Tags</h5>
+                    <h5 className="text-xs font-semibold text-nexus-primary uppercase tracking-wider mb-1">{t('tools.tags')}</h5>
                     <div className="flex flex-wrap gap-1.5">
                         {behavior.tags.map(tag => (
                             <span key={tag} className="text-xs bg-nexus-surface px-2 py-0.5 rounded-full text-nexus-secondary font-mono">{tag}</span>
@@ -41,15 +43,15 @@ const BehaviorCard: React.FC<{ behavior: Behavior; onEdit: (behavior: Behavior) 
                     </div>
                 </div>
                 <div>
-                    <h5 className="text-xs font-semibold text-nexus-primary uppercase tracking-wider mb-1">Strategy</h5>
+                    <h5 className="text-xs font-semibold text-nexus-primary uppercase tracking-wider mb-1">{t('behaviors.strategy')}</h5>
                     <p className="text-sm text-nexus-text-muted whitespace-pre-wrap font-mono bg-nexus-dark/50 p-2 rounded-xl max-h-24 overflow-y-auto">
                         {behavior.strategy}
                     </p>
                 </div>
                 <div className="flex items-center justify-between text-xs text-nexus-text-muted pt-2">
-                    <span>Usage Count: <span className="font-bold text-nexus-text">{behavior.usageCount}</span></span>
+                    <span>{t('behaviors.usageCount')}<span className="font-bold text-nexus-text">{behavior.usageCount}</span></span>
                     <span className="flex items-center gap-1">
-                        <ClockIcon className="w-3 h-3"/> Last used: {new Date(behavior.lastUsed).toLocaleDateString()}
+                        <ClockIcon className="w-3 h-3"/> {t('behaviors.lastUsed')} {new Date(behavior.lastUsed).toLocaleDateString()}
                     </span>
                 </div>
             </div>
@@ -58,6 +60,7 @@ const BehaviorCard: React.FC<{ behavior: Behavior; onEdit: (behavior: Behavior) 
 };
 
 const BehaviorManager: React.FC<BehaviorManagerProps> = ({ behaviors, onUpdate, onDelete }) => {
+    const { t } = useTranslation();
     const [behaviorToModify, setBehaviorToModify] = useState<Behavior | null>(null);
 
     return (
@@ -69,10 +72,10 @@ const BehaviorManager: React.FC<BehaviorManagerProps> = ({ behaviors, onUpdate, 
                     onClose={() => setBehaviorToModify(null)}
                 />
             )}
-            <DashboardCard title="Metacognitive Behavior Handbook" icon={<BrainCircuitIcon />} className="md:col-span-2 xl:col-span-3">
+            <DashboardCard title={t('behaviors.handbookTitle')} icon={<BrainCircuitIcon />} className="md:col-span-2 xl:col-span-3">
                 <div className="mb-4 pb-4 border-b border-nexus-surface/50">
-                    <h3 className="text-lg font-semibold text-nexus-text">Learned Strategies</h3>
-                    <p className="text-sm text-nexus-text-muted">A library of reusable problem-solving strategies extracted by the AI from its own successful operations.</p>
+                    <h3 className="text-lg font-semibold text-nexus-text">{t('behaviors.strategiesTitle')}</h3>
+                    <p className="text-sm text-nexus-text-muted">{t('behaviors.strategiesDesc')}</p>
                 </div>
                 <div className="space-y-4">
                     {behaviors.length > 0 ? (
@@ -87,8 +90,8 @@ const BehaviorManager: React.FC<BehaviorManagerProps> = ({ behaviors, onUpdate, 
                     ) : (
                          <div className="text-center py-8 text-nexus-text-muted">
                             <BrainCircuitIcon className="w-12 h-12 mx-auto mb-4" />
-                            <h3 className="text-lg font-semibold">The Handbook is Empty</h3>
-                            <p className="text-sm">Complete a cognitive task and use the "Extract Behavior" action to start building this library.</p>
+                            <h3 className="text-lg font-semibold">{t('behaviors.emptyHandbook')}</h3>
+                            <p className="text-sm">{t('behaviors.emptyHandbookHint')}</p>
                         </div>
                     )}
                 </div>

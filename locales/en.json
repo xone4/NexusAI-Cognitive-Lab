@@ -179,26 +179,14 @@
     "archive": "Archive",
     "decommission": "Decommission",
     "tags": "Tags",
-    "noTags": "No tags assigned.",
-    "toolForgeTitle": "Forge a New Mental Tool",
-    "forgingInProgress": "AI is Forging...",
-    "forgingInProgressDesc": "Synthesizing a new cognitive instrument based on your design...",
-    "purposeDesc": "Purpose / Description",
-    "purposePlaceholder": "e.g., 'Analyze real-time market data to predict short-term volatility.'",
-    "capabilities": "Key Capabilities (comma-separated)",
-    "capabilitiesPlaceholder": "e.g., 'data analysis, prediction, financial modeling'",
-    "forgeTool": "Forge Tool",
-    "purposeRequired": "Purpose description is required.",
-    "modifyToolTitle": "Modify Mental Tool",
-    "toolName": "Tool Name",
-    "description": "Description",
-    "saveChanges": "Save Changes"
+    "noTags": "No tags assigned."
   },
   "toolchains": {
     "promptName": "Enter a name for the new toolchain:",
     "promptNameDefault": "My Saved Plan",
     "promptDesc": "Enter a short description:",
     "promptDescDefault": "Created from plan with {{count}} steps.",
+    "deleteConfirm": "Are you sure you want to delete the toolchain \"{{name}}\"?",
     "managementTitle": "Toolchain Management",
     "workflowsTitle": "Cognitive Workflows",
     "workflowsDesc": "Create, modify, and deploy sequences of mental tools for complex, automated tasks.",
@@ -215,7 +203,8 @@
     "availableTools": "Available Tools",
     "noMoreTools": "No more tools available.",
     "chainSequence": "Chain Sequence",
-    "addToolsHint": "Add tools from the left panel to build your chain."
+    "addToolsHint": "Add tools from the left panel to build your chain.",
+    "create": "Create Toolchain"
   },
   "behaviors": {
     "handbookTitle": "Metacognitive Behavior Handbook",
@@ -249,9 +238,11 @@
     "longTermMemory": "Long-Term Memory",
     "archiveOfTraces": "Archive of traces",
     "replicas": "Replicas",
-    "replicaInstances": "{{count}} Active Instances",
+    "replicaInstances_one": "{{count}} Active Instance",
+    "replicaInstances_other": "{{count}} Active Instances",
     "mentalTools": "Mental Tools",
-    "toolsAvailable": "{{count}} Tools Available",
+    "toolsAvailable_one": "{{count}} Tool Available",
+    "toolsAvailable_other": "{{count}} Tools Available",
     "externalIntegrations": "External Integrations",
     "model": "Model: {{model}}",
     "ui_ux": "UI/UX",
@@ -288,16 +279,13 @@
   },
   "settings": {
     "cognitiveCore": "Cognitive Core",
-    "systemPersonality": "System Personality",
-    "systemPersonalityDesc": "Defines the AI's core behavior and response style for planning and synthesis.",
-    "balanced": "Balanced",
-    "creative": "Creative",
-    "logical": "Logical",
     "agentPersonality": "Core Agent Personality",
     "agentPersonalityDesc": "Defines the AI's core cognitive style based on 4 axes. This influences planning, decision-making, and interaction.",
-    "cognitiveModel": "Cognitive Model",
-    "modelDescGemini": "The recommended model for most use cases, balancing speed, and intelligence.",
-    "selectModelDesc": "Select a model to see its description.",
+    "cognitiveProfile": "Cognitive Profile",
+    "cognitiveProfileDesc": "Select the AI's performance and response style. 'Pro' provides deeper analysis, while 'Lite' is faster and more concise.",
+    "lite": "Lite",
+    "flash": "Flash",
+    "pro": "Pro",
     "cognitiveStepDelay": "Cognitive Step Delay",
     "cognitiveStepDelayDesc": "Adds a delay between each step of the AI's execution plan. Higher values prevent API rate-limiting errors.",
     "interface": "Interface",
@@ -313,15 +301,11 @@
     "responseLanguage": "Response Language",
     "responseLanguageDesc": "Sets the language for AI responses and thinking processes. Changing this will start a new chat session.",
     "dataManagement": "Data Management",
-    "aiQuerySuggestions": "AI Query Suggestions",
-    "aiQuerySuggestionsDesc": "Clear the session cache to force regeneration of new query suggestions.",
-    "clearCache": "Clear Cache",
     "factoryReset": "Factory Reset",
     "factoryResetDesc": "Clear all stored settings and cache data, resetting the app to its default state.",
     "resetApplication": "Reset Application",
     "settingsSaved": "Settings Saved!",
     "saveChanges": "Save Changes",
-    "cacheClearedMsg": "AI query suggestion cache has been cleared.",
     "factoryResetConfirm": "Are you sure you want to perform a factory reset? This will clear ALL local data, including settings, and reload the application."
   },
   "personality": {
@@ -377,13 +361,16 @@
     "finalAnswer": "Final Ensembled Answer",
     "problemRequired": "A problem statement is required to initialize the population.",
     "visualBalance": "Maximize Visual Balance",
-    "loadFromMemory": "Load from Memory"
+    "loadFromMemory": "Load from Memory",
+    "gen": "Gen",
+    "fit": "Fit",
+    "emptyPlan": "Empty Plan"
   },
   "memory": {
     "title": "Memory Explorer",
     "filtersTitle": "Memory Filters",
-    "searchKeyword": "Search by Keyword",
-    "searchPlaceholder": "Search queries or responses...",
+    "searchKeyword": "Search by Keyword (Semantic)",
+    "searchPlaceholder": "Search for concepts and meanings...",
     "filterEmotion": "Filter by Emotion",
     "minSalience": "Minimum Salience",
     "retrievedMemories": "Retrieved Memories",
@@ -395,7 +382,10 @@
     "unknown": "Unknown",
     "dominantEmotion": "Dominant Emotion: {{emotion}}",
     "view": "View",
-    "deleteConfirm": "Are you sure you want to permanently delete this memory?"
+    "deleteConfirm": "Are you sure you want to permanently delete this memory?",
+    "match": "match",
+    "semanticSearchActive": "Semantic search is active. Other filters are temporarily disabled.",
+    "searching": "Performing semantic search..."
   },
   "traceInspector": {
     "title": "Cognitive Trace Inspector",
@@ -406,13 +396,14 @@
     "userQuery": "User Query",
     "finalAnswer": "Final Answer",
     "metrics": "Metrics",
-    "planSteps": "Plan Steps: {{count}}",
-    "constitution": "Constitution: {{id}}",
+    "planSteps": "Plan Steps",
+    "constitution": "Constitution",
     "default": "Default",
     "affectiveStateSnapshot": "Affective State Snapshot",
     "noResult": "No result recorded.",
     "input": "Input:",
     "result": "Result:",
+    "prompt": "Prompt:",
     "generateReflection": "Generate AI Self-Reflection",
     "reflecting": "AI is reflecting on its performance...",
     "discussionHub": "Discussion Hub",
@@ -447,6 +438,55 @@
     "inProgress": "Dreaming in Progress...",
     "progressTitle": "Dream Sequence",
     "resultsTitle": "Metacognitive Insights",
-    "newDirectives": "The following new directives have been integrated into the cognitive core:"
+    "newDirectives": "The following new directives have been integrated into the cognitive core:",
+    "idleMessage": "Dream cycle has not been initiated."
+  },
+  "app": {
+    "initializing": "Initializing Cognitive Core..."
+  },
+  "performanceCharts": {
+    "initializing": "Initializing performance data...",
+    "rsiCycles": "RSI Cycles"
+  },
+  "toolForge": {
+    "title": "Forge a New Mental Tool",
+    "inProgress": "AI is Forging...",
+    "inProgressDesc": "Synthesizing a new cognitive instrument based on your design...",
+    "purposeDesc": "Purpose / Description",
+    "capabilities": "Key Capabilities (comma-separated)",
+    "forgeTool": "Forge Tool",
+    "purposeRequired": "Purpose description is required.",
+    "unknownError": "An unknown error occurred during forging.",
+    "purposePlaceholder": "e.g., 'Analyze market sentiment from real-time news feeds.'",
+    "capabilitiesPlaceholder": "e.g., 'Sentiment Analysis, NLP, Real-time Data'"
+  },
+  "modifyTool": {
+    "title": "Modify Mental Tool",
+    "toolName": "Tool Name",
+    "description": "Description",
+    "tagsCommaSeparated": "Tags (comma-separated)"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "saveChanges": "Save Changes",
+    "description": "Description",
+    "name": "Name"
+  },
+  "replicaNetwork": {
+    "noData": "No data for network graph."
+  },
+  "constitutionManager": {
+    "title": "Active Cognitive Constitution",
+    "activeRules": "Active Rules:",
+    "noRules": "No special rules. Operating under default parameters.",
+    "selectHint": "Select a constitution to view its rules."
+  },
+  "memorySelector": {
+    "title": "Load Problem from Memory",
+    "description": "Select a past experience to use as a foundation for evolution.",
+    "archivedMemories": "Archived Memories ({{count}})",
+    "learnedBehaviors": "Learned Behaviors ({{count}})",
+    "queryPrefix": "Query:",
+    "close": "Close"
   }
 }

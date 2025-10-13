@@ -27,7 +27,7 @@ const DreamingView: React.FC<DreamingViewProps> = ({ onSubmitQuery, setActiveVie
     const { t } = useTranslation();
     const [dreamState, setDreamState] = useState<DreamProcessUpdate>({
         stage: 'IDLE',
-        message: 'Dream cycle has not been initiated.'
+        message: t('dreaming.idleMessage')
     });
     const [progress, setProgress] = useState<string[]>([]);
     

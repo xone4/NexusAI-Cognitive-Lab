@@ -76,7 +76,7 @@ const ToolCard: React.FC<Omit<MentalToolsLabProps, 'tools' | 'toolchains' | 'beh
         <DashboardCard 
             title={tool.name} 
             icon={getToolIcon(tool)} 
-            className={`border-l-4 ${style.border} ${style.anim || ''} transition-all duration-300 flex flex-col`}
+            className={`border-s-4 ${style.border} ${style.anim || ''} transition-all duration-300 flex flex-col`}
         >
             <div className="flex-grow space-y-3">
                 <div className="flex justify-between items-start">
@@ -104,14 +104,14 @@ const ToolCard: React.FC<Omit<MentalToolsLabProps, 'tools' | 'toolchains' | 'beh
                         </Menu.Button>
                     </div>
                     <Transition as={Fragment} enter="transition ease-out duration-100" enterFrom="transform opacity-0 scale-95" enterTo="transform opacity-100 scale-100" leave="transition ease-in duration-75" leaveFrom="transform opacity-100 scale-100" leaveTo="transform opacity-0 scale-95">
-                        <Menu.Items className="absolute bottom-full mb-2 w-56 origin-bottom-left rounded-xl bg-nexus-bg shadow-lg ring-1 ring-nexus-surface ring-opacity-50 focus:outline-none z-10">
+                        <Menu.Items className="absolute bottom-full mb-2 w-56 origin-bottom-start rounded-xl bg-nexus-bg shadow-lg ring-1 ring-nexus-surface ring-opacity-50 focus:outline-none z-10">
                             <div className="py-1">
                                 <Menu.Item disabled={tool.status === 'Archived' || tool.status === 'Optimizing'}>
                                 {({ active, disabled }) => {
                                     const isActivate = tool.status !== 'Active';
                                     return (
                                         <button onClick={() => onToggleStatus(tool.id)} disabled={disabled} className={`${active ? 'bg-nexus-surface text-white' : 'text-nexus-text-muted'} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} group flex w-full items-center rounded-lg px-2 py-2 text-sm`}>
-                                            {isActivate ? <CheckCircleIcon className="mr-2 h-5 w-5 text-green-400" /> : <XCircleIcon className="mr-2 h-5 w-5 text-yellow-400" />}
+                                            {isActivate ? <CheckCircleIcon className="me-2 h-5 w-5 text-green-400" /> : <XCircleIcon className="me-2 h-5 w-5 text-yellow-400" />}
                                             {isActivate ? t('tools.activate') : t('tools.deactivate')}
                                         </button>
                                     );
@@ -120,7 +120,7 @@ const ToolCard: React.FC<Omit<MentalToolsLabProps, 'tools' | 'toolchains' | 'beh
                                 <Menu.Item>
                                 {({ active }) => (
                                     <button onClick={() => onSelectModify(tool)} className={`${active ? 'bg-nexus-surface text-white' : 'text-nexus-text-muted'} group flex w-full items-center rounded-lg px-2 py-2 text-sm`}>
-                                        <WrenchScrewdriverIcon className="mr-2 h-5 w-5 text-purple-400" />
+                                        <WrenchScrewdriverIcon className="me-2 h-5 w-5 text-purple-400" />
                                         {t('tools.modify')}
                                     </button>
                                 )}
@@ -128,7 +128,7 @@ const ToolCard: React.FC<Omit<MentalToolsLabProps, 'tools' | 'toolchains' | 'beh
                                  <Menu.Item disabled={tool.status !== 'Idle'}>
                                 {({ active, disabled }) => (
                                     <button onClick={() => onOptimizeTool(tool.id)} disabled={disabled} className={`${active ? 'bg-nexus-surface text-white' : 'text-nexus-text-muted'} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} group flex w-full items-center rounded-lg px-2 py-2 text-sm`}>
-                                        <SparklesIcon className="mr-2 h-5 w-5 text-blue-400" />
+                                        <SparklesIcon className="me-2 h-5 w-5 text-blue-400" />
                                         {t('tools.optimize')}
                                     </button>
                                 )}
@@ -137,7 +137,7 @@ const ToolCard: React.FC<Omit<MentalToolsLabProps, 'tools' | 'toolchains' | 'beh
                                  <Menu.Item disabled={tool.status === 'Active' || tool.status === 'Optimizing'}>
                                 {({ active, disabled }) => (
                                     <button onClick={() => onArchiveTool(tool.id)} disabled={disabled} className={`${active ? 'bg-nexus-surface text-white' : 'text-nexus-text-muted'} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} group flex w-full items-center rounded-lg px-2 py-2 text-sm`}>
-                                        <ArchiveBoxIcon className="mr-2 h-5 w-5 text-gray-400" />
+                                        <ArchiveBoxIcon className="me-2 h-5 w-5 text-gray-400" />
                                         {tool.status === 'Archived' ? t('tools.unarchive') : t('tools.archive')}
                                     </button>
                                 )}
@@ -145,7 +145,7 @@ const ToolCard: React.FC<Omit<MentalToolsLabProps, 'tools' | 'toolchains' | 'beh
                                  <Menu.Item disabled={tool.status !== 'Archived'}>
                                 {({ active, disabled }) => (
                                     <button onClick={() => onDecommissionTool(tool.id)} disabled={disabled} className={`${active ? 'bg-red-500/20 text-red-400' : 'text-red-500'} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} group flex w-full items-center rounded-lg px-2 py-2 text-sm`}>
-                                       <TrashIcon className="mr-2 h-5 w-5" />
+                                       <TrashIcon className="me-2 h-5 w-5" />
                                        {t('tools.decommission')}
                                     </button>
                                 )}
@@ -192,7 +192,7 @@ const MentalToolsLab: React.FC<MentalToolsLabProps> = (props) => {
                 {/* Filter */}
                 <div>
                     <label htmlFor="filter-status" className="text-xs font-semibold text-nexus-text-muted">{t('tools.filterByStatus')}</label>
-                    <select id="filter-status" value={filterStatus} onChange={e => setFilterStatus(e.target.value as FilterStatus)} className="w-full mt-1 block rounded-xl border-0 py-1.5 pl-3 pr-10 bg-nexus-bg text-nexus-text ring-1 ring-inset ring-nexus-surface focus:ring-2 focus:ring-nexus-primary sm:text-sm sm:leading-6">
+                    <select id="filter-status" value={filterStatus} onChange={e => setFilterStatus(e.target.value as FilterStatus)} className="w-full mt-1 block rounded-xl border-0 py-1.5 ps-3 pe-10 bg-nexus-bg text-nexus-text ring-1 ring-inset ring-nexus-surface focus:ring-2 focus:ring-nexus-primary sm:text-sm sm:leading-6">
                         <option value="All">{t('tools.all')}</option>
                         <option value="Idle">{t('tools.idle')}</option>
                         <option value="Active">{t('tools.active')}</option>
@@ -203,7 +203,7 @@ const MentalToolsLab: React.FC<MentalToolsLabProps> = (props) => {
                 {/* Sort */}
                  <div>
                     <label htmlFor="sort-key" className="text-xs font-semibold text-nexus-text-muted">{t('tools.sortBy')}</label>
-                    <select id="sort-key" value={sortKey} onChange={e => setSortKey(e.target.value as SortKey)} className="w-full mt-1 block rounded-xl border-0 py-1.5 pl-3 pr-10 bg-nexus-bg text-nexus-text ring-1 ring-inset ring-nexus-surface focus:ring-2 focus:ring-nexus-primary sm:text-sm sm:leading-6">
+                    <select id="sort-key" value={sortKey} onChange={e => setSortKey(e.target.value as SortKey)} className="w-full mt-1 block rounded-xl border-0 py-1.5 ps-3 pe-10 bg-nexus-bg text-nexus-text ring-1 ring-inset ring-nexus-surface focus:ring-2 focus:ring-nexus-primary sm:text-sm sm:leading-6">
                         <option value="name">{t('tools.name')}</option>
                         <option value="complexity">{t('tools.complexity')}</option>
                         <option value="version">{t('tools.version')}</option>

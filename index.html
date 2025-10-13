@@ -23,6 +23,8 @@
             fontFamily: {
               'sans': ['Inter', 'sans-serif'],
               'mono': ['Fira Code', 'monospace'],
+              'arabic': ['Noto Sans Arabic', 'sans-serif'],
+              'tahoma': ['Tahoma', 'sans-serif'],
             },
             animation: {
               'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
@@ -35,6 +37,8 @@
               'load-pulse': 'load-pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
               'slide-in-right': 'slide-in-right 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both',
               'slide-out-right': 'slide-out-right 0.5s cubic-bezier(0.550, 0.085, 0.680, 0.530) both',
+              'slide-in-left': 'slide-in-left 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both',
+              'slide-out-left': 'slide-out-left 0.5s cubic-bezier(0.550, 0.085, 0.680, 0.530) both',
               'loader-rotate': 'loader-rotate 1.5s linear infinite',
             },
             keyframes: {
@@ -75,6 +79,14 @@
                 '0%': { transform: 'translateX(0)', opacity: '1' },
                 '100%': { transform: 'translateX(100%)', opacity: '0' },
               },
+              'slide-in-left': {
+                '0%': { transform: 'translateX(-100%)', opacity: '0' },
+                '100%': { transform: 'translateX(0)', opacity: '1' },
+              },
+              'slide-out-left': {
+                '0%': { transform: 'translateX(0)', opacity: '1' },
+                '100%': { transform: 'translateX(-100%)', opacity: '0' },
+              },
               'loader-rotate': {
                 '100%': { transform: 'rotate(360deg)' }
               },
@@ -105,7 +117,7 @@
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;600;700&family=Noto+Sans+Arabic:wght@400;700&display=swap" rel="stylesheet">
   <script type="importmap">
 {
   "imports": {

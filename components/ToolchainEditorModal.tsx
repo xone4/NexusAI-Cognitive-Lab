@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { MentalTool, Toolchain } from '../types';
 import { LinkIcon, ArrowUpIcon, ArrowDownIcon, ArrowRightIcon, ArrowUturnLeftIcon } from './Icons';
 
@@ -10,6 +11,7 @@ interface ToolchainEditorModalProps {
 }
 
 const ToolchainEditorModal: React.FC<ToolchainEditorModalProps> = ({ allTools, toolchainToEdit, onSave, onClose }) => {
+    const { t } = useTranslation();
     const [name, setName] = useState(toolchainToEdit?.name || '');
     const [description, setDescription] = useState(toolchainToEdit?.description || '');
     const [chainedToolIds, setChainedToolIds] = useState<string[]>(toolchainToEdit?.toolIds || []);
@@ -63,32 +65,32 @@ const ToolchainEditorModal: React.FC<ToolchainEditorModalProps> = ({ allTools, t
                     <div className="flex items-center gap-3 mb-4">
                         <LinkIcon className="w-8 h-8 text-nexus-primary"/>
                         <h3 className="text-xl font-bold text-nexus-text">
-                            {toolchainToEdit ? 'Edit Toolchain' : 'Create New Toolchain'}
+                            {toolchainToEdit ? t('toolchains.editorTitleEdit') : t('toolchains.editorTitleCreate')}
                         </h3>
                     </div>
                     
                     {/* --- Metadata Inputs --- */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div>
-                            <label htmlFor="tc-name" className="block text-sm font-medium text-nexus-text-muted">Name</label>
+                            <label htmlFor="tc-name" className="block text-sm font-medium text-nexus-text-muted">{t('common.name')}</label>
                             <input
                                 id="tc-name"
                                 type="text"
                                 value={name}
                                 onChange={e => setName(e.target.value)}
-                                placeholder="e.g., 'Market Volatility Analysis Chain'"
+                                placeholder={t('toolchains.namePlaceholder')}
                                 required
                                 className="w-full mt-1 p-2 bg-nexus-dark/70 border border-nexus-surface rounded-xl focus:outline-none focus:ring-2 focus:ring-nexus-primary text-nexus-text font-mono text-sm"
                             />
                         </div>
                         <div>
-                            <label htmlFor="tc-desc" className="block text-sm font-medium text-nexus-text-muted">Description</label>
+                            <label htmlFor="tc-desc" className="block text-sm font-medium text-nexus-text-muted">{t('common.description')}</label>
                             <input
                                 id="tc-desc"
                                 type="text"
                                 value={description}
                                 onChange={e => setDescription(e.target.value)}
-                                placeholder="A short description of the workflow's purpose."
+                                placeholder={t('toolchains.descPlaceholder')}
                                 required
                                 className="w-full mt-1 p-2 bg-nexus-dark/70 border border-nexus-surface rounded-xl focus:outline-none focus:ring-2 focus:ring-nexus-primary text-nexus-text font-mono text-sm"
                             />
@@ -99,17 +101,17 @@ const ToolchainEditorModal: React.FC<ToolchainEditorModalProps> = ({ allTools, t
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Available Tools */}
                         <div className="bg-nexus-dark/30 p-4 rounded-xl">
-                            <h4 className="font-semibold text-nexus-text mb-2">Available Tools</h4>
+                            <h4 className="font-semibold text-nexus-text mb-2">{t('toolchains.availableTools')}</h4>
                             <div className="space-y-2 h-64 overflow-y-auto pr-2">
                                 {availableTools.length > 0 ? availableTools.map(tool => renderToolItem(tool, 
                                     <button type="button" onClick={() => handleAddTool(tool.id)} className="p-1 text-green-400 hover:text-white"><ArrowRightIcon className="w-4 h-4" /></button>
-                                )) : <p className="text-sm text-center py-4 text-nexus-text-muted">No more tools available.</p>}
+                                )) : <p className="text-sm text-center py-4 text-nexus-text-muted">{t('toolchains.noMoreTools')}</p>}
                             </div>
                         </div>
 
                         {/* Chained Tools */}
                         <div className="bg-nexus-dark/30 p-4 rounded-xl">
-                            <h4 className="font-semibold text-nexus-text mb-2">Chain Sequence</h4>
+                            <h4 className="font-semibold text-nexus-text mb-2">{t('toolchains.chainSequence')}</h4>
                              <div className="space-y-2 h-64 overflow-y-auto pr-2">
                                 {chainedTools.length > 0 ? chainedTools.map((tool, index) => renderToolItem(tool,
                                     <>
@@ -117,15 +119,15 @@ const ToolchainEditorModal: React.FC<ToolchainEditorModalProps> = ({ allTools, t
                                         <button type="button" onClick={() => handleMoveTool(index, 'down')} disabled={index === chainedTools.length - 1} className="p-1 text-nexus-secondary hover:text-white disabled:opacity-30"><ArrowDownIcon className="w-4 h-4" /></button>
                                         <button type="button" onClick={() => handleRemoveTool(tool.id)} className="p-1 text-red-500 hover:text-white"><ArrowUturnLeftIcon className="w-4 h-4" /></button>
                                     </>
-                                )) : <p className="text-sm text-center py-4 text-nexus-text-muted">Add tools from the left panel to build your chain.</p>}
+                                )) : <p className="text-sm text-center py-4 text-nexus-text-muted">{t('toolchains.addToolsHint')}</p>}
                             </div>
                         </div>
                     </div>
                     
                     <div className="flex justify-end space-x-3 mt-6">
-                        <button type="button" onClick={onClose} className="py-2 px-4 rounded-full text-nexus-text-muted hover:bg-nexus-dark">Cancel</button>
+                        <button type="button" onClick={onClose} className="py-2 px-4 rounded-full text-nexus-text-muted hover:bg-nexus-dark">{t('common.cancel')}</button>
                         <button type="submit" className="py-2 px-6 rounded-full bg-nexus-primary text-nexus-dark font-bold hover:bg-nexus-secondary">
-                            {toolchainToEdit ? 'Save Changes' : 'Create Toolchain'}
+                            {toolchainToEdit ? t('common.saveChanges') : t('toolchains.create')}
                         </button>
                     </div>
                 </form>
