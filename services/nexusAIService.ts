@@ -23,6 +23,8 @@ let systemDirectivesState: SystemDirective[];
 let isCancelled = false;
 let appSettings: AppSettings = {
     model: 'gemini-2.5-flash',
+    // FIX: Added missing 'modelProfile' property to satisfy the AppSettings type.
+    modelProfile: 'flash',
     cognitiveStepDelay: 1000,
     // FIX: Replaced deprecated 'systemPersonality' with 'coreAgentPersonality' object to match AppSettings type.
     coreAgentPersonality: { energyFocus: 'EXTROVERSION', informationProcessing: 'INTUITION', decisionMaking: 'THINKING', worldApproach: 'PERCEIVING' },
@@ -359,6 +361,30 @@ const behaviorExtractionSchema = {
 
 const planToText = (plan: PlanStep[]): string => {
     return plan.map(s => `Step ${s.step}: ${s.description} (Tool: ${s.tool})`).join('\n');
+};
+
+let memoryEmbeddings = new Map<string, number[]>(); // Cache for simulated embeddings
+
+// Helper function for simulated semantic search
+const getEmbedding = (text: string): number[] => {
+    if (memoryEmbeddings.has(text)) {
+        return memoryEmbeddings.get(text)!;
+    }
+    const vector = Array.from({ length: 128 }, () => Math.random() - 0.5);
+    // Normalize the vector
+    const magnitude = Math.sqrt(vector.reduce((sum, val) => sum + val * val, 0));
+    const normalized = vector.map(v => v / magnitude);
+    memoryEmbeddings.set(text, normalized);
+    return normalized;
+};
+
+const cosineSimilarity = (vecA: number[], vecB: number[]): number => {
+    let dotProduct = 0;
+    for (let i = 0; i < vecA.length; i++) {
+        dotProduct += vecA[i] * vecB[i];
+    }
+    // Since vectors are normalized, dot product is the cosine similarity
+    return dotProduct;
 };
 
 
@@ -1570,6 +1596,31 @@ const service = {
         log('SYSTEM', `Rerunning trace for query: "${userMessage?.text}"`);
         service.startNewChat(false);
         service.submitQuery(userMessage?.text || '', userMessage?.image);
+    },
+
+    semanticSearchInMemory: async (query: string): Promise<ChatMessage[]> => {
+        log('AI', `Performing semantic search for: "${query}"`);
+        if (archivedTracesState.length === 0) return [];
+        
+        // Simulate async work and Gemini API call for embeddings
+        await new Promise(res => setTimeout(res, 750)); 
+
+        const queryVector = getEmbedding(query);
+
+        const scoredTraces = archivedTracesState.map(trace => {
+            // Create a text representation of the memory for embedding
+            const traceText = `${trace.userQuery || ''} ${trace.text || ''}`;
+            const traceVector = getEmbedding(traceText);
+            const similarity = cosineSimilarity(queryVector, traceVector);
+            return { ...trace, similarity };
+        });
+
+        const relevantTraces = scoredTraces
+            .filter(trace => trace.similarity > 0.4) // Filter by a relevance threshold
+            .sort((a, b) => b.similarity - a.similarity);
+
+        log('AI', `Found ${relevantTraces.length} relevant memories via semantic search.`);
+        return relevantTraces;
     },
     
     translateResponse: async (messageId: string, text: string, targetLanguageKey: Language): Promise<string> => {
