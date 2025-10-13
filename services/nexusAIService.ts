@@ -1694,11 +1694,15 @@ ${text}
         notifyEvolution();
     
         let currentGeneration = 1;
+        const CONVERGENCE_GENERATIONS = 10;
+        const CONVERGENCE_THRESHOLD = 1.0;
+
         evolutionInterval = setInterval(() => {
             if (currentGeneration > evolutionState.config.generations) {
                 service.stopEvolution();
                 evolutionState.statusMessage = `Evolution complete after ${evolutionState.config.generations} generations.`;
                 notifyEvolution();
+                service.ensembleAndFinalize();
                 return;
             }
 
@@ -1721,6 +1725,22 @@ ${text}
 
             evolutionState.progress.push({ generation: currentGeneration, bestFitness, averageFitness });
             evolutionState.statusMessage = `Generation ${currentGeneration}/${evolutionState.config.generations}`;
+
+            if (currentGeneration > CONVERGENCE_GENERATIONS) {
+                const previousProgress = evolutionState.progress[evolutionState.progress.length - (CONVERGENCE_GENERATIONS + 1)];
+                if (previousProgress) {
+                    const fitnessImprovement = bestFitness - previousProgress.bestFitness;
+                    if (fitnessImprovement < CONVERGENCE_THRESHOLD) {
+                        log('SYSTEM', `Evolution converged. Best fitness has not improved significantly in the last ${CONVERGENCE_GENERATIONS} generations.`);
+                        service.stopEvolution();
+                        evolutionState.statusMessage = `Evolution converged at generation ${currentGeneration}. Synthesizing...`;
+                        notifyEvolution();
+                        service.ensembleAndFinalize();
+                        return;
+                    }
+                }
+            }
+
             notifyEvolution();
             currentGeneration++;
         }, 500);
@@ -1774,7 +1794,12 @@ ${text}
 
         try {
             const response = await ai.models.generateContent({ model: appSettings.model, contents: prompt });
-            evolutionState.finalEnsembleResult = { id: `final-${Date.now()}`, role: 'model', text: response.text };
+            evolutionState.finalEnsembleResult = {
+                id: `final-${Date.now()}`,
+                role: 'model',
+                text: response.text,
+                evolutionProblemStatement: evolutionState.problemStatement
+            };
             evolutionState.statusMessage = 'Final answer synthesized.';
             log('SYSTEM', 'Evolutionary process concluded with a synthesized answer.');
         } catch (error) {
@@ -1784,6 +1809,36 @@ ${text}
             evolutionState.statusMessage = 'Error during synthesis.';
         }
         notifyEvolution();
+    },
+
+    archiveEvolvedAnswer: async (trace: ChatMessage): Promise<ChatMessage> => {
+        log('SYSTEM', `Archiving answer evolved from problem: "${trace.evolutionProblemStatement}"`);
+        const archivedTrace: ChatMessage = { ...trace };
+        archivedTrace.archivedAt = Date.now();
+        archivedTrace.userQuery = trace.evolutionProblemStatement; // Use problem statement for context
+        await dbService.put('archivedTraces', archivedTrace);
+        archivedTracesState.unshift(archivedTrace);
+        log('SYSTEM', `Evolved answer has been archived.`);
+        
+        evolutionState.finalEnsembleResult = null;
+        evolutionState.statusMessage = 'Final answer archived. Ready for new problem.';
+
+        notifyArchives();
+        notifyEvolution();
+        return archivedTrace;
+    },
+
+    extractBehaviorFromEvolvedAnswer: async (trace: ChatMessage): Promise<Behavior | null> => {
+        return service.extractBehaviorFromTrace({
+            ...trace,
+            userQuery: trace.evolutionProblemStatement || "Evolved from a problem statement"
+        });
+    },
+
+    rerunEvolutionProblem: (problemStatement: string) => {
+        log('SYSTEM', `Rerunning evolution problem in main dashboard: "${problemStatement}"`);
+        service.startNewChat(false);
+        service.submitQuery(problemStatement);
     },
 
     subscribeToLogs: (callback: (log: LogEntry) => void) => { logSubscribers.push(callback); },

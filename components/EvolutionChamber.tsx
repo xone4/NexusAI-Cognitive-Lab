@@ -1,16 +1,21 @@
 import React, { useState, useCallback, useMemo, memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import type { EvolutionState, EvolutionConfig, FitnessGoal, IndividualPlan, PlanStep, ChatMessage, Behavior } from '../types';
+import type { EvolutionState, EvolutionConfig, FitnessGoal, IndividualPlan, PlanStep, ChatMessage, Behavior, Language } from '../types';
 import { nexusAIService } from '../services/nexusAIService';
 import DashboardCard from './DashboardCard';
 import MemorySelectorModal from './MemorySelectorModal';
-import { DnaIcon, PlayIcon, LinkIcon, XCircleIcon, SparklesIcon, BrainCircuitIcon, BookOpenIcon } from './Icons';
+import { DnaIcon, PlayIcon, LinkIcon, XCircleIcon, SparklesIcon, BrainCircuitIcon, BookOpenIcon, GlobeAltIcon, RefreshIcon, ArchiveBoxArrowDownIcon } from './Icons';
 
 interface EvolutionChamberProps {
     evolutionState: EvolutionState;
     archivedTraces: ChatMessage[];
     behaviors: Behavior[];
+    onArchive: (trace: ChatMessage) => void;
+    onExtractBehavior: (trace: ChatMessage) => void;
+    onRerun: (problemStatement: string) => void;
+    onTranslate: (messageId: string, text: string, language: Language) => Promise<string>;
+    language: string;
 }
 
 const planToText = (plan: PlanStep[]) => {
@@ -48,13 +53,15 @@ const IndividualPlanCard: React.FC<{
 });
 IndividualPlanCard.displayName = "IndividualPlanCard";
 
-const EvolutionChamber: React.FC<EvolutionChamberProps> = ({ evolutionState, archivedTraces, behaviors }) => {
+const EvolutionChamber: React.FC<EvolutionChamberProps> = ({ evolutionState, archivedTraces, behaviors, onArchive, onExtractBehavior, onRerun, onTranslate, language }) => {
     const { t } = useTranslation();
     const [problemStatement, setProblemStatement] = useState(evolutionState.problemStatement);
     const [config, setConfig] = useState<EvolutionConfig>(evolutionState.config);
     const [selectedIndividualId, setSelectedIndividualId] = useState<string | null>(null);
     const [isSynthesizing, setIsSynthesizing] = useState(false);
     const [isMemorySelectorOpen, setIsMemorySelectorOpen] = useState(false);
+    const [translatedText, setTranslatedText] = useState<string | null>(null);
+    const [isActionLoading, setIsActionLoading] = useState<'archive' | 'extract' | 'rerun' | 'translate' | null>(null);
     
     const { isRunning, progress, population, statusMessage, finalEnsembleResult } = evolutionState;
 
@@ -71,6 +78,7 @@ const EvolutionChamber: React.FC<EvolutionChamberProps> = ({ evolutionState, arc
             return;
         }
         setSelectedIndividualId(null);
+        setTranslatedText(null);
         nexusAIService.initializeEvolution(problemStatement, config);
     };
 
@@ -79,8 +87,48 @@ const EvolutionChamber: React.FC<EvolutionChamberProps> = ({ evolutionState, arc
     
     const handleSynthesize = async () => {
         setIsSynthesizing(true);
+        setTranslatedText(null);
         await nexusAIService.ensembleAndFinalize();
         setIsSynthesizing(false);
+    };
+    
+    const handleArchive = async () => {
+        if (!finalEnsembleResult) return;
+        setIsActionLoading('archive');
+        try {
+            await onArchive(finalEnsembleResult);
+        } finally {
+            setIsActionLoading(null);
+        }
+    };
+
+    const handleExtract = async () => {
+        if (!finalEnsembleResult) return;
+        setIsActionLoading('extract');
+        try {
+            await onExtractBehavior(finalEnsembleResult);
+        } finally {
+            setIsActionLoading(null);
+        }
+    };
+
+    const handleRerun = () => {
+        if (!finalEnsembleResult?.evolutionProblemStatement) return;
+        setIsActionLoading('rerun');
+        onRerun(finalEnsembleResult.evolutionProblemStatement);
+    };
+
+    const handleTranslate = async () => {
+        if (!finalEnsembleResult?.text) return;
+        setIsActionLoading('translate');
+        setTranslatedText(null);
+        try {
+            const targetLanguage = language === 'en' ? 'ar' : 'en';
+            const translation = await onTranslate(finalEnsembleResult.id, finalEnsembleResult.text, targetLanguage as Language);
+            setTranslatedText(translation);
+        } finally {
+            setIsActionLoading(null);
+        }
     };
 
     const handleSelectFromMemory = (item: ChatMessage | Behavior) => {
@@ -135,7 +183,7 @@ const EvolutionChamber: React.FC<EvolutionChamberProps> = ({ evolutionState, arc
                         </div>
                          <div>
                             <label className="text-sm font-medium text-nexus-text-muted">{t('evolution.generations')} ({config.generations})</label>
-                            <input type="range" min="5" max="50" step="1" value={config.generations} onChange={e => setConfig(p => ({...p, generations: +e.target.value}))} disabled={isRunning} className="w-full h-2 config-range" />
+                            <input type="range" min="10" max="100" step="5" value={config.generations} onChange={e => setConfig(p => ({...p, generations: +e.target.value}))} disabled={isRunning} className="w-full h-2 config-range" />
                         </div>
                         <div className="flex gap-2 pt-2">
                              <button onClick={handleStart} disabled={isRunning || population.length === 0} className="flex-1 btn-primary"><PlayIcon className="w-5 h-5"/> {t('evolution.run')}</button>
@@ -144,18 +192,20 @@ const EvolutionChamber: React.FC<EvolutionChamberProps> = ({ evolutionState, arc
                     </div>
                 </DashboardCard>
 
-                <DashboardCard title={t('evolution.progressTitle')} fullHeight>
-                   <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={progress} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff1a" />
-                            <XAxis dataKey="generation" name="Gen" stroke="#a0a0a0" />
-                            <YAxis stroke="#00e5ff" domain={[0, 100]}/>
-                            <Tooltip contentStyle={{ backgroundColor: 'rgba(10, 15, 31, 0.8)', borderColor: '#18213a' }} />
-                            <Legend />
-                            <Line type="monotone" dataKey="bestFitness" name={t('evolution.bestFitness')} stroke="#00e5ff" strokeWidth={2} dot={false} />
-                            <Line type="monotone" dataKey="averageFitness" name={t('evolution.averageFitness')} stroke="#ff00aa" strokeWidth={1} dot={false} />
-                        </LineChart>
-                    </ResponsiveContainer>
+                <DashboardCard title={t('evolution.progressTitle')} className="h-64">
+                    <div className="h-full w-full">
+                       <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={progress} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff1a" />
+                                <XAxis dataKey="generation" name="Gen" stroke="#a0a0a0" />
+                                <YAxis stroke="#00e5ff" domain={[0, 100]}/>
+                                <Tooltip contentStyle={{ backgroundColor: 'rgba(10, 15, 31, 0.8)', borderColor: '#18213a' }} />
+                                <Legend />
+                                <Line type="monotone" dataKey="bestFitness" name={t('evolution.bestFitness')} stroke="#00e5ff" strokeWidth={2} dot={false} />
+                                <Line type="monotone" dataKey="averageFitness" name={t('evolution.averageFitness')} stroke="#ff00aa" strokeWidth={1} dot={false} />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
                 </DashboardCard>
             </div>
 
@@ -188,6 +238,26 @@ const EvolutionChamber: React.FC<EvolutionChamberProps> = ({ evolutionState, arc
                                  <div>
                                      <h4 className="font-bold text-nexus-primary">{t('evolution.finalAnswer')}</h4>
                                      <pre className="text-sm whitespace-pre-wrap font-sans text-nexus-text bg-nexus-dark/50 p-3 rounded-xl max-h-48 overflow-y-auto mt-2">{finalEnsembleResult.text}</pre>
+                                     {translatedText && (
+                                        <div className="mt-3 pt-3 border-t border-dashed border-nexus-surface/50">
+                                            <h5 className="text-xs font-semibold text-nexus-secondary">{t('cognitiveProcess.translation')}</h5>
+                                            <pre className="text-sm whitespace-pre-wrap font-sans text-nexus-text-muted">{translatedText}</pre>
+                                        </div>
+                                     )}
+                                    <div className="flex justify-center items-center gap-2 flex-wrap mt-4">
+                                        <button onClick={handleArchive} disabled={!!isActionLoading} className="action-btn bg-blue-500/20 text-blue-400 border-blue-500/50 hover:bg-blue-500/40">
+                                            <ArchiveBoxArrowDownIcon className="w-5 h-5" /> {isActionLoading === 'archive' ? 'Archiving...' : t('cognitiveProcess.archive')}
+                                        </button>
+                                        <button onClick={handleExtract} disabled={!!isActionLoading} className="action-btn bg-pink-500/20 text-pink-400 border-pink-500/50 hover:bg-pink-500/40">
+                                            <SparklesIcon className="w-5 h-5" /> {isActionLoading === 'extract' ? 'Extracting...' : t('cognitiveProcess.extractBehavior')}
+                                        </button>
+                                        <button onClick={handleRerun} disabled={!!isActionLoading} className="action-btn bg-green-500/20 text-green-400 border-green-500/50 hover:bg-green-500/40">
+                                            <RefreshIcon className="w-5 h-5" /> {isActionLoading === 'rerun' ? 'Rerunning...' : t('cognitiveProcess.rerun')}
+                                        </button>
+                                        <button onClick={handleTranslate} disabled={!!isActionLoading} className="action-btn bg-purple-500/20 text-purple-400 border-purple-500/50 hover:bg-purple-500/40">
+                                            <GlobeAltIcon className="w-5 h-5" /> {isActionLoading === 'translate' ? 'Translating...' : t('cognitiveProcess.translate')}
+                                        </button>
+                                    </div>
                                  </div>
                              ) : (
                                 <>
@@ -212,6 +282,9 @@ const EvolutionChamber: React.FC<EvolutionChamberProps> = ({ evolutionState, arc
                 .btn-secondary { background-color: #ff00aa20; color: #ff00aa; border-color: #ff00aa80; }
                 .btn-secondary:hover:not(:disabled) { background-color: #ff00aa40; color: white; }
                 .btn-primary:disabled, .btn-secondary:disabled { background-color: #18213a80 !important; color: #a0a0a80 !important; border-color: #18213a !important; cursor: not-allowed; }
+                .action-btn { display: flex; align-items: center; gap: 0.5rem; font-weight: bold; padding: 0.5rem 1rem; border-radius: 9999px; border-width: 1px; transition: all 0.3s; color: white; }
+                .action-btn:disabled { cursor: not-allowed; opacity: 0.6; }
+                .action-btn:focus { outline: none; ring: 2px; }
             `}</style>
         </div>
         </>

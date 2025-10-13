@@ -160,6 +160,9 @@ export interface ChatMessage {
     
     // Persisted Metadata
     traceDetails?: TraceDetails;
+    
+    // For evolved answers
+    evolutionProblemStatement?: string;
 }
 
 export interface CognitiveProcess {

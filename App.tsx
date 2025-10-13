@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, ActiveView, CognitiveProcess, AppSettings, Toolchain, ChatMessage, PlanStep, CognitiveConstitution, EvolutionState, Behavior } from './types';
+import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, ActiveView, CognitiveProcess, AppSettings, Toolchain, ChatMessage, PlanStep, CognitiveConstitution, EvolutionState, Behavior, Language } from './types';
 import { nexusAIService } from './services/nexusAIService';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -263,6 +263,23 @@ const App: React.FC = () => {
     nexusAIService.rerunTrace(trace);
     setActiveView('dashboard');
   }, []);
+
+  const handleArchiveEvolvedAnswer = useCallback(async (trace: ChatMessage) => {
+      await nexusAIService.archiveEvolvedAnswer(trace);
+  }, []);
+
+  const handleExtractBehaviorFromEvolved = useCallback(async (trace: ChatMessage) => {
+      try {
+          await nexusAIService.extractBehaviorFromEvolvedAnswer(trace);
+      } catch (e) {
+          console.error("Failed to extract behavior from evolved answer", e);
+      }
+  }, []);
+
+  const handleRerunEvolution = useCallback((problem: string) => {
+      nexusAIService.rerunEvolutionProblem(problem);
+      setActiveView('dashboard');
+  }, []);
   
   const cognitivePermissions = useMemo(() => {
     const state = cognitiveProcess?.state ?? 'Idle';
@@ -402,6 +419,11 @@ const App: React.FC = () => {
                  evolutionState={evolutionState}
                  archivedTraces={archivedTraces}
                  behaviors={behaviors}
+                 onArchive={handleArchiveEvolvedAnswer}
+                 onExtractBehavior={handleExtractBehaviorFromEvolved}
+                 onRerun={handleRerunEvolution}
+                 onTranslate={(messageId, text, lang) => nexusAIService.translateResponse(messageId, text, lang as Language)}
+                 language={settings.language}
                />;
       case 'memory':
         return <MemoryExplorerView
