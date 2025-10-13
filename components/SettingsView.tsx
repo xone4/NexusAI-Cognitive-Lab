@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { AppSettings, SystemPersonality, LogVerbosity, AnimationLevel, Language } from '../types';
+import type { AppSettings, AnimationLevel, Language } from '../types';
 import DashboardCard from './DashboardCard';
 import { CogIcon, TrashIcon, BrainCircuitIcon, EyeIcon } from './Icons';
 import { nexusAIService } from '../services/nexusAIService';
+import PersonalityEditor from './PersonalityEditor';
 
 interface SettingsViewProps {
   settings: AppSettings;
@@ -58,11 +59,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSettingsChange 
     setTimeout(() => setShowSaveConfirmation(false), 2000);
   };
   
-  const handleClearCache = () => {
-    nexusAIService.clearSuggestionCache();
-    alert(t('settings.cacheClearedMsg'));
-  }
-
   const handleFactoryReset = () => {
     if(confirm(t('settings.factoryResetConfirm'))) {
         nexusAIService.factoryReset();
@@ -71,13 +67,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSettingsChange 
 
   const hasChanges = JSON.stringify(localSettings) !== JSON.stringify(settings);
   
-  const personalityOptions: { value: SystemPersonality; label: string; }[] = [
-    { value: 'BALANCED', label: t('settings.balanced') },
-    { value: 'CREATIVE', label: t('settings.creative') },
-    { value: 'LOGICAL', label: t('settings.logical') },
-  ];
-  
-  const verbosityOptions: { value: LogVerbosity; label: string; }[] = [
+  const verbosityOptions: { value: AppSettings['logVerbosity']; label: string; }[] = [
     { value: 'STANDARD', label: t('settings.standard') },
     { value: 'VERBOSE', label: t('settings.verbose') },
   ];
@@ -96,13 +86,14 @@ const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSettingsChange 
     <div className="space-y-6 max-w-4xl mx-auto">
       <DashboardCard title={t('settings.cognitiveCore')} icon={<BrainCircuitIcon />}>
         <div className="space-y-6 p-4">
-            <SettingsRadioGroup
-                label={t('settings.systemPersonality')}
-                description={t('settings.systemPersonalityDesc')}
-                options={personalityOptions}
-                selected={localSettings.systemPersonality}
-                onChange={(v) => setLocalSettings(p => ({...p, systemPersonality: v}))}
-            />
+            <div>
+              <label className="block text-sm font-medium text-nexus-text-muted">{t('settings.agentPersonality')}</label>
+              <p className="text-xs text-nexus-text-muted mt-2 mb-4">{t('settings.agentPersonalityDesc')}</p>
+              <PersonalityEditor
+                personality={localSettings.coreAgentPersonality}
+                onChange={(p) => setLocalSettings(s => ({...s, coreAgentPersonality: p}))}
+              />
+            </div>
             <div>
               <label htmlFor="model-select" className="block text-sm font-medium text-nexus-text-muted">
                 {t('settings.cognitiveModel')}
@@ -185,20 +176,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSettingsChange 
       
        <DashboardCard title={t('settings.dataManagement')} icon={<TrashIcon />}>
           <div className="p-4 space-y-4">
-              <div className="flex items-center justify-between">
-                  <div>
-                     <h4 className="font-semibold text-nexus-text">{t('settings.aiQuerySuggestions')}</h4>
-                     <p className="text-sm text-nexus-text-muted">{t('settings.aiQuerySuggestionsDesc')}</p>
-                  </div>
-                   <button
-                      onClick={handleClearCache}
-                      className="bg-blue-500/20 text-blue-400 font-bold py-2 px-4 rounded-full border border-blue-500/50
-                                 hover:bg-blue-500/40 hover:text-white transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                   >
-                      {t('settings.clearCache')}
-                   </button>
-              </div>
-              <div className="h-px bg-nexus-surface/50"></div>
               <div className="flex items-center justify-between">
                   <div>
                      <h4 className="font-semibold text-nexus-text">{t('settings.factoryReset')}</h4>

@@ -41,7 +41,11 @@
     "regenerateSuggestions": "Regenerate Suggestions",
     "short": "Short",
     "medium": "Medium",
-    "long": "Long"
+    "long": "Long",
+    "keywordsPlaceholder": "Add keywords to guide suggestions...",
+    "generateFromKeywords": "Generate suggestions from keywords",
+    "generate": "Generate",
+    "randomKeywords": "Generate random keywords"
   },
   "commandCenter": {
     "query": "Query",
@@ -134,6 +138,9 @@
     "assign": "Assign",
     "spawnChild": "Spawn Child",
     "prune": "Prune",
+    "setPersonality": "Set Personality",
+    "setPersonalityFor": "Set Personality for {{name}}",
+    "savePersonality": "Save Personality",
     "tooltipTitle": "{{name}} (Status: {{status}})",
     "status_Active": "Active",
     "status_ExecutingTask": "Executing Task",
@@ -286,6 +293,8 @@
     "balanced": "Balanced",
     "creative": "Creative",
     "logical": "Logical",
+    "agentPersonality": "Core Agent Personality",
+    "agentPersonalityDesc": "Defines the AI's core cognitive style based on 4 axes. This influences planning, decision-making, and interaction.",
     "cognitiveModel": "Cognitive Model",
     "modelDescGemini": "The recommended model for most use cases, balancing speed, and intelligence.",
     "selectModelDesc": "Select a model to see its description.",
@@ -314,6 +323,32 @@
     "saveChanges": "Save Changes",
     "cacheClearedMsg": "AI query suggestion cache has been cleared.",
     "factoryResetConfirm": "Are you sure you want to perform a factory reset? This will clear ALL local data, including settings, and reload the application."
+  },
+  "personality": {
+    "energyFocus": {
+      "label": "Energy Focus",
+      "desc": "How the agent directs and receives its cognitive energy.",
+      "introversion": "Introversion (I)",
+      "extroversion": "Extroversion (E)"
+    },
+    "informationProcessing": {
+      "label": "Information Processing",
+      "desc": "How the agent perceives and interprets information.",
+      "sensing": "Sensing (S)",
+      "intuition": "Intuition (N)"
+    },
+    "decisionMaking": {
+      "label": "Decision Making",
+      "desc": "How the agent makes decisions and comes to conclusions.",
+      "thinking": "Thinking (T)",
+      "feeling": "Feeling (F)"
+    },
+    "worldApproach": {
+      "label": "World Approach",
+      "desc": "The agent's preferred approach to the outer world and tasks.",
+      "judging": "Judging (J)",
+      "perceiving": "Perceiving (P)"
+    }
   },
   "evolution": {
     "problemStatement": "Problem Statement & Controls",

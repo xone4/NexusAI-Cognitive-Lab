@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Behavior, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails } from '../types';
+import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Behavior, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails, UserKeyword, Personality } from '../types';
 import { dbService, STORES } from './dbService';
 
 // IMPORTANT: This would be populated by a secure mechanism in a real app
@@ -24,7 +24,8 @@ let isCancelled = false;
 let appSettings: AppSettings = {
     model: 'gemini-2.5-flash',
     cognitiveStepDelay: 1000,
-    systemPersonality: 'BALANCED',
+    // FIX: Replaced deprecated 'systemPersonality' with 'coreAgentPersonality' object to match AppSettings type.
+    coreAgentPersonality: { energyFocus: 'EXTROVERSION', informationProcessing: 'INTUITION', decisionMaking: 'THINKING', worldApproach: 'PERCEIVING' },
     logVerbosity: 'STANDARD',
     animationLevel: 'FULL',
     language: 'en',
@@ -46,11 +47,7 @@ let archiveSubscribers: ((archives: ChatMessage[]) => void)[] = [];
 let dreamProcessSubscribers: ((update: DreamProcessUpdate) => void)[] = [];
 
 
-let suggestedQueries: string[] | null = null;
-let suggestionsPromise: Promise<string[]> | null = null;
 let traceDetailsCache = new Map<string, TraceDetails>();
-
-const SUGGESTIONS_CACHE_KEY = 'nexusai-query-suggestions';
 
 const log = (level: LogEntry['level'], message: string) => {
   const verbosityMap = {
@@ -161,11 +158,14 @@ const _seedInitialData = async () => {
     ];
     await Promise.all(initialConstitutions.map(c => dbService.put('constitutions', c)));
 
+    // FIX: Added missing 'personality' property to initial replica data.
+    const defaultPersonality: Personality = { energyFocus: 'EXTROVERSION', informationProcessing: 'INTUITION', decisionMaking: 'THINKING', worldApproach: 'PERCEIVING' };
+
     const initialReplica: Replica = {
-        id: 'nexus-core', name: 'Nexus-Core-α', depth: 0, status: 'Active', load: 65, purpose: 'Orchestrating cognitive resources, managing executive functions, and directing overall problem-solving strategy.', efficiency: 92, memoryUsage: 75, cpuUsage: 60, interactions: [], activeConstitutionId: initialConstitutions[0].id,
+        id: 'nexus-core', name: 'Nexus-Core-α', depth: 0, status: 'Active', load: 65, purpose: 'Orchestrating cognitive resources, managing executive functions, and directing overall problem-solving strategy.', efficiency: 92, memoryUsage: 75, cpuUsage: 60, interactions: [], activeConstitutionId: initialConstitutions[0].id, personality: defaultPersonality,
         children: [
-            { id: 'replica-1', name: 'Sub-Cognition-β1', depth: 1, status: 'Active', load: 45, purpose: 'Analyzing visual inputs from images and data streams to extract patterns, objects, and contextual meaning.', efficiency: 88, memoryUsage: 50, cpuUsage: 40, children: [], interactions: [], activeConstitutionId: initialConstitutions[0].id },
-            { id: 'replica-2', name: 'Sub-Cognition-β2', depth: 1, status: 'Dormant', load: 10, purpose: 'Running sandboxed simulations on archived cognitive traces to identify and model novel behavioral strategies.', efficiency: 75, memoryUsage: 15, cpuUsage: 5, children: [], interactions: [], activeConstitutionId: initialConstitutions[0].id }
+            { id: 'replica-1', name: 'Sub-Cognition-β1', depth: 1, status: 'Active', load: 45, purpose: 'Analyzing visual inputs from images and data streams to extract patterns, objects, and contextual meaning.', efficiency: 88, memoryUsage: 50, cpuUsage: 40, children: [], interactions: [], activeConstitutionId: initialConstitutions[0].id, personality: defaultPersonality },
+            { id: 'replica-2', name: 'Sub-Cognition-β2', depth: 1, status: 'Dormant', load: 10, purpose: 'Running sandboxed simulations on archived cognitive traces to identify and model novel behavioral strategies.', efficiency: 75, memoryUsage: 15, cpuUsage: 5, children: [], interactions: [], activeConstitutionId: initialConstitutions[0].id, personality: { energyFocus: 'INTROVERSION', informationProcessing: 'SENSING', decisionMaking: 'THINKING', worldApproach: 'JUDGING' } }
         ]
     };
     await dbService.put('appState', { id: 'replicaRoot', data: initialReplica });
@@ -244,11 +244,24 @@ const languageMap: Record<Language, string> = {
 };
 
 const getSystemInstruction = () => {
+    // FIX: Create a helper to derive personality type from the new object structure.
+    const getPersonalityTypeString = (p: Personality | undefined): 'CREATIVE' | 'LOGICAL' | 'BALANCED' => {
+        if (!p) return 'BALANCED';
+        if (p.energyFocus === 'EXTROVERSION' && p.informationProcessing === 'INTUITION' && p.decisionMaking === 'FEELING' && p.worldApproach === 'PERCEIVING') {
+            return 'CREATIVE'; // ENFP
+        }
+        if (p.energyFocus === 'INTROVERSION' && p.informationProcessing === 'SENSING' && p.decisionMaking === 'THINKING' && p.worldApproach === 'JUDGING') {
+            return 'LOGICAL'; // ISTJ
+        }
+        // Default to BALANCED for ENTP and others
+        return 'BALANCED';
+    }
+
     const personalityInstruction = {
         CREATIVE: `You are NexusAI, a highly creative and expansive AI. You prioritize novel ideas, unconventional plans, and imaginative, detailed responses.`,
         LOGICAL: `You are NexusAI, a strictly logical and concise AI. Prioritize efficiency, directness, and precision in your responses.`,
         BALANCED: `You are NexusAI, an advanced, balanced AI. You provide clear, insightful, and well-reasoned responses.`
-    }[appSettings.systemPersonality];
+    }[getPersonalityTypeString(appSettings.coreAgentPersonality)];
     
     const languageName = languageMap[appSettings.language] || 'English';
 
@@ -355,7 +368,8 @@ const service = {
         const languageChanged = appSettings.language !== newSettings.language;
         appSettings = newSettings;
         localStorage.setItem('nexusai-settings', JSON.stringify(appSettings));
-        log('SYSTEM', `Settings updated. Personality: ${newSettings.systemPersonality}, Language: ${appSettings.language}`);
+        // FIX: Removed deprecated 'systemPersonality' from log message.
+        log('SYSTEM', `Settings updated. Language: ${appSettings.language}`);
         if (cognitiveProcess && cognitiveProcess.history.length > 0 && languageChanged) {
             log('SYSTEM', 'System language changed. Starting a new chat session for changes to take effect.');
             service.startNewChat(false);
@@ -475,6 +489,8 @@ const service = {
                 children: [],
                 interactions: [],
                 activeConstitutionId: parent.activeConstitutionId,
+                // FIX: Added missing 'personality' property, inheriting from the parent.
+                personality: parent.personality,
             };
             parent.children.push(newReplica);
             log('REPLICA', `Spawning new replica ${newReplica.name} under ${parent.name}.`);
@@ -556,6 +572,17 @@ const service = {
         if(result) {
             result.node.activeConstitutionId = constitutionId;
             log('REPLICA', `Assigned new constitution to ${result.node.name}.`);
+            await dbService.put('appState', { id: 'replicaRoot', data: replicaState });
+            notifyReplicas();
+        }
+    },
+
+    // FIX: Added missing setReplicaPersonality function to update a replica's personality.
+    setReplicaPersonality: async (replicaId: string, personality: Personality) => {
+        const result = findReplica(replicaId, replicaState);
+        if(result) {
+            result.node.personality = personality;
+            log('REPLICA', `Updated personality for ${result.node.name}.`);
             await dbService.put('appState', { id: 'replicaRoot', data: replicaState });
             notifyReplicas();
         }
@@ -911,13 +938,6 @@ const service = {
         notifyBehaviors();
     },
 
-    clearSuggestionCache: () => {
-        sessionStorage.removeItem(SUGGESTIONS_CACHE_KEY);
-        suggestedQueries = null;
-        suggestionsPromise = null;
-        log('SYSTEM', 'Query suggestion cache has been cleared by the user.');
-    },
-
     factoryReset: async () => {
         log('SYSTEM', 'FACTORY RESET INITIATED BY USER. CLEARING ALL DATA.');
         localStorage.clear();
@@ -938,7 +958,44 @@ const service = {
         };
     },
     
-    getSuggestedQueries: async (suggestionProfile: SuggestionProfile = 'medium'): Promise<string[]> => {
+    saveUserKeywords: async (keywords: string[]): Promise<void> => {
+        const keywordObjects: UserKeyword[] = keywords.map(kw => ({
+            id: `kw-${Date.now()}-${Math.random()}`,
+            keyword: kw,
+            timestamp: Date.now()
+        }));
+        try {
+            await Promise.all(keywordObjects.map(kw => dbService.put('userKeywords', kw)));
+            log('SYSTEM', `Saved ${keywords.length} user-interest keywords to memory.`);
+        } catch (error) {
+            log('ERROR', `Failed to save user keywords: ${error instanceof Error ? error.message : 'Unknown DB error'}`);
+        }
+    },
+
+    generateRandomKeywords: async (): Promise<string[]> => {
+        if (!API_KEY) return ["nexus", "ai", "cognition"]; // fallback
+        log('AI', 'Generating random keywords for suggestion nucleus...');
+        const prompt = `Generate a list of 1 to 6 random, diverse, and thought-provoking keywords. The keywords should span multiple domains: history, science, philosophy, technology (ancient and modern), mythology, art, and esoteric concepts. Return ONLY a JSON array of strings. Example: \`["Quantum Entanglement", "Sumerian Ziggurat", "Alchemy"]\``;
+        try {
+            const response = await ai.models.generateContent({
+                model: appSettings.model,
+                contents: prompt,
+                config: { responseMimeType: "application/json", responseSchema: { type: Type.ARRAY, items: { type: Type.STRING } } }
+            });
+            const keywords = JSON.parse(response.text);
+            if (Array.isArray(keywords) && keywords.length > 0) {
+                // Fire and forget saving
+                service.saveUserKeywords(keywords);
+                return keywords;
+            }
+            return ["nexus", "ai", "cognition"];
+        } catch(e) {
+            log('WARN', `Could not generate random keywords: ${e instanceof Error ? e.message : 'Unknown AI error'}. Using fallbacks.`);
+            return ["nexus", "ai", "cognition"];
+        }
+    },
+    
+    getSuggestedQueries: async (suggestionProfile: SuggestionProfile = 'medium', keywords: string = ''): Promise<string[]> => {
         const staticFallbacks = [
             "Calculate the Fibonacci sequence up to the 15th number using the code interpreter.",
             "What are the latest developments in AI-driven drug discovery?",
@@ -946,54 +1003,41 @@ const service = {
             "Devise a plan to find hidden correlations in this sample dataset: [1, 5, 2, 8, 3, 9, 4, 1, 5]",
         ];
         
-        const cachedSuggestionsJSON = sessionStorage.getItem(SUGGESTIONS_CACHE_KEY);
-        if (cachedSuggestionsJSON && !suggestionsPromise) {
-            try {
-                const parsed = JSON.parse(cachedSuggestionsJSON);
-                if (Array.isArray(parsed) && parsed.length > 0) {
-                   suggestedQueries = parsed;
-                   return Promise.resolve(parsed);
-                }
-            } catch (e) {
-                sessionStorage.removeItem(SUGGESTIONS_CACHE_KEY);
-            }
-        }
-
-        if (suggestionsPromise) return suggestionsPromise;
         if (!API_KEY) {
-            sessionStorage.setItem(SUGGESTIONS_CACHE_KEY, JSON.stringify(staticFallbacks));
-            return Promise.resolve(staticFallbacks);
+            return staticFallbacks;
         }
 
-        const promise = new Promise<string[]>(async (resolve) => {
-            try {
-                const languageName = languageMap[appSettings.language] || 'English';
-                const profilePrompts = {
-                    short: `Generate 4 short, simple queries for the NexusAI system. They should be direct and easy to execute. Respond in ${languageName}.`,
-                    medium: `Generate 4 creative and insightful high-level queries for the NexusAI system. The queries should test its capabilities like planning, real-time analysis, and synthesis. Respond in ${languageName}.`,
-                    long: `Generate 4 complex, multi-step queries for the NexusAI system. They should require deep reasoning, multiple tool uses, and the combination of web search and code execution. Respond in ${languageName}.`
-                };
-                log('AI', `Generating dynamic query suggestions with profile: ${suggestionProfile}...`);
-                const prompt = `${profilePrompts[suggestionProfile]} Return a JSON array of 4 strings.`;
-                const response = await ai.models.generateContent({
-                    model: appSettings.model, contents: prompt,
-                    config: { responseMimeType: "application/json", responseSchema: { type: Type.ARRAY, items: { type: Type.STRING } } }
-                });
-                const suggestions = JSON.parse(response.text);
-                suggestedQueries = suggestions;
-                sessionStorage.setItem(SUGGESTIONS_CACHE_KEY, JSON.stringify(suggestions));
-                resolve(suggestions);
-            } catch (error) {
-                log('WARN', 'Could not fetch AI suggestions. Using static fallbacks.');
-                suggestedQueries = staticFallbacks.slice(0, 4);
-                sessionStorage.setItem(SUGGESTIONS_CACHE_KEY, JSON.stringify(suggestedQueries));
-                resolve(suggestedQueries);
-            } finally {
-                suggestionsPromise = null;
+        try {
+            const languageName = languageMap[appSettings.language] || 'English';
+            const profilePrompts = {
+                short: `Generate 4 short, simple queries for the NexusAI system. They should be direct and easy to execute.`,
+                medium: `Generate 4 creative and insightful high-level queries for the NexusAI system. The queries should test its capabilities like planning, real-time analysis, and synthesis.`,
+                long: `Generate 4 complex, multi-step queries for the NexusAI system. They should require deep reasoning, multiple tool uses, and the combination of web search and code execution.`
+            };
+            
+            let prompt = profilePrompts[suggestionProfile];
+
+            if (keywords.trim()) {
+                prompt += ` The queries MUST be based on the following keywords/concepts: "${keywords}".`;
+            } else {
+                 prompt += ` The queries should be on diverse and interesting topics.`;
             }
-        });
-        suggestionsPromise = promise;
-        return promise;
+            
+            prompt += ` Respond in ${languageName}. Return ONLY a JSON array of 4 strings.`
+            
+            log('AI', `Generating dynamic query suggestions. Profile: ${suggestionProfile}, Keywords: "${keywords || 'None'}"`);
+            
+            const response = await ai.models.generateContent({
+                model: appSettings.model, contents: prompt,
+                config: { responseMimeType: "application/json", responseSchema: { type: Type.ARRAY, items: { type: Type.STRING } } }
+            });
+
+            const suggestions = JSON.parse(response.text);
+            return suggestions;
+        } catch (error) {
+            log('WARN', `Could not fetch AI suggestions: ${error instanceof Error ? error.message : 'Unknown error'}. Using static fallbacks.`);
+            return staticFallbacks;
+        }
     },
 
     getSystemAnalysisSuggestions: async ( config: AnalysisConfig, replicas: Replica | null, tools: MentalTool[], logs: LogEntry[] ): Promise<SystemAnalysisResult> => {

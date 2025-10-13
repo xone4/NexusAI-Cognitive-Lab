@@ -1,9 +1,10 @@
 import React, { memo, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Replica, CognitiveConstitution } from '../types';
-import { ReplicaIcon, CogIcon, TrashIcon, PencilIcon, BrainCircuitIcon, ShareIcon } from './Icons';
+import type { Replica, CognitiveConstitution, Personality } from '../types';
+import { ReplicaIcon, CogIcon, TrashIcon, PencilIcon, BrainCircuitIcon, ShareIcon, UserIcon } from './Icons';
 import DashboardCard from './DashboardCard';
 import ReplicaNetwork from './ReplicaNetwork';
+import PersonalityEditor from './PersonalityEditor';
 
 interface ReplicasViewProps {
     rootReplica: Replica;
@@ -15,6 +16,7 @@ interface ReplicasViewProps {
     constitutions: CognitiveConstitution[];
     onSetConstitution: (replicaId: string, constitutionId: string) => void;
     onBroadcastProblem: (replicaId: string, problem: string) => void;
+    onSetPersonality: (replicaId: string, personality: Personality) => void;
 }
 
 const statusColors: Record<Replica['status'], { text: string; border: string; bg: string }> = {
@@ -45,6 +47,30 @@ const StatBar: React.FC<{ label: string; value: number; color: string; max?: num
         </div>
     );
 }
+
+const PersonalityModal: React.FC<{ replica: Replica; onSave: (personality: Personality) => void; onClose: () => void; }> = ({ replica, onSave, onClose }) => {
+    const { t } = useTranslation();
+    const [personality, setPersonality] = useState(replica.personality);
+
+    const handleSave = (e: React.FormEvent) => {
+        e.preventDefault();
+        onSave(personality);
+        onClose();
+    };
+
+    return (
+        <div className="fixed inset-0 bg-nexus-dark/80 backdrop-blur-sm flex items-center justify-center z-50 animate-spawn-in">
+            <form onSubmit={handleSave} className="bg-nexus-surface p-6 rounded-xl shadow-2xl w-full max-w-2xl border border-nexus-primary/50">
+                <h3 className="text-lg font-bold text-nexus-text mb-4">{t('replicas.setPersonalityFor', { name: replica.name })}</h3>
+                <PersonalityEditor personality={personality} onChange={setPersonality} />
+                <div className="flex justify-end space-x-3 mt-4">
+                    <button type="button" onClick={onClose} className="py-2 px-4 rounded-full text-nexus-text-muted hover:bg-nexus-dark">{t('cognitiveProcess.cancel')}</button>
+                    <button type="submit" className="py-2 px-4 rounded-full bg-nexus-primary text-nexus-dark font-bold hover:bg-nexus-secondary">{t('replicas.savePersonality')}</button>
+                </div>
+            </form>
+        </div>
+    );
+};
 
 const PurposeModal: React.FC<{ currentPurpose: string; onSave: (newPurpose: string) => void; onClose: () => void; }> = ({ currentPurpose, onSave, onClose }) => {
     const { t } = useTranslation();
@@ -91,10 +117,17 @@ const BroadcastModal: React.FC<{ onBroadcast: (problem: string) => void; onClose
     );
 };
 
-const ReplicaCard: React.FC<Omit<ReplicasViewProps, 'rootReplica'> & { replica: Replica; path: string; }> = memo(({ replica, path, isInteractionDisabled, onSpawnReplica, onPruneReplica, onRecalibrate, onAssignPurpose, constitutions, onSetConstitution, onBroadcastProblem }) => {
+const getPersonalityCode = (p: Personality): string => {
+    if (!p) return '----';
+    return `${p.energyFocus[0]}${p.informationProcessing[0]}${p.decisionMaking[0]}${p.worldApproach[0]}`;
+}
+
+
+const ReplicaCard: React.FC<Omit<ReplicasViewProps, 'rootReplica'> & { replica: Replica; path: string; }> = memo(({ replica, path, isInteractionDisabled, onSpawnReplica, onPruneReplica, onRecalibrate, onAssignPurpose, constitutions, onSetConstitution, onBroadcastProblem, onSetPersonality }) => {
     const { t } = useTranslation();
     const [isPurposeModalOpen, setPurposeModalOpen] = useState(false);
     const [isBroadcastModalOpen, setBroadcastModalOpen] = useState(false);
+    const [isPersonalityModalOpen, setPersonalityModalOpen] = useState(false);
     
     const color = statusColors[replica.status] || statusColors.Dormant;
     const animationClass = replica.status === 'Pruning' ? 'animate-fade-out' : replica.status === 'Spawning' ? 'animate-spawn-in' : replica.status === 'Executing Task' ? 'animate-pulse' : '';
@@ -108,14 +141,20 @@ const ReplicaCard: React.FC<Omit<ReplicasViewProps, 'rootReplica'> & { replica: 
         onBroadcastProblem(replica.id, problem);
         setBroadcastModalOpen(false);
     };
+    
+    const handleSavePersonality = (newPersonality: Personality) => {
+        onSetPersonality(replica.id, newPersonality);
+    }
 
     const isCore = replica.depth === 0;
-    const activeConstitution = constitutions.find(c => c.id === replica.activeConstitutionId);
+    const personalityCode = getPersonalityCode(replica.personality);
 
     return (
         <>
             {isPurposeModalOpen && <PurposeModal currentPurpose={replica.purpose} onSave={handleSavePurpose} onClose={() => setPurposeModalOpen(false)} />}
             {isBroadcastModalOpen && <BroadcastModal onBroadcast={handleBroadcast} onClose={() => setBroadcastModalOpen(false)} />}
+            {isPersonalityModalOpen && <PersonalityModal replica={replica} onSave={handleSavePersonality} onClose={() => setPersonalityModalOpen(false)} />}
+
             <DashboardCard 
                 title={replica.name} 
                 icon={<ReplicaIcon className={color.text} />} 
@@ -125,7 +164,10 @@ const ReplicaCard: React.FC<Omit<ReplicasViewProps, 'rootReplica'> & { replica: 
                 <div className="space-y-4">
                     <div>
                         <p className="text-xs font-mono text-nexus-text-muted break-words">{path}</p>
-                        <p className={`text-sm font-bold ${color.text}`}>{t('replicas.status')}: {t(`replicas.status_${replica.status.replace(' ', '')}`, replica.status)}</p>
+                        <div className="flex justify-between items-center">
+                             <p className={`text-sm font-bold ${color.text}`}>{t('replicas.status')}: {t(`replicas.status_${replica.status.replace(' ', '')}`, replica.status)}</p>
+                             <div className="text-sm font-mono font-bold text-nexus-accent bg-nexus-accent/10 px-2 py-0.5 rounded-full">{personalityCode}</div>
+                        </div>
                     </div>
 
                     <div className="p-3 bg-nexus-dark/30 rounded-xl space-y-2">
@@ -166,7 +208,10 @@ const ReplicaCard: React.FC<Omit<ReplicasViewProps, 'rootReplica'> & { replica: 
                          <button onClick={() => onPruneReplica(replica.id)} disabled={isInteractionDisabled || isCore} className="replica-btn bg-red-500/10 text-red-400 border-red-500/50 hover:bg-red-500/20">
                             <TrashIcon className="w-4 h-4" /> {t('replicas.prune')}
                         </button>
-                        <button onClick={() => setBroadcastModalOpen(true)} disabled={isInteractionDisabled || replica.status !== 'Active'} className="replica-btn bg-purple-500/10 text-purple-400 border-purple-500/50 hover:bg-purple-500/20 col-span-2">
+                         <button onClick={() => setPersonalityModalOpen(true)} disabled={isInteractionDisabled} className="replica-btn bg-purple-500/10 text-purple-400 border-purple-500/50 hover:bg-purple-500/20">
+                            <UserIcon className="w-4 h-4" /> {t('replicas.setPersonality')}
+                        </button>
+                        <button onClick={() => setBroadcastModalOpen(true)} disabled={isInteractionDisabled || replica.status !== 'Active'} className="replica-btn bg-purple-500/10 text-purple-400 border-purple-500/50 hover:bg-purple-500/20">
                             <ShareIcon className="w-4 h-4" /> {t('replicas.broadcastProblem')}
                         </button>
                     </div>

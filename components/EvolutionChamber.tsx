@@ -133,7 +133,8 @@ const EvolutionChamber: React.FC<EvolutionChamberProps> = ({ evolutionState, arc
 
     const handleSelectFromMemory = (item: ChatMessage | Behavior) => {
         let formattedProblem = '';
-        if ('userQuery' in item) { // It's a ChatMessage (trace)
+        // FIX: Use 'role' as a discriminator for ChatMessage vs Behavior to ensure correct type narrowing.
+        if ('role' in item) { // It's a ChatMessage (trace)
             formattedProblem = `Problem: Evolve a more efficient or creative plan to solve the original query: "${item.userQuery}".\n\nContext from original answer:\n${item.text?.substring(0, 200)}...`;
         } else { // It's a Behavior
             formattedProblem = `Problem: Apply the core principles of the learned behavior "${item.name}" to a new, more challenging scenario.\n\nCore Strategy to evolve:\n${item.strategy}`;

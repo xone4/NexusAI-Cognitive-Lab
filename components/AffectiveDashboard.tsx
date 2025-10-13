@@ -1,9 +1,10 @@
 import React, { memo } from 'react';
-import type { AffectiveState, PrimaryEmotion } from '../types';
+import type { AffectiveState, PrimaryEmotion, Personality } from '../types';
 import { LightBulbIcon } from './Icons';
 
 interface AffectiveDashboardProps {
   activeState: AffectiveState | null;
+  personality: Personality;
   onInduceEmotion: (emotion: PrimaryEmotion, intensity: number) => void;
   isInteractionDisabled: boolean;
 }
@@ -19,13 +20,17 @@ const emotions: { name: PrimaryEmotion; color: string; angle: number }[] = [
     { name: 'anticipation', color: '#f97316', angle: 315 },
 ];
 
-const EmotionWheel: React.FC<AffectiveDashboardProps> = ({ activeState, onInduceEmotion, isInteractionDisabled }) => {
+const EmotionWheel: React.FC<AffectiveDashboardProps> = ({ activeState, personality, onInduceEmotion, isInteractionDisabled }) => {
     const getIntensity = (emotion: PrimaryEmotion) => {
         return activeState?.dominantEmotions.find(e => e.type === emotion)?.intensity || 0;
     };
+    
+    const isFeelingType = personality.decisionMaking === 'FEELING';
+    const wheelSizeClass = isFeelingType ? "w-24 h-24" : "w-20 h-20";
+    const iconSizeClass = isFeelingType ? "w-8 h-8" : "w-6 h-6";
 
     return (
-        <div className="relative w-24 h-24">
+        <div className={`relative transition-all duration-300 ${wheelSizeClass}`}>
             <svg viewBox="0 0 100 100" className="w-full h-full">
                 <g transform="translate(50,50)">
                     {emotions.map(({ name, color, angle }) => {
@@ -50,7 +55,7 @@ const EmotionWheel: React.FC<AffectiveDashboardProps> = ({ activeState, onInduce
                 </g>
             </svg>
              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <LightBulbIcon className="w-8 h-8 text-nexus-primary" />
+                <LightBulbIcon className={`text-nexus-primary ${iconSizeClass}`} />
             </div>
         </div>
     );

@@ -4,6 +4,20 @@ export interface Interaction {
   intensity: number; // 0 to 1
 }
 
+// --- Personality Types ---
+export type EnergyFocus = 'INTROVERSION' | 'EXTROVERSION';
+export type InformationProcessing = 'SENSING' | 'INTUITION';
+export type DecisionMaking = 'THINKING' | 'FEELING';
+export type WorldApproach = 'JUDGING' | 'PERCEIVING';
+
+export interface Personality {
+    energyFocus: EnergyFocus;
+    informationProcessing: InformationProcessing;
+    decisionMaking: DecisionMaking;
+    worldApproach: WorldApproach;
+}
+
+
 export interface Replica {
   id: string;
   name: string;
@@ -16,6 +30,7 @@ export interface Replica {
   memoryUsage: number;
   cpuUsage: number;
   interactions: Interaction[];
+  personality: Personality;
   activeConstitutionId: string;
 }
 
@@ -87,7 +102,6 @@ export interface LogEntry {
 export type ActiveView = 'dashboard' | 'replicas' | 'tools' | 'architecture' | 'analysis' | 'settings' | 'evolution' | 'memory' | 'dreaming';
 
 export type LogVerbosity = 'STANDARD' | 'VERBOSE';
-export type SystemPersonality = 'BALANCED' | 'CREATIVE' | 'LOGICAL';
 export type AnimationLevel = 'FULL' | 'MINIMAL' | 'NONE';
 export type SuggestionProfile = 'short' | 'medium' | 'long';
 export type Language = 'en' | 'ar' | 'es' | 'fr' | 'de' | 'zh';
@@ -95,7 +109,7 @@ export type Language = 'en' | 'ar' | 'es' | 'fr' | 'de' | 'zh';
 export interface AppSettings {
   model: string;
   cognitiveStepDelay: number; // in milliseconds
-  systemPersonality: SystemPersonality;
+  coreAgentPersonality: Personality;
   logVerbosity: LogVerbosity;
   animationLevel: AnimationLevel;
   language: Language;
@@ -117,6 +131,7 @@ export interface PlanStep {
     citations?: any[];
     replicaId?: string; // For delegate_task_to_replica
     task?: string; // For delegate_task_to_replica
+    personalityOverride?: Partial<Personality>;
 }
 
 // --- Affective Core Types ---
@@ -292,4 +307,10 @@ export interface DreamProcessUpdate {
     stage: 'IDLE' | 'GATHERING' | 'ANALYZING' | 'SYNTHESIZING' | 'INTEGRATING' | 'DONE' | 'ERROR';
     message: string;
     newDirectives?: SystemDirective[];
+}
+
+export interface UserKeyword {
+  id: string;
+  keyword: string;
+  timestamp: number;
 }

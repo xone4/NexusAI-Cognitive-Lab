@@ -50,6 +50,7 @@ import {
   ChevronLeft,
   ChevronRight,
   MessageCircleMore,
+  Dices,
   type LucideProps,
 } from 'lucide-react';
 
@@ -108,3 +109,4 @@ export const ChartPieIcon: React.FC<IconProps> = (props) => <PieChart {...props}
 export const ChevronLeftIcon: React.FC<IconProps> = (props) => <ChevronLeft {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;
 export const ChevronRightIcon: React.FC<IconProps> = (props) => <ChevronRight {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;
 export const ChatBubbleBottomCenterTextIcon: React.FC<IconProps> = (props) => <MessageCircleMore {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;
+export const DicesIcon: React.FC<IconProps> = (props) => <Dices {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;

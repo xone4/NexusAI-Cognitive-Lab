@@ -59,11 +59,14 @@ const StructuralView: React.FC<ArchitectureDiagramProps> = ({ replicaCount, tool
     const currentStep = (lastMessage?.role === 'model' && lastMessage.currentStep !== undefined) ? lastMessage.plan?.[lastMessage.currentStep] : null;
     const activeTool = currentStep?.tool;
 
+    // FIX: Replaced deprecated 'systemPersonality' with 'coreAgentPersonality' and formatted the object into a string.
+    const personalityCode = `${settings.coreAgentPersonality.energyFocus[0]}${settings.coreAgentPersonality.informationProcessing[0]}${settings.coreAgentPersonality.decisionMaking[0]}${settings.coreAgentPersonality.worldApproach[0]}`;
+
     return (
         <div className="h-full w-full flex flex-col items-center justify-center p-4 space-y-2 font-sans">
             <ArchBox title="User Interface Layer" items={[`Animation: ${settings.animationLevel}`, `Verbosity: ${settings.logVerbosity}`]} icon={<UserGroupIcon />} className="w-full md:w-1/2" isInteractive onClick={() => setActiveView('settings')} />
             <Connector />
-            <ArchBox title="Nexus Core Engine" items={[`Personality: ${settings.systemPersonality}`, `Status: ${cognitiveProcess.state}`]} icon={<BrainCircuitIcon />} className="w-full md:w-2/3" isGlowing={isThinking && !activeTool}/>
+            <ArchBox title="Nexus Core Engine" items={[`Personality: ${personalityCode}`, `Status: ${cognitiveProcess.state}`]} icon={<BrainCircuitIcon />} className="w-full md:w-2/3" isGlowing={isThinking && !activeTool}/>
             <div className="w-full flex justify-center items-center">
                 <Connector />
             </div>

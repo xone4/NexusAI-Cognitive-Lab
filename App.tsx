@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, ActiveView, CognitiveProcess, AppSettings, Toolchain, ChatMessage, PlanStep, CognitiveConstitution, EvolutionState, Behavior, Language } from './types';
+import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, ActiveView, CognitiveProcess, AppSettings, Toolchain, ChatMessage, PlanStep, CognitiveConstitution, EvolutionState, Behavior, Language, Personality } from './types';
 import { nexusAIService } from './services/nexusAIService';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -44,7 +44,7 @@ const App: React.FC = () => {
     const defaultSettings: AppSettings = {
       model: 'gemini-2.5-flash',
       cognitiveStepDelay: 1000,
-      systemPersonality: 'BALANCED',
+      coreAgentPersonality: { energyFocus: 'EXTROVERSION', informationProcessing: 'INTUITION', decisionMaking: 'THINKING', worldApproach: 'PERCEIVING' }, // ENTP Default
       logVerbosity: 'STANDARD',
       animationLevel: 'FULL',
       language: 'en',
@@ -53,8 +53,19 @@ const App: React.FC = () => {
     try {
       const savedSettingsJSON = localStorage.getItem('nexusai-settings');
       if (savedSettingsJSON) {
-        const parsed = JSON.parse(savedSettingsJSON);
+        let parsed = JSON.parse(savedSettingsJSON);
         if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            // Graceful migration from old 'systemPersonality' string to new object
+            if (parsed.systemPersonality) {
+                switch(parsed.systemPersonality) {
+                    case 'CREATIVE': parsed.coreAgentPersonality = { energyFocus: 'EXTROVERSION', informationProcessing: 'INTUITION', decisionMaking: 'FEELING', worldApproach: 'PERCEIVING' }; break; // ENFP
+                    case 'LOGICAL': parsed.coreAgentPersonality = { energyFocus: 'INTROVERSION', informationProcessing: 'SENSING', decisionMaking: 'THINKING', worldApproach: 'JUDGING' }; break; // ISTJ
+                    default: parsed.coreAgentPersonality = { ...defaultSettings.coreAgentPersonality }; // ENTP
+                }
+                delete parsed.systemPersonality;
+                localStorage.setItem('nexusai-settings', JSON.stringify(parsed));
+                console.log("Migrated settings from old personality format.");
+            }
           return { ...defaultSettings, ...parsed };
         }
       }
@@ -191,6 +202,11 @@ const App: React.FC = () => {
 
   const setReplicaConstitution = useCallback((replicaId: string, constitutionId: string) => {
     nexusAIService.setReplicaConstitution(replicaId, constitutionId);
+  }, []);
+  
+  // FIX: This function was calling a non-existent method on nexusAIService. The method is now added to the service.
+  const setReplicaPersonality = useCallback((replicaId: string, personality: Personality) => {
+    nexusAIService.setReplicaPersonality(replicaId, personality);
   }, []);
 
   const broadcastProblem = useCallback((replicaId: string, problem: string) => {
@@ -334,6 +350,7 @@ const App: React.FC = () => {
                  <CognitiveCommandCenter
                   permissions={cognitivePermissions}
                   process={cognitiveProcess}
+                  settings={settings}
                   onSubmitQuery={submitQuery}
                   onCancelQuery={cancelQuery}
                   onNewChat={startNewChat}
@@ -373,6 +390,7 @@ const App: React.FC = () => {
             constitutions={constitutions}
             onSetConstitution={setReplicaConstitution}
             onBroadcastProblem={broadcastProblem}
+            onSetPersonality={setReplicaPersonality}
         />;
       case 'tools':
         return <MentalToolsLab 

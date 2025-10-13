@@ -1,6 +1,6 @@
 import React, { useState, useEffect, memo, useCallback, useRef, Fragment } from 'react';
 import { Tab } from '@headlessui/react';
-import type { CognitiveProcess, SuggestionProfile, PrimaryEmotion } from '../types';
+import type { CognitiveProcess, AppSettings } from '../types';
 import { nexusAIService } from '../services/nexusAIService';
 import { BrainCircuitIcon, PlusCircleIcon, XCircleIcon, RefreshIcon, PhotographIcon, DocumentMagnifyingGlassIcon, LightBulbIcon, SparklesIcon } from './Icons';
 import AffectiveDashboard from './AffectiveDashboard';
@@ -15,6 +15,7 @@ interface CognitiveCommandCenterProps {
         isGloballyBusy: boolean;
     };
     process: CognitiveProcess | null;
+    settings: AppSettings;
     onSubmitQuery: (query: string, image?: { mimeType: string; data: string; }) => void;
     onCancelQuery: () => void;
     onNewChat: () => void;
@@ -151,7 +152,7 @@ const ManualActionsTab: React.FC<Pick<CognitiveCommandCenterProps, 'permissions'
 };
 
 const CognitiveCommandCenter: React.FC<CognitiveCommandCenterProps> = (props) => {
-    const { process } = props;
+    const { process, settings } = props;
 
     const tabClasses = ({ selected }: { selected: boolean }) => `
         w-full py-2.5 text-xs font-semibold uppercase tracking-wider rounded-lg
@@ -181,6 +182,7 @@ const CognitiveCommandCenter: React.FC<CognitiveCommandCenterProps> = (props) =>
                         <Tab.Panel className="h-full rounded-xl p-2 focus:outline-none">
                             <AffectiveDashboard 
                                 activeState={process?.activeAffectiveState || null}
+                                personality={settings.coreAgentPersonality}
                                 onInduceEmotion={nexusAIService.induceUserEmotion}
                                 isInteractionDisabled={props.permissions.isGloballyBusy}
                             />
