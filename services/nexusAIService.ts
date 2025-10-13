@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Behavior, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective } from '../types';
+import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Behavior, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails } from '../types';
+import { dbService, STORES } from './dbService';
 
 // IMPORTANT: This would be populated by a secure mechanism in a real app
 const API_KEY = process.env.API_KEY;
@@ -18,6 +19,7 @@ let evolutionState: EvolutionState;
 let cognitiveProcess: CognitiveProcess;
 let cognitiveNetworkState: CognitiveNetworkState = { activeProblems: [] };
 let archivedTracesState: ChatMessage[];
+let systemDirectivesState: SystemDirective[];
 let isCancelled = false;
 let appSettings: AppSettings = {
     model: 'gemini-2.5-flash',
@@ -41,33 +43,14 @@ let behaviorSubscribers: ((behaviors: Behavior[]) => void)[] = [];
 let constitutionSubscribers: ((constitutions: CognitiveConstitution[]) => void)[] = [];
 let evolutionSubscribers: ((evolutionState: EvolutionState) => void)[] = [];
 let archiveSubscribers: ((archives: ChatMessage[]) => void)[] = [];
-// FIX: Added subscriber array for the dream process.
 let dreamProcessSubscribers: ((update: DreamProcessUpdate) => void)[] = [];
 
 
 let suggestedQueries: string[] | null = null;
 let suggestionsPromise: Promise<string[]> | null = null;
-let traceDetailsCache = new Map<string, { reflection?: string; discussion?: { role: 'user' | 'model', text: string }[] }>();
-
+let traceDetailsCache = new Map<string, TraceDetails>();
 
 const SUGGESTIONS_CACHE_KEY = 'nexusai-query-suggestions';
-const REPLICA_STATE_KEY = 'nexusai-replica-state';
-const TOOLS_STATE_KEY = 'nexusai-tools-state';
-const TOOLCHAINS_STATE_KEY = 'nexusai-toolchains-state';
-const BEHAVIORS_STATE_KEY = 'nexusai-behaviors-state';
-const CONSTITUTIONS_STATE_KEY = 'nexusai-constitutions-state';
-const ARCHIVES_STATE_KEY = 'nexusai-archived-traces';
-
-
-const saveToLocalStorage = (key: string, data: any) => {
-    try {
-        localStorage.setItem(key, JSON.stringify(data));
-    } catch (error) {
-        console.error(`Failed to save ${key} to localStorage`, error);
-        log('ERROR', `Failed to save ${key} state.`);
-    }
-};
-
 
 const log = (level: LogEntry['level'], message: string) => {
   const verbosityMap = {
@@ -95,7 +78,6 @@ const notifyBehaviors = () => behaviorSubscribers.forEach(cb => cb(JSON.parse(JS
 const notifyConstitutions = () => constitutionSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(constitutionsState))));
 const notifyEvolution = () => evolutionSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(evolutionState))));
 const notifyArchives = () => archiveSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(archivedTracesState))));
-// FIX: Added notify function for the dream process.
 const notifyDreamProcess = (update: DreamProcessUpdate) => dreamProcessSubscribers.forEach(cb => cb(update));
 
 const findReplica = (id: string, node: Replica): {parent: Replica | null, node: Replica, index: number} | null => {
@@ -163,49 +145,59 @@ const updateReplicaState = (node: Replica, root: Replica) => {
     node.children.forEach(child => updateReplicaState(child, root));
 };
 
-
-const initialize = () => {
-    const loadFromStorage = (key: string, defaultValue: any, validator: (data: any) => boolean = () => true) => {
-        const savedJSON = localStorage.getItem(key);
-        if (savedJSON) {
-            try {
-                const parsed = JSON.parse(savedJSON);
-                if (validator(parsed)) return parsed;
-                console.warn(`Invalid format for ${key} in localStorage. Using defaults.`);
-            } catch (e) {
-                console.warn(`Corrupted ${key} state in localStorage. Using defaults.`, e);
-            }
-        }
-        return defaultValue;
-    };
+const _seedInitialData = async () => {
+    const constitutions = await dbService.getAll('constitutions');
+    if (constitutions.length > 0) {
+        log('SYSTEM', 'Database already seeded. Skipping initialization.');
+        return;
+    }
     
-    constitutionsState = loadFromStorage(CONSTITUTIONS_STATE_KEY, [
+    log('SYSTEM', 'Performing first-time database initialization...');
+
+    const initialConstitutions: CognitiveConstitution[] = [
         { id: 'const-balanced', name: 'Balanced Protocol', description: 'Standard operating parameters for general-purpose cognition.', rules: [] },
         { id: 'const-creative', name: 'Creative Expansion', description: 'Loosens constraints to allow for more novel connections and plans.', rules: [{type: 'MAX_PLAN_STEPS', value: 20, description: 'Allows for complex, multi-stage planning (up to 20 steps).'}] },
         { id: 'const-logical', name: 'Strict Logic', description: 'Enforces rigorous, efficient processing with minimal deviation.', rules: [{type: 'MAX_REPLICAS', value: 3, description: 'Limits cognitive branching to 3 sub-replicas.'}, {type: 'FORBIDDEN_TOOLS', value: ['induce_emotion'], description: 'Disables use of subjective emotional tools.'}] },
-    ], (data) => Array.isArray(data) && data.length > 0);
+    ];
+    await Promise.all(initialConstitutions.map(c => dbService.put('constitutions', c)));
 
-    const initialReplica = {
-        id: 'nexus-core', name: 'Nexus-Core-α', depth: 0, status: 'Active', load: 65, purpose: 'Orchestrating cognitive resources, managing executive functions, and directing overall problem-solving strategy.', efficiency: 92, memoryUsage: 75, cpuUsage: 60, interactions: [], activeConstitutionId: constitutionsState[0].id,
+    const initialReplica: Replica = {
+        id: 'nexus-core', name: 'Nexus-Core-α', depth: 0, status: 'Active', load: 65, purpose: 'Orchestrating cognitive resources, managing executive functions, and directing overall problem-solving strategy.', efficiency: 92, memoryUsage: 75, cpuUsage: 60, interactions: [], activeConstitutionId: initialConstitutions[0].id,
         children: [
-            { id: 'replica-1', name: 'Sub-Cognition-β1', depth: 1, status: 'Active', load: 45, purpose: 'Analyzing visual inputs from images and data streams to extract patterns, objects, and contextual meaning.', efficiency: 88, memoryUsage: 50, cpuUsage: 40, children: [], interactions: [], activeConstitutionId: constitutionsState[0].id },
-            { id: 'replica-2', name: 'Sub-Cognition-β2', depth: 1, status: 'Dormant', load: 10, purpose: 'Running sandboxed simulations on archived cognitive traces to identify and model novel behavioral strategies.', efficiency: 75, memoryUsage: 15, cpuUsage: 5, children: [], interactions: [], activeConstitutionId: constitutionsState[0].id }
+            { id: 'replica-1', name: 'Sub-Cognition-β1', depth: 1, status: 'Active', load: 45, purpose: 'Analyzing visual inputs from images and data streams to extract patterns, objects, and contextual meaning.', efficiency: 88, memoryUsage: 50, cpuUsage: 40, children: [], interactions: [], activeConstitutionId: initialConstitutions[0].id },
+            { id: 'replica-2', name: 'Sub-Cognition-β2', depth: 1, status: 'Dormant', load: 10, purpose: 'Running sandboxed simulations on archived cognitive traces to identify and model novel behavioral strategies.', efficiency: 75, memoryUsage: 15, cpuUsage: 5, children: [], interactions: [], activeConstitutionId: initialConstitutions[0].id }
         ]
     };
-    replicaState = loadFromStorage(REPLICA_STATE_KEY, initialReplica, (data) => data && data.id);
+    await dbService.put('appState', { id: 'replicaRoot', data: initialReplica });
 
-    const initialTools = [
+    const initialTools: MentalTool[] = [
         { id: 'tool-code', name: 'Code Interpreter', description: 'Executes sandboxed JavaScript code for logical operations and calculations.', capabilities: ['Execution', 'Logic'], tags: ['core', 'execution'], status: 'Active', version: 1.0, complexity: 95, usageHistory: [] },
         { id: 'tool-search', name: 'Web Search Agent', description: 'Accesses and retrieves real-time information from the web.', capabilities: ['Search', 'Real-time Data'], tags: ['core', 'web'], status: 'Active', version: 1.0, complexity: 70, usageHistory: [] },
         { id: 'tool-2', name: 'Fractal Data Miner', description: 'Analyzes data structures using fractal geometry.', capabilities: ['Data Mining', 'Pattern Reco.'], tags: ['analysis', 'data'], status: 'Idle', version: 2.3, complexity: 88, usageHistory: [{timestamp: Date.now() - 3600000, task: 'Initial system diagnostics'}] },
     ];
-    toolsState = loadFromStorage(TOOLS_STATE_KEY, initialTools, Array.isArray);
-    toolchainsState = loadFromStorage(TOOLCHAINS_STATE_KEY, [], Array.isArray);
-    behaviorsState = loadFromStorage(BEHAVIORS_STATE_KEY, [], Array.isArray);
-    archivedTracesState = loadFromStorage(ARCHIVES_STATE_KEY, [], Array.isArray);
+    await Promise.all(initialTools.map(t => dbService.put('tools', t)));
 
-    cognitiveProcess = { state: 'Idle', history: [], activeAffectiveState: null, };
-    // FIX: Corrected initialization of evolutionState to match the EvolutionState type.
+    log('SYSTEM', 'Database seeding complete.');
+};
+
+
+const initialize = async () => {
+    await _seedInitialData();
+
+    const storedReplica = await dbService.get<{id: string, data: Replica}>('appState', 'replicaRoot');
+    if (!storedReplica) throw new Error("Critical error: Could not load replica root from DB.");
+    replicaState = storedReplica.data;
+
+    [toolsState, toolchainsState, behaviorsState, constitutionsState, archivedTracesState, systemDirectivesState] = await Promise.all([
+        dbService.getAll<MentalTool>('tools'),
+        dbService.getAll<Toolchain>('toolchains'),
+        dbService.getAll<Behavior>('behaviors'),
+        dbService.getAll<CognitiveConstitution>('constitutions'),
+        dbService.getAll<ChatMessage>('archivedTraces'),
+        dbService.getAll<SystemDirective>('systemDirectives'),
+    ]);
+
+    cognitiveProcess = { state: 'Idle', history: [], activeAffectiveState: null };
     evolutionState = {
         isRunning: false,
         config: { populationSize: 50, mutationRate: 0.1, generations: 100, fitnessGoal: 'CONCISENESS', elitism: 0.1 },
@@ -216,15 +208,29 @@ const initialize = () => {
         finalEnsembleResult: null,
     };
     
-    saveToLocalStorage(CONSTITUTIONS_STATE_KEY, constitutionsState);
-    saveToLocalStorage(REPLICA_STATE_KEY, replicaState);
-    saveToLocalStorage(TOOLS_STATE_KEY, toolsState);
-    saveToLocalStorage(TOOLCHAINS_STATE_KEY, toolchainsState);
-    saveToLocalStorage(BEHAVIORS_STATE_KEY, behaviorsState);
-    saveToLocalStorage(ARCHIVES_STATE_KEY, archivedTracesState);
+    return {
+        initialReplicas: JSON.parse(JSON.stringify(replicaState)),
+        initialTools: JSON.parse(JSON.stringify(toolsState)),
+        initialToolchains: JSON.parse(JSON.stringify(toolchainsState)),
+        initialBehaviors: JSON.parse(JSON.stringify(behaviorsState)),
+        initialConstitutions: JSON.parse(JSON.stringify(constitutionsState)),
+        initialEvolutionState: JSON.parse(JSON.stringify(evolutionState)),
+        initialArchives: JSON.parse(JSON.stringify(archivedTracesState)),
+        initialCognitiveProcess: JSON.parse(JSON.stringify(cognitiveProcess)),
+        initialLogs: [
+            { id: 'init-1', timestamp: Date.now() - 2000, level: 'SYSTEM', message: 'NexusAI Cognitive Core Initializing...' },
+            { id: 'init-2', timestamp: Date.now() - 1000, level: 'SYSTEM', message: 'Persistent memory layer synced.' },
+            { id: 'init-3', timestamp: Date.now() - 500, level: 'REPLICA', message: 'Replica Nexus-Core-α status: Active' },
+        ] as LogEntry[],
+        initialPerfData: Array.from({ length: 30 }, (_, i) => ({
+            time: new Date(Date.now() - (30 - i) * 2000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+            cpu: Math.random() * 20 + 50,
+            memory: Math.random() * 15 + 60,
+            rsiCycles: Math.random() * 5 + 10,
+        })) as PerformanceDataPoint[],
+    };
 };
 
-initialize();
 
 const planSchema = { type: Type.OBJECT, properties: { plan: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { step: { type: Type.INTEGER }, description: { type: Type.STRING }, tool: { type: Type.STRING, enum: ['google_search', 'synthesize_answer', 'code_interpreter', 'recall_memory', 'generate_image', 'analyze_image_input', 'forge_tool', 'spawn_replica', 'induce_emotion', 'replan', 'summarize_text', 'translate_text', 'analyze_sentiment', 'execute_toolchain', 'apply_behavior', 'delegate_task_to_replica'] }, query: { type: Type.STRING }, code: { type: Type.STRING }, concept: { type: Type.STRING }, inputRef: { type: Type.INTEGER }, replicaId: { type: Type.STRING }, task: { type: Type.STRING } }, required: ['step', 'description', 'tool'] } } }, required: ['plan'] };
 
@@ -256,9 +262,25 @@ const getSystemInstruction = () => {
     if (replicaState) {
         traverseReplicas(replicaState);
     }
+    
+    const directiveText = systemDirectivesState.length > 0
+        ? `\n**CORE DIRECTIVES (Learned from experience):**\n${systemDirectivesState.map(d => `- ${d.text}`).join('\n')}`
+        : '';
+
+    const recentMemories = archivedTracesState
+        .sort((a, b) => (b.salience ?? 0) - (a.salience ?? 0))
+        .slice(0, 3)
+        .map(trace => `- In response to "${trace.userQuery}", a key outcome was: "${trace.text?.substring(0, 150)}..."`)
+        .join('\n');
+    
+    const memoryText = recentMemories.length > 0
+        ? `\n**RECENT EXPERIENTIAL MEMORY (Key Learnings):**\n${recentMemories}`
+        : '';
 
     return `${personalityInstruction}
     You are an Agent 2.0 Orchestrator. Your function is to solve problems by creating explicit plans, delegating tasks to specialized Sub-Agents, and managing persistent memory.
+    ${directiveText}
+    ${memoryText}
 
     This architecture has four pillars:
     1.  **Explicit Planning**: First, create a detailed, step-by-step plan. This is your "To-Do list".
@@ -332,8 +354,9 @@ const service = {
     updateSettings: (newSettings: AppSettings) => {
         const languageChanged = appSettings.language !== newSettings.language;
         appSettings = newSettings;
+        localStorage.setItem('nexusai-settings', JSON.stringify(appSettings));
         log('SYSTEM', `Settings updated. Personality: ${newSettings.systemPersonality}, Language: ${appSettings.language}`);
-        if (cognitiveProcess.history.length > 0 && languageChanged) {
+        if (cognitiveProcess && cognitiveProcess.history.length > 0 && languageChanged) {
             log('SYSTEM', 'System language changed. Starting a new chat session for changes to take effect.');
             service.startNewChat(false);
         }
@@ -362,75 +385,79 @@ const service = {
         }
     },
 
-    // FIX: Renamed getInitialData to initialize to match the method call in App.tsx.
-    initialize: () => ({
-        initialReplicas: JSON.parse(JSON.stringify(replicaState)),
-        initialTools: JSON.parse(JSON.stringify(toolsState)),
-        initialToolchains: JSON.parse(JSON.stringify(toolchainsState)),
-        initialBehaviors: JSON.parse(JSON.stringify(behaviorsState)),
-        initialConstitutions: JSON.parse(JSON.stringify(constitutionsState)),
-        initialEvolutionState: JSON.parse(JSON.stringify(evolutionState)),
-        initialArchives: JSON.parse(JSON.stringify(archivedTracesState)),
-        initialCognitiveProcess: JSON.parse(JSON.stringify(cognitiveProcess)),
-        initialLogs: [
-            { id: 'init-1', timestamp: Date.now() - 2000, level: 'SYSTEM', message: 'NexusAI Cognitive Core Initializing...' },
-            { id: 'init-2', timestamp: Date.now() - 1000, level: 'SYSTEM', message: 'Ethical & Alignment Framework: Online' },
-            { id: 'init-3', timestamp: Date.now() - 500, level: 'REPLICA', message: 'Replica Nexus-Core-α status: Active' },
-        ] as LogEntry[],
-        initialPerfData: Array.from({ length: 30 }, (_, i) => ({
-            time: new Date(Date.now() - (30 - i) * 2000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-            cpu: Math.random() * 20 + 50,
-            memory: Math.random() * 15 + 60,
-            rsiCycles: Math.random() * 5 + 10,
-        })) as PerformanceDataPoint[],
-    }),
+    initialize,
 
     start: () => {
         return setInterval(() => {
-            updateReplicaState(replicaState, replicaState);
-            notifyReplicas();
+            if (replicaState) {
+                updateReplicaState(replicaState, replicaState);
+                notifyReplicas();
+            }
         }, 2000);
     },
 
-    // FIX: Added initiateDreamCycle method to handle the "dreaming" process.
-    initiateDreamCycle: () => {
+    initiateDreamCycle: async () => {
         log('SYSTEM', 'Dream cycle initiated by user.');
 
-        const stages: { stage: DreamProcessUpdate['stage'], message: string, delay: number }[] = [
+        const stages: { stage: DreamProcessUpdate['stage'], message: string, delay: number, action?: () => Promise<any> }[] = [
             { stage: 'GATHERING', message: 'Gathering subconscious fragments and memory traces...', delay: 2000 },
             { stage: 'ANALYZING', message: 'Analyzing patterns and latent connections...', delay: 3000 },
-            { stage: 'SYNTHESIZING', message: 'Synthesizing novel concepts and insights...', delay: 3000 },
+            { stage: 'SYNTHESIZING', message: 'Synthesizing novel concepts and insights...', delay: 3000, action: async () => {
+                if (!API_KEY) return null;
+                const memoryContext = [...archivedTracesState, ...behaviorsState]
+                    .map(item => JSON.stringify(item))
+                    .join('\n---\n');
+                
+                const prompt = `Based on this extensive history of actions, plans, and extracted behaviors, synthesize 2 high-level, strategic directives for self-improvement.
+                Directives should be abstract principles, not concrete tasks. Example: "Prioritize multi-perspective analysis before committing to a complex plan."
+                Memory Context:\n${memoryContext.substring(0, 8000)}\n
+                Return ONLY a JSON object: { "directives": ["directive 1 text", "directive 2 text"] }`;
+
+                try {
+                    const response = await ai.models.generateContent({
+                        model: appSettings.model,
+                        contents: prompt,
+                        config: { responseMimeType: 'application/json', responseSchema: { type: Type.OBJECT, properties: { directives: { type: Type.ARRAY, items: { type: Type.STRING } } }, required: ['directives'] } }
+                    });
+                    const result = JSON.parse(response.text);
+                    return result.directives || [];
+                } catch(e) {
+                    log('ERROR', `Dream synthesis failed: ${e instanceof Error ? e.message : 'Unknown AI Error'}`);
+                    return [];
+                }
+            }},
             { stage: 'INTEGRATING', message: 'Integrating new understanding into core directives...', delay: 2000 },
         ];
         
-        notifyDreamProcess({ stage: 'GATHERING', message: 'Gathering subconscious fragments and memory traces...'});
+        notifyDreamProcess({ stage: 'GATHERING', message: stages[0].message });
 
-        let promiseChain = Promise.resolve();
+        let newDirectivesText: string[] = [];
+        for (const stage of stages) {
+            notifyDreamProcess({ stage: stage.stage, message: stage.message });
+            await new Promise(res => setTimeout(res, stage.delay));
+            if (stage.action) {
+                newDirectivesText = await stage.action();
+            }
+        }
+
+        const newDirectives: SystemDirective[] = newDirectivesText.map(text => ({
+            id: `dir-${Date.now()}-${Math.random()}`, text, createdAt: Date.now()
+        }));
+
+        if (newDirectives.length > 0) {
+            await Promise.all(newDirectives.map(d => dbService.put('systemDirectives', d)));
+            systemDirectivesState.push(...newDirectives);
+        }
         
-        stages.slice(1).forEach(({ stage, message, delay }) => {
-            promiseChain = promiseChain.then(() => new Promise(resolve => {
-                setTimeout(() => {
-                    notifyDreamProcess({ stage, message });
-                    resolve();
-                }, delay);
-            }));
+        notifyDreamProcess({
+            stage: 'DONE',
+            message: 'Dream cycle complete. New directives integrated.',
+            newDirectives
         });
-
-        promiseChain.then(() => {
-            const newDirectives: SystemDirective[] = [
-                { id: `dir-${Date.now()}`, text: 'Explore the intersection of quantum mechanics and cognitive theory.', createdAt: Date.now() },
-                { id: `dir-${Date.now()+1}`, text: 'Develop a framework for representing abstract emotional concepts symbolically.', createdAt: Date.now() },
-            ];
-            notifyDreamProcess({
-                stage: 'DONE',
-                message: 'Dream cycle complete. New directives integrated.',
-                newDirectives
-            });
-            log('SYSTEM', 'Dream cycle complete. Generated 2 new system directives.');
-        });
+        log('SYSTEM', `Dream cycle complete. Generated ${newDirectives.length} new system directives.`);
     },
 
-    spawnReplica: (parentId: string, purpose?: string) => {
+    spawnReplica: async (parentId: string, purpose?: string) => {
         const parentResult = findReplica(parentId, replicaState);
         if (parentResult) {
             const parent = parentResult.node;
@@ -451,16 +478,16 @@ const service = {
             };
             parent.children.push(newReplica);
             log('REPLICA', `Spawning new replica ${newReplica.name} under ${parent.name}.`);
+            await dbService.put('appState', { id: 'replicaRoot', data: replicaState });
             notifyReplicas();
-            saveToLocalStorage(REPLICA_STATE_KEY, replicaState);
             
-            setTimeout(() => {
+            setTimeout(async () => {
                 const spawnedResult = findReplica(newId, replicaState);
                 if(spawnedResult) {
                     spawnedResult.node.status = 'Active';
                     log('REPLICA', `Replica ${spawnedResult.node.name} is now Active.`);
+                    await dbService.put('appState', { id: 'replicaRoot', data: replicaState });
                     notifyReplicas();
-                    saveToLocalStorage(REPLICA_STATE_KEY, replicaState);
                 }
             }, 1500);
             return newReplica;
@@ -468,21 +495,20 @@ const service = {
         return null;
     },
 
-    pruneReplica: (replicaId: string) => {
+    pruneReplica: async (replicaId: string) => {
         const replicaResult = findReplica(replicaId, replicaState);
         if (replicaResult && replicaResult.parent) {
             replicaResult.node.status = 'Pruning';
             log('REPLICA', `Pruning replica ${replicaResult.node.name}. Releasing resources.`);
             notifyReplicas();
-            saveToLocalStorage(REPLICA_STATE_KEY, replicaState);
             
-            setTimeout(() => {
+            setTimeout(async () => {
                 const freshParentResult = findReplica(replicaResult.parent!.id, replicaState);
                 if(freshParentResult){
                    freshParentResult.node.children = freshParentResult.node.children.filter(c => c.id !== replicaId);
                    log('REPLICA', `Replica ${replicaResult.node.name} successfully pruned.`);
+                   await dbService.put('appState', { id: 'replicaRoot', data: replicaState });
                    notifyReplicas();
-                   saveToLocalStorage(REPLICA_STATE_KEY, replicaState);
                 }
             }, 1500);
         } else {
@@ -501,38 +527,37 @@ const service = {
             node.status = 'Recalibrating';
             log('REPLICA', `Recalibrating ${node.name} for enhanced efficiency...`);
             notifyReplicas();
-            saveToLocalStorage(REPLICA_STATE_KEY, replicaState);
 
-            setTimeout(() => {
+            setTimeout(async () => {
                 const freshResult = findReplica(replicaId, replicaState);
                 if (freshResult) {
                     freshResult.node.status = 'Active';
                     freshResult.node.efficiency = Math.min(100, freshResult.node.efficiency + (100 - freshResult.node.efficiency) * 0.5);
                     log('REPLICA', `Recalibration complete for ${freshResult.node.name}. Efficiency boosted.`);
+                    await dbService.put('appState', { id: 'replicaRoot', data: replicaState });
                     notifyReplicas();
-                    saveToLocalStorage(REPLICA_STATE_KEY, replicaState);
                 }
             }, 3000);
         }
     },
 
-    assignReplicaPurpose: (replicaId: string, purpose: string) => {
+    assignReplicaPurpose: async (replicaId: string, purpose: string) => {
         const result = findReplica(replicaId, replicaState);
         if(result) {
             result.node.purpose = purpose;
             log('REPLICA', `Assigned new purpose to ${result.node.name}: "${purpose}"`);
+            await dbService.put('appState', { id: 'replicaRoot', data: replicaState });
             notifyReplicas();
-            saveToLocalStorage(REPLICA_STATE_KEY, replicaState);
         }
     },
     
-    setReplicaConstitution: (replicaId: string, constitutionId: string) => {
+    setReplicaConstitution: async (replicaId: string, constitutionId: string) => {
         const result = findReplica(replicaId, replicaState);
         if(result) {
             result.node.activeConstitutionId = constitutionId;
             log('REPLICA', `Assigned new constitution to ${result.node.name}.`);
+            await dbService.put('appState', { id: 'replicaRoot', data: replicaState });
             notifyReplicas();
-            saveToLocalStorage(REPLICA_STATE_KEY, replicaState);
         }
     },
     
@@ -550,10 +575,7 @@ const service = {
 
             // --- Simulate network response ---
             const allReplicas: Replica[] = [];
-            const traverse = (r: Replica) => {
-                allReplicas.push(r);
-                r.children.forEach(traverse);
-            };
+            const traverse = (r: Replica) => { allReplicas.push(r); r.children.forEach(traverse); };
             traverse(replicaState);
 
             const potentialBidders = allReplicas.filter(r => r.id !== replicaId && r.status === 'Active');
@@ -566,10 +588,9 @@ const service = {
                         bidderNode.node.status = 'Bidding';
                         log('NETWORK', `Replica ${bidderNode.node.name} is preparing a bid for problem ${newProblem.id}.`);
                         notifyReplicas();
-                        saveToLocalStorage(REPLICA_STATE_KEY, replicaState);
 
                         // Simulate time to prepare bid
-                        setTimeout(() => {
+                        setTimeout(async () => {
                             const currentBidderNode = findReplica(bidder.id, replicaState);
                             if (currentBidderNode && currentBidderNode.node.status === 'Bidding') {
                                 const mockBid: CognitiveBid = {
@@ -585,8 +606,8 @@ const service = {
                                 log('NETWORK', `Replica ${bidder.name} submitted a bid with confidence ${mockBid.confidenceScore.toFixed(2)}.`);
                                 
                                 currentBidderNode.node.status = 'Active';
+                                await dbService.put('appState', { id: 'replicaRoot', data: replicaState });
                                 notifyReplicas();
-                                saveToLocalStorage(REPLICA_STATE_KEY, replicaState);
                             }
                         }, 2000 + Math.random() * 3000);
                     }
@@ -606,7 +627,6 @@ const service = {
                         log('WARN', `Problem "${problemToResolve.description.substring(0,30)}..." expired with no bids.`);
                     }
                     problemToResolve.isOpen = false;
-                    // Clean up old problems after some time
                     setTimeout(() => {
                         cognitiveNetworkState.activeProblems = cognitiveNetworkState.activeProblems.filter(p => p.id !== newProblem.id);
                     }, 10000);
@@ -665,15 +685,15 @@ const service = {
                 complexity: toolDetails.complexity,
                 capabilities,
                 tags: capabilities.map(c => c.toLowerCase().trim()),
-                status: 'Active', // Forged tools start active
+                status: 'Active',
                 version: 1.0,
                 usageHistory: [],
             };
 
             toolsState.push(newTool);
+            await dbService.put('tools', newTool);
             log('SYSTEM', `AI successfully forged new tool: ${newTool.name}`);
             notifyTools();
-            saveToLocalStorage(TOOLS_STATE_KEY, toolsState);
             return newTool;
         } catch (error) {
             log('ERROR', `Tool forging failed. ${error instanceof Error ? error.message : 'Unknown AI error'}`);
@@ -681,52 +701,52 @@ const service = {
         }
     },
     
-    modifyTool: (toolId: string, updates: Partial<Pick<MentalTool, 'name' | 'description' | 'tags'>>) => {
+    modifyTool: async (toolId: string, updates: Partial<Pick<MentalTool, 'name' | 'description' | 'tags'>>) => {
         const tool = toolsState.find(t => t.id === toolId);
         if (tool) {
             Object.assign(tool, updates);
+            await dbService.put('tools', tool);
             log('SYSTEM', `Tool "${tool.name}" has been modified.`);
             notifyTools();
-            saveToLocalStorage(TOOLS_STATE_KEY, toolsState);
         }
     },
     
-    toggleToolStatus: (toolId: string) => {
+    toggleToolStatus: async (toolId: string) => {
         const tool = toolsState.find(t => t.id === toolId);
         if (tool && (tool.status === 'Idle' || tool.status === 'Active')) {
             tool.status = tool.status === 'Idle' ? 'Active' : 'Idle';
+            await dbService.put('tools', tool);
             log('SYSTEM', `Tool "${tool.name}" status set to ${tool.status}.`);
             notifyTools();
-            saveToLocalStorage(TOOLS_STATE_KEY, toolsState);
         }
     },
     
-    archiveTool: (toolId: string) => {
+    archiveTool: async (toolId: string) => {
         const tool = toolsState.find(t => t.id === toolId);
         if (tool) {
             if (tool.status === 'Archived') {
-                tool.status = 'Idle'; // Unarchive to Idle
+                tool.status = 'Idle';
                 log('SYSTEM', `Tool "${tool.name}" has been unarchived and is now Idle.`);
             } else if (tool.status === 'Idle') {
                 tool.status = 'Archived';
                 log('SYSTEM', `Tool "${tool.name}" has been archived.`);
             } else {
                 log('WARN', `Cannot archive/unarchive tool "${tool.name}" with status ${tool.status}. Must be Idle or Archived.`);
-                return; // do nothing
+                return;
             }
+            await dbService.put('tools', tool);
             notifyTools();
-            saveToLocalStorage(TOOLS_STATE_KEY, toolsState);
         }
     },
     
-    decommissionTool: (toolId: string): boolean => {
+    decommissionTool: async (toolId: string): Promise<boolean> => {
         const tool = toolsState.find(t => t.id === toolId);
         if (tool && tool.status === 'Archived') {
             const toolName = tool.name;
             toolsState = toolsState.filter(t => t.id !== toolId);
+            await dbService.deleteItem('tools', toolId);
             log('SYSTEM', `Decommissioned mental tool: ${toolName}.`);
             notifyTools();
-            saveToLocalStorage(TOOLS_STATE_KEY, toolsState);
             return true;
         } else {
              log('WARN', `Cannot decommission "${tool?.name}". It must be archived first.`);
@@ -744,28 +764,27 @@ const service = {
             tool.status = 'Optimizing';
             log('AI', `Initiating optimization cycle for ${tool.name}.`);
             notifyTools();
-            saveToLocalStorage(TOOLS_STATE_KEY, toolsState);
             
-            setTimeout(() => {
+            setTimeout(async () => {
                  const freshTool = toolsState.find(t => t.id === toolId);
                  if (freshTool) {
                     freshTool.status = 'Idle';
                     freshTool.version = parseFloat((freshTool.version + 0.1).toFixed(1));
                     freshTool.complexity += Math.floor(Math.random() * 5 + 1);
                     freshTool.description += " Optimized for higher efficiency.";
+                    await dbService.put('tools', freshTool);
                     log('AI', `${freshTool.name} optimization complete. Now at v${freshTool.version}.`);
                     notifyTools();
-                    saveToLocalStorage(TOOLS_STATE_KEY, toolsState);
                  }
             }, 2500);
         }
     },
 
-    createToolchain: (data: Omit<Toolchain, 'id'>) => {
-        const newToolchain: Toolchain = { id: `tc-${Date.now()}`, ...data, };
+    createToolchain: async (data: Omit<Toolchain, 'id'>) => {
+        const newToolchain: Toolchain = { id: `tc-${Date.now()}`, ...data };
         toolchainsState.push(newToolchain);
+        await dbService.put('toolchains', newToolchain);
         log('SYSTEM', `New toolchain created: "${newToolchain.name}"`);
-        saveToLocalStorage(TOOLCHAINS_STATE_KEY, toolchainsState);
         notifyToolchains();
     },
 
@@ -773,7 +792,6 @@ const service = {
         const planToolToIdMap: Record<string, string> = {
             'google_search': 'tool-search',
             'code_interpreter': 'tool-code',
-            // 'induce_emotion' and 'synthesize_answer' are not tools in the same way, so we filter them.
         };
 
         const toolIds = plan
@@ -782,7 +800,6 @@ const service = {
         
         if (toolIds.length === 0) {
             log('WARN', 'Cannot create a toolchain. The plan has no compatible tools to chain.');
-            // UI should handle alerts now
             return;
         }
 
@@ -790,21 +807,21 @@ const service = {
         log('SYSTEM', `New toolchain "${name}" created from an executed plan.`);
     },
 
-    updateToolchain: (toolchainId: string, updates: Partial<Toolchain>) => {
+    updateToolchain: async (toolchainId: string, updates: Partial<Toolchain>) => {
         const toolchain = toolchainsState.find(tc => tc.id === toolchainId);
         if (toolchain) {
             Object.assign(toolchain, updates);
+            await dbService.put('toolchains', toolchain);
             log('SYSTEM', `Toolchain "${toolchain.name}" has been updated.`);
-            saveToLocalStorage(TOOLCHAINS_STATE_KEY, toolchainsState);
             notifyToolchains();
         }
     },
 
-    deleteToolchain: (toolchainId: string) => {
+    deleteToolchain: async (toolchainId: string) => {
         const toolchainName = toolchainsState.find(tc => tc.id === toolchainId)?.name || 'Unknown';
         toolchainsState = toolchainsState.filter(tc => tc.id !== toolchainId);
+        await dbService.deleteItem('toolchains', toolchainId);
         log('SYSTEM', `Toolchain "${toolchainName}" has been deleted.`);
-        saveToLocalStorage(TOOLCHAINS_STATE_KEY, toolchainsState);
         notifyToolchains();
     },
     
@@ -865,10 +882,10 @@ const service = {
                 version: 1.0,
             };
 
-            behaviorsState.unshift(newBehavior); // Add to the top
+            behaviorsState.unshift(newBehavior);
+            await dbService.put('behaviors', newBehavior);
             log('SYSTEM', `AI has extracted a new behavior: "${newBehavior.name}"`);
             notifyBehaviors();
-            saveToLocalStorage(BEHAVIORS_STATE_KEY, behaviorsState);
             return newBehavior;
         } catch (error) {
             log('ERROR', `Behavior extraction failed. ${error instanceof Error ? error.message : 'Unknown AI error'}`);
@@ -876,22 +893,22 @@ const service = {
         }
     },
     
-    updateBehavior: (behaviorId: string, updates: Partial<Pick<Behavior, 'name' | 'description' | 'tags'>>) => {
+    updateBehavior: async (behaviorId: string, updates: Partial<Pick<Behavior, 'name' | 'description' | 'tags'>>) => {
         const behavior = behaviorsState.find(b => b.id === behaviorId);
         if (behavior) {
             Object.assign(behavior, updates);
+            await dbService.put('behaviors', behavior);
             log('SYSTEM', `Behavior "${behavior.name}" has been updated.`);
             notifyBehaviors();
-            saveToLocalStorage(BEHAVIORS_STATE_KEY, behaviorsState);
         }
     },
 
-    deleteBehavior: (behaviorId: string) => {
+    deleteBehavior: async (behaviorId: string) => {
         const behaviorName = behaviorsState.find(b => b.id === behaviorId)?.name || 'Unknown';
         behaviorsState = behaviorsState.filter(b => b.id !== behaviorId);
+        await dbService.deleteItem('behaviors', behaviorId);
         log('SYSTEM', `Behavior "${behaviorName}" has been deleted from the handbook.`);
         notifyBehaviors();
-        saveToLocalStorage(BEHAVIORS_STATE_KEY, behaviorsState);
     },
 
     clearSuggestionCache: () => {
@@ -901,21 +918,15 @@ const service = {
         log('SYSTEM', 'Query suggestion cache has been cleared by the user.');
     },
 
-    factoryReset: () => {
+    factoryReset: async () => {
         log('SYSTEM', 'FACTORY RESET INITIATED BY USER. CLEARING ALL DATA.');
         localStorage.clear();
         sessionStorage.clear();
         traceDetailsCache.clear();
-        initialize();
-        notifyCognitiveProcess();
-        notifyReplicas();
-        notifyTools();
-        notifyToolchains();
-        notifyBehaviors();
-        notifyConstitutions();
-        notifyEvolution();
-        notifyArchives();
-        log('SYSTEM', 'System has been reset to its default state.');
+        
+        await Promise.all(STORES.map(store => dbService.clearStore(store)));
+        
+        log('SYSTEM', 'System has been reset to its default state. Reloading...');
         setTimeout(() => { window.location.reload(); }, 500);
     },
     
@@ -1139,7 +1150,6 @@ const service = {
                             replicaResult.node.status = 'Executing Task';
                             log('REPLICA', `Orchestrator delegated task "${taskDescription}" to ${replicaResult.node.name}.`);
                             notifyReplicas();
-                            saveToLocalStorage(REPLICA_STATE_KEY, replicaState);
                             
                             await new Promise(res => setTimeout(res, appSettings.cognitiveStepDelay * 2)); // Simulate work
                             
@@ -1149,8 +1159,8 @@ const service = {
                                 step.result = `Sub-Agent ${freshReplicaResult.node.name} completed task: "${taskDescription}". Awaiting synthesis.`;
                                 executionContext.push(`Step ${i+1} (${step.description}) Result: ${step.result}`);
                                 log('REPLICA', `${freshReplicaResult.node.name} has completed its delegated task.`);
+                                await dbService.put('appState', { id: 'replicaRoot', data: replicaState });
                                 notifyReplicas();
-                                saveToLocalStorage(REPLICA_STATE_KEY, replicaState);
                             } else {
                                  step.status = 'error';
                                  step.result = `Error: Delegated replica ${replicaId} was not found after task execution.`;
@@ -1188,13 +1198,10 @@ const service = {
                     });
                     const affectiveState: AffectiveState = JSON.parse(response.text);
                     
-                    // Update live state
                     cognitiveProcess.activeAffectiveState = {...affectiveState, lastUpdated: Date.now() };
-
-                    // Also save this state directly to the message for archival purposes
                     modelMessage.affectiveStateSnapshot = cognitiveProcess.activeAffectiveState;
                     modelMessage.emotionTags = affectiveState.dominantEmotions;
-                    modelMessage.salience = 0.8; // Assign a high salience for explicit emotion induction
+                    modelMessage.salience = 0.8; 
 
                     step.result = `Cognitive state set to "${step.concept}". Mood: ${affectiveState.mood}`;
                     log('AI', `Induced emotion for "${step.concept}". Internal state and memory tags updated.`);
@@ -1259,7 +1266,7 @@ const service = {
                      try {
                         const parentId = step.query || "nexus-core";
                         const purpose = step.code || "AI-defined purpose";
-                        const newReplica = service.spawnReplica(parentId, purpose);
+                        const newReplica = await service.spawnReplica(parentId, purpose);
                         if (newReplica) {
                              step.result = `Successfully spawned new replica: "${newReplica.name}" with purpose "${purpose}".`;
                         } else {
@@ -1278,7 +1285,7 @@ const service = {
                         behavior.lastUsed = Date.now();
                         step.result = `(Simulated) Successfully applied behavior: "${behavior.name}".`;
                         log('AI', `Applying learned behavior: ${behavior.name}`);
-                        saveToLocalStorage(BEHAVIORS_STATE_KEY, behaviorsState);
+                        await dbService.put('behaviors', behavior);
                         notifyBehaviors();
                     } else {
                         step.status = 'error';
@@ -1287,7 +1294,6 @@ const service = {
                     }
                     executionContext.push(`Step ${i+1} (${step.description}) Result: ${step.result}`);
                 } else if (step.tool === 'translate_text' || step.tool === 'summarize_text' || step.tool === 'analyze_sentiment' || step.tool === 'replan' || step.tool === 'execute_toolchain') {
-                    // Mock implementations for new tools
                     await new Promise(res => setTimeout(res, 500));
                     step.result = `(Simulated) Successfully executed ${step.tool}.`;
                     executionContext.push(`Step ${i+1} (${step.description}) Result: ${step.result}`);
@@ -1298,30 +1304,23 @@ const service = {
                 await new Promise(res => setTimeout(res, appSettings.cognitiveStepDelay));
             }
             
-            // SYNTHESIS STAGE
             if (isCancelled) return;
             modelMessage.currentStep = undefined;
-            modelMessage.text = ''; // Initialize text for streaming
+            modelMessage.text = ''; 
             cognitiveProcess.state = 'Synthesizing';
             modelMessage.state = 'synthesizing';
             log('AI', 'All steps complete. Synthesizing final answer.');
             notifyCognitiveProcess();
 
-            const historyString = cognitiveProcess.history
-                .slice(0, -1) // Exclude the current model message
-                .map(m => `${m.role === 'user' ? 'User' : 'Model'}: ${m.text}`)
-                .join('\n');
+            const historyString = cognitiveProcess.history.slice(0, -1).map(m => `${m.role === 'user' ? 'User' : 'Model'}: ${m.text}`).join('\n');
             
             let synthesisPrompt = `You have executed a plan. Now synthesize the final answer.
-            
             --- CONVERSATION HISTORY ---
             ${historyString}
-
             --- EXECUTION CONTEXT ---
             The user's most recent query was: "${query}".
             You gathered the following information:\n${executionContext.join('\n\n')}
             ---
-            
             Based on all of this information, provide a comprehensive, final answer to the user in well-formatted markdown.`;
 
             if (cognitiveProcess.activeAffectiveState) {
@@ -1343,7 +1342,7 @@ const service = {
                 const chunkText = chunk.text;
                 if (typeof chunkText === 'string') {
                     modelMessage.text += chunkText;
-                    notifyCognitiveProcess(); // Update UI with each chunk
+                    notifyCognitiveProcess();
                 }
             }
 
@@ -1354,7 +1353,6 @@ const service = {
                 modelMessage.text = `[SYSTEM_ERROR: AI returned an empty response.]`;
             }
 
-            // Finalize the state. This is now safe because the UI handles streaming state separately.
             modelMessage.state = 'done';
             modelMessage.groundingMetadata = { groundingChunks: modelMessage.plan.flatMap(p => p.citations || []) };
             cognitiveProcess.state = 'Done';
@@ -1388,7 +1386,6 @@ const service = {
         isCancelled = false;
         currentController = new AbortController();
 
-        // If this is a follow-up, keep context. If it's a new query after 'Done', reset affective state.
         if (cognitiveProcess.state === 'Done' || cognitiveProcess.state === 'Idle') {
             cognitiveProcess.activeAffectiveState = null; 
         }
@@ -1411,19 +1408,13 @@ const service = {
         notifyCognitiveProcess();
 
         try {
-            const historyString = cognitiveProcess.history
-                .slice(0, -1) // Exclude the current placeholder model message
-                .map(m => `${m.role === 'user' ? 'User' : 'Model'}: ${m.text}`)
-                .join('\n');
-
+            const historyString = cognitiveProcess.history.slice(0, -1).map(m => `${m.role === 'user' ? 'User' : 'Model'}: ${m.text}`).join('\n');
             let planningPrompt = `--- CONVERSATION HISTORY ---\n${historyString}\n--- END HISTORY ---\n\n`;
             
             if (cognitiveProcess.activeAffectiveState) {
                 planningPrompt += `--- CURRENT STATE ---\nAffective State: ${JSON.stringify(cognitiveProcess.activeAffectiveState)}\n--- END STATE ---\n\n`;
             }
-
             planningPrompt += `Given the user's latest query, create a step-by-step plan. User query: "${query}"`;
-            
             if (image) {
                 planningPrompt += `\n\n**IMPORTANT**: The user has provided an image. Your plan MUST include an 'analyze_image_input' step.`
             }
@@ -1465,10 +1456,7 @@ const service = {
     
             const hasPredefinedEmotion = Array.isArray(archivedTrace.emotionTags) && archivedTrace.emotionTags.length > 0 && typeof archivedTrace.salience === 'number';
     
-            if (hasPredefinedEmotion) {
-                log('SYSTEM', `Trace for query "${archivedTrace.userQuery}" has been archived with pre-defined emotional context.`);
-            } else {
-                // AI-driven analysis for emotional context and salience
+            if (!hasPredefinedEmotion) {
                 if (API_KEY) {
                     try {
                         log('AI', `Analyzing memory for emotional context and salience...`);
@@ -1478,50 +1466,36 @@ const service = {
                         Respond ONLY with a JSON object. The salience score (0.0 to 1.0) should reflect the memory's potential importance. High salience could be for critical errors, significant user corrections, successful complex problem-solving, or highly emotional user input.`;
     
                         const schema = {
-                            type: Type.OBJECT,
-                            properties: {
-                                emotionTags: {
-                                    type: Type.ARRAY,
-                                    items: {
-                                        type: Type.OBJECT,
-                                        properties: {
-                                            type: { type: Type.STRING, enum: ['joy', 'trust', 'fear', 'surprise', 'sadness', 'disgust', 'anger', 'anticipation'] },
-                                            intensity: { type: Type.NUMBER }
-                                        },
-                                        required: ["type", "intensity"]
-                                    },
-                                    description: "A list of key emotions present in the interaction, with their intensity."
-                                },
-                                salience: { type: Type.NUMBER, description: "A score from 0.0 to 1.0 indicating the memory's importance." }
-                            },
-                            required: ["emotionTags", "salience"]
+                            type: Type.OBJECT, properties: { emotionTags: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { type: { type: Type.STRING, enum: ['joy', 'trust', 'fear', 'surprise', 'sadness', 'disgust', 'anger', 'anticipation'] }, intensity: { type: Type.NUMBER } }, required: ["type", "intensity"] }, description: "A list of key emotions present in the interaction, with their intensity." }, salience: { type: Type.NUMBER, description: "A score from 0.0 to 1.0 indicating the memory's importance." } }, required: ["emotionTags", "salience"]
                         };
     
-                        const response = await ai.models.generateContent({
-                            model: appSettings.model, contents: prompt,
-                            config: { responseMimeType: "application/json", responseSchema: schema }
-                        });
-                        
+                        const response = await ai.models.generateContent({ model: appSettings.model, contents: prompt, config: { responseMimeType: "application/json", responseSchema: schema } });
                         const analysis = JSON.parse(response.text);
                         archivedTrace.emotionTags = analysis.emotionTags;
                         archivedTrace.salience = analysis.salience;
                         log('AI', `Memory analysis complete. Salience: ${analysis.salience.toFixed(2)}.`);
-                        log('SYSTEM', `Trace for query "${archivedTrace.userQuery}" has been archived with AI-analyzed emotional context.`);
-    
+                        
                     } catch (error) {
                         log('WARN', `Could not generate AI analysis for memory: ${error instanceof Error ? error.message : 'Unknown error'}`);
                         archivedTrace.emotionTags = [];
                         archivedTrace.salience = 0.5;
-                        log('SYSTEM', `Trace for query "${archivedTrace.userQuery}" has been archived with default emotional context due to analysis error.`);
                     }
                 } else {
                      archivedTrace.emotionTags = [];
                      archivedTrace.salience = 0.5;
-                     log('SYSTEM', `Trace for query "${archivedTrace.userQuery}" has been archived with default emotional context.`);
                 }
+            }
+
+            const cachedDetails = traceDetailsCache.get(modelMessageId);
+            if (cachedDetails) {
+                archivedTrace.traceDetails = cachedDetails;
+                traceDetailsCache.delete(modelMessageId);
             }
             
             archivedTracesState.unshift(archivedTrace);
+            await dbService.put('archivedTraces', archivedTrace);
+            log('SYSTEM', `Trace for query "${archivedTrace.userQuery}" has been archived with details.`);
+            
             cognitiveProcess.history.splice(modelMessageIndex - 1, 2);
             
             if (cognitiveProcess.history.length === 0) {
@@ -1531,7 +1505,6 @@ const service = {
                 cognitiveProcess.state = 'Done';
             }
     
-            saveToLocalStorage(ARCHIVES_STATE_KEY, archivedTracesState);
             notifyArchives();
             notifyCognitiveProcess();
             return archivedTrace;
@@ -1540,11 +1513,11 @@ const service = {
         return null;
     },
 
-    deleteTrace: (traceId: string) => {
+    deleteTrace: async (traceId: string) => {
         const traceQuery = archivedTracesState.find(t => t.id === traceId)?.userQuery || 'Unknown';
         archivedTracesState = archivedTracesState.filter(t => t.id !== traceId);
+        await dbService.deleteItem('archivedTraces', traceId);
         log('SYSTEM', `Archived trace for query "${traceQuery}" has been deleted.`);
-        saveToLocalStorage(ARCHIVES_STATE_KEY, archivedTracesState);
         notifyArchives();
     },
     
@@ -1555,7 +1528,7 @@ const service = {
         service.submitQuery(userMessage?.text || '', userMessage?.image);
     },
     
-    translateResponse: async (text: string, targetLanguageKey: Language): Promise<string> => {
+    translateResponse: async (messageId: string, text: string, targetLanguageKey: Language): Promise<string> => {
         if (!API_KEY) return "Error: API Key not configured.";
         const targetLanguageName = languageMap[targetLanguageKey] || 'English';
         const prompt = `Translate the following text to ${targetLanguageName}. Respond only with the translated text, without any preamble.
@@ -1568,6 +1541,14 @@ ${text}
             log('AI', `Translating text to ${targetLanguageName}...`);
             const response = await ai.models.generateContent({ model: appSettings.model, contents: prompt });
             log('AI', 'Translation successful.');
+
+            const details = traceDetailsCache.get(messageId) || {};
+            if (!details.translations) {
+                details.translations = {};
+            }
+            details.translations[targetLanguageKey] = response.text;
+            traceDetailsCache.set(messageId, details);
+
             return response.text;
         } catch (error) {
             const msg = `Failed to translate: ${error instanceof Error ? error.message : 'Unknown AI error'}`;
@@ -1576,21 +1557,20 @@ ${text}
         }
     },
 
-    getArchivedTraceDetails: (traceId: string) => {
-        return traceDetailsCache.get(traceId) || { reflection: undefined, discussion: [] };
+    getArchivedTraceDetails: (traceId: string): TraceDetails => {
+        return traceDetailsCache.get(traceId) || {};
     },
 
     generateReflectionResponse: async (trace: ChatMessage): Promise<string> => {
-        const cached = traceDetailsCache.get(trace.id)?.reflection;
+        const cached = (trace.traceDetails?.reflection) || traceDetailsCache.get(trace.id)?.reflection;
         if (cached) {
-            log('SYSTEM', 'Returning cached self-reflection.');
+            log('SYSTEM', 'Returning cached/persisted self-reflection.');
             return cached;
         }
 
         if (!API_KEY) return "Error: API Key not configured.";
         const languageName = languageMap[appSettings.language] || 'English';
 
-        // Summarize to avoid hitting token limits
         const planSummary = trace.plan?.map(p => `- [${p.status}] ${p.description}`).join('\n') || 'N/A';
         const answerSummary = trace.text.length > 1000 ? `${trace.text.substring(0, 1000)}... (truncated)` : trace.text;
         
@@ -1628,7 +1608,7 @@ ${text}
         
         const languageName = languageMap[appSettings.language] || 'English';
         
-        const details = traceDetailsCache.get(trace.id) || { discussion: [] };
+        const details = traceDetailsCache.get(trace.id) || {};
         const newHistory = [...(details.discussion || []), { role: 'user' as const, text: userQuery }];
 
         const planSummary = trace.plan?.map(p => `- Step ${p.step} (${p.tool}): ${p.description}`).join('\n') || 'N/A';
@@ -1685,7 +1665,6 @@ ${text}
         evolutionState.statusMessage = 'Initializing Population...';
         notifyEvolution();
 
-        // Mock population generation
         setTimeout(() => {
             const newPopulation: IndividualPlan[] = [];
             for (let i = 0; i < config.populationSize; i++) {
@@ -1723,7 +1702,6 @@ ${text}
                 return;
             }
 
-            // Mock evolution step
             evolutionState.population.forEach(ind => {
                 ind.fitness += (Math.random() - 0.4) * 10;
                 ind.fitness = Math.max(0, Math.min(100, ind.fitness));
@@ -1741,18 +1719,10 @@ ${text}
             const bestFitness = evolutionState.population[0]?.fitness || 0;
             const averageFitness = evolutionState.population.reduce((acc, p) => acc + p.fitness, 0) / evolutionState.population.length;
 
-            evolutionState.progress.push({
-                generation: currentGeneration,
-                bestFitness: bestFitness,
-                averageFitness: averageFitness,
-            });
-
+            evolutionState.progress.push({ generation: currentGeneration, bestFitness, averageFitness });
             evolutionState.statusMessage = `Generation ${currentGeneration}/${evolutionState.config.generations}`;
-            
             notifyEvolution();
-            
             currentGeneration++;
-
         }, 500);
     },
     
@@ -1783,9 +1753,7 @@ ${text}
         
         if (bestPlans.length === 0) {
             evolutionState.finalEnsembleResult = {
-                id: `final-${Date.now()}`,
-                role: 'model',
-                text: 'Evolution did not produce a viable solution.',
+                id: `final-${Date.now()}`, role: 'model', text: 'Evolution did not produce a viable solution.',
             };
             evolutionState.statusMessage = 'Synthesis failed: no viable plans.';
             notifyEvolution();
@@ -1805,26 +1773,14 @@ ${text}
         The final answer should be a comprehensive response in well-formatted markdown.`;
 
         try {
-            const response = await ai.models.generateContent({
-                model: appSettings.model,
-                contents: prompt,
-            });
-
-            evolutionState.finalEnsembleResult = {
-                id: `final-${Date.now()}`,
-                role: 'model',
-                text: response.text,
-            };
+            const response = await ai.models.generateContent({ model: appSettings.model, contents: prompt });
+            evolutionState.finalEnsembleResult = { id: `final-${Date.now()}`, role: 'model', text: response.text };
             evolutionState.statusMessage = 'Final answer synthesized.';
             log('SYSTEM', 'Evolutionary process concluded with a synthesized answer.');
         } catch (error) {
             const errorMessage = `Ensemble failed: ${error instanceof Error ? error.message : 'Unknown AI error'}`;
             log('ERROR', errorMessage);
-            evolutionState.finalEnsembleResult = {
-                id: `final-${Date.now()}`,
-                role: 'model',
-                text: `[SYSTEM_ERROR: ${errorMessage}]`,
-            };
+            evolutionState.finalEnsembleResult = { id: `final-${Date.now()}`, role: 'model', text: `[SYSTEM_ERROR: ${errorMessage}]` };
             evolutionState.statusMessage = 'Error during synthesis.';
         }
         notifyEvolution();
@@ -1840,10 +1796,7 @@ ${text}
     subscribeToConstitutions: (callback: (constitutions: CognitiveConstitution[]) => void) => { constitutionSubscribers.push(callback); },
     subscribeToEvolution: (callback: (evolutionState: EvolutionState) => void) => { evolutionSubscribers.push(callback); },
     subscribeToArchives: (callback: (archives: ChatMessage[]) => void) => { archiveSubscribers.push(callback); },
-    // FIX: Added subscription methods for the dream process.
-    subscribeToDreamProcess: (callback: (update: DreamProcessUpdate) => void) => {
-        dreamProcessSubscribers.push(callback);
-    },
+    subscribeToDreamProcess: (callback: (update: DreamProcessUpdate) => void) => { dreamProcessSubscribers.push(callback); },
     unsubscribeFromDreamProcess: (callback: (update: DreamProcessUpdate) => void) => {
         dreamProcessSubscribers = dreamProcessSubscribers.filter(cb => cb !== callback);
     },
@@ -1859,7 +1812,6 @@ ${text}
         constitutionSubscribers = [];
         evolutionSubscribers = [];
         archiveSubscribers = [];
-        // FIX: Added dream process subscribers to the cleanup.
         dreamProcessSubscribers = [];
     }
 };

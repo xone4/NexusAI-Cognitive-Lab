@@ -342,7 +342,8 @@
     "synthesizing": "جاري التوليف...",
     "finalAnswer": "الإجابة النهائية المجمعة",
     "problemRequired": "بيان المشكلة مطلوب لتهيئة السكان.",
-    "visualBalance": "تحقيق أقصى توازن بصري"
+    "visualBalance": "تحقيق أقصى توازن بصري",
+    "loadFromMemory": "تحميل من الذاكرة"
   },
   "memory": {
     "title": "مستكشف الذاكرة",

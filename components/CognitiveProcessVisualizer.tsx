@@ -1,5 +1,5 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
-import type { CognitiveProcess, ChatMessage, PlanStep, CognitiveConstitution, GeneratedImage } from '../types';
+import type { CognitiveProcess, ChatMessage, PlanStep, CognitiveConstitution, GeneratedImage, Language } from '../types';
 import { BrainCircuitIcon, UserIcon, BookOpenIcon, CogIcon, CheckCircleIcon, CubeTransparentIcon, PlayIcon, PencilIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, PlusCircleIcon, CodeBracketIcon, LightBulbIcon, LinkIcon, ArrowRightIcon, PhotographIcon, SparklesIcon, ArchiveBoxArrowDownIcon, RefreshIcon, GlobeAltIcon, DocumentTextIcon, ShareIcon } from './Icons';
 
 interface CognitiveProcessVisualizerProps {
@@ -14,7 +14,7 @@ interface CognitiveProcessVisualizerProps {
   onArchiveTrace: (messageId: string) => void;
   onExtractBehavior: (messageId: string) => void;
   onRerunTrace: (trace: ChatMessage) => void;
-  onTranslate: (text: string, language: string) => Promise<string>;
+  onTranslate: (messageId: string, text: string, language: Language) => Promise<string>;
   language: string;
 }
 
@@ -233,7 +233,8 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
         setIsActionLoading('translate');
         setTranslatedText(null);
         try {
-            const translation = await onTranslate(message.text, props.language === 'en' ? 'ar' : 'en');
+            const targetLanguage = props.language === 'en' ? 'ar' : 'en';
+            const translation = await onTranslate(message.id, message.text, targetLanguage);
             setTranslatedText(translation);
         } catch (e) {
             setTranslatedText("Translation failed.");

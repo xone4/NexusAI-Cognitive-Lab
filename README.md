@@ -34,7 +34,7 @@ Our implementation is built on four foundational pillars that define a Deep Agen
     The core AI acts as an **Orchestrator**. It doesn't handle every task itself. Instead, it delegates specific jobs to its **Cognitive Replicas**, which function as specialized **Sub-Agents**. This is achieved through the `delegate_task_to_replica` tool, enabling a robust, distributed cognitive workload.
 
 3.  **Pillar 3: Persistent Memory**
-    To overcome the limitations of a finite context window, the AI utilizes the **Memory Explorer** as an external, persistent memory source. It can query its own archived experiences (`recall_memory`) to inform current decisions, shifting from "remembering everything" to "knowing where to find information."
+    To overcome the limitations of a finite context window, the AI utilizes a robust **IndexedDB** database as its external, persistent memory source. This forms the AI's 'collective memory', allowing it to query its own archived experiences (`recall_memory`) to inform current decisions, shifting from "remembering everything" to "knowing where to find information."
 
 4.  **Pillar 4: Extreme Context Engineering**
     The AI's behavior is governed by highly detailed operational instructions (the `System Instruction`). This core prompt defines its role as an Orchestrator, outlines the protocols for delegating to Sub-Agents, and sets the standards for planning and execution.
@@ -46,6 +46,7 @@ Our implementation is built on four foundational pillars that define a Deep Agen
 -   **Interactive Co-Cognitive Authoring**: Review, edit, and approve the AI's explicit plan before it's executed, making you a direct collaborator in its reasoning process.
 -   **Living Memory (MEMORIA)**: Explore an emotionally-contextual archive of the AI's past "experiences," which it uses to learn and inform its actions.
 -   **Evolutionary Problem Solving**: The "Evolution Chamber" uses genetic algorithms to evolve populations of plans, finding optimal solutions to highly complex problems.
+-   **Cognitive Dreaming & Self-Improvement**: A dedicated "Dreaming Chamber" where the AI analyzes its collective memory to synthesize new high-level directives, allowing it to learn from experience and improve its core logic over time.
 -   **Architectural Plasticity**: The AI can dynamically `forge_tool` or `spawn_replica` as part of its plan, modifying its own capabilities to meet the demands of a task.
 
 ## System Architecture
@@ -84,11 +85,11 @@ This roadmap is aligned with the maturation of our Agent 2.0 architecture.
 
 ---
 ### **Phase 3: Agent 2.0 Architecture - ✅ Complete**
-*   **Outcome:** Refactored the entire cognitive model to the **Orchestrator/Sub-Agent** paradigm. Implemented the four pillars: Explicit Planning, Hierarchical Delegation (`delegate_task_to_replica`), Persistent Memory (`recall_memory`), and Extreme Context Engineering (`System Instruction`).
+*   **Outcome:** Refactored the entire cognitive model to the **Orchestrator/Sub-Agent** paradigm. Implemented the four pillars: Explicit Planning, Hierarchical Delegation (`delegate_task_to_replica`), Persistent Memory (`recall_memory` via IndexedDB), and Extreme Context Engineering (`System Instruction`).
 
 ---
 ### **Phase 4: Proactive Cognition & Self-Improvement - ✅ Complete**
-*   **Outcome:** Evolved the AI from a reactive to a proactive system with `forge_tool`, `replan`, and the **Analysis Lab** and **Evolution Chamber**.
+*   **Outcome:** Evolved the AI from a reactive to a proactive system. The **Analysis Lab** and **Evolution Chamber** provide directed self-optimization, while the **Dreaming Chamber** enables autonomous metacognitive analysis and the generation of new self-improvement directives.
 
 ---
 ### **Phase 5: Distributed Consciousness & Emergent Strategy - ⚙️ In Progress**

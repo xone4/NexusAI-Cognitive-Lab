@@ -1,7 +1,7 @@
 // A simple IndexedDB wrapper service
 const DB_NAME = 'NexusAI-Memory';
 const DB_VERSION = 1;
-const STORES = ['appState', 'tools', 'toolchains', 'behaviors', 'archivedTraces', 'constitutions', 'systemDirectives'];
+export const STORES = ['appState', 'tools', 'toolchains', 'behaviors', 'archivedTraces', 'constitutions', 'systemDirectives'];
 
 let db: IDBDatabase | null = null;
 
@@ -17,7 +17,8 @@ const initDB = (): Promise<IDBDatabase> => {
             const dbInstance = (event.target as IDBOpenDBRequest).result;
             STORES.forEach(storeName => {
                 if (!dbInstance.objectStoreNames.contains(storeName)) {
-                    dbInstance.createObjectStore(storeName, { keyPath: 'id', autoIncrement: true });
+                    // Use 'id' as the keyPath for all stores. For single-item stores like 'appState', we'll use a fixed 'id'.
+                    dbInstance.createObjectStore(storeName, { keyPath: 'id' });
                 }
             });
         };
@@ -34,7 +35,7 @@ const initDB = (): Promise<IDBDatabase> => {
     });
 };
 
-const put = <T>(storeName: string, item: T & { id?: any }): Promise<void> => {
+const put = <T>(storeName: string, item: T & { id: any }): Promise<void> => {
     return new Promise(async (resolve, reject) => {
         const dbInstance = await initDB();
         const transaction = dbInstance.transaction(storeName, 'readwrite');
@@ -72,6 +73,19 @@ const getAll = <T>(storeName: string): Promise<T[]> => {
     });
 };
 
+const deleteItem = (storeName: string, id: any): Promise<void> => {
+    return new Promise(async (resolve, reject) => {
+        const dbInstance = await initDB();
+        const transaction = dbInstance.transaction(storeName, 'readwrite');
+        const store = transaction.objectStore(storeName);
+        const request = store.delete(id);
+
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+    });
+};
+
+
 const clearStore = (storeName: string): Promise<void> => {
      return new Promise(async (resolve, reject) => {
         const dbInstance = await initDB();
@@ -90,5 +104,6 @@ export const dbService = {
     put,
     get,
     getAll,
+    deleteItem,
     clearStore
 };

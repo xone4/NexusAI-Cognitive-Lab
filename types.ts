@@ -133,6 +133,12 @@ export interface AffectiveState {
     lastUpdated: number;
 }
 
+export interface TraceDetails {
+    reflection?: string;
+    discussion?: { role: 'user' | 'model', text: string }[];
+    translations?: Partial<Record<Language, string>>;
+}
+
 export interface ChatMessage {
     id: string;
     role: 'user' | 'model';
@@ -151,6 +157,9 @@ export interface ChatMessage {
     affectiveStateSnapshot?: AffectiveState;
     emotionTags?: EmotionInstance[]; // Key emotions tagged to this memory
     salience?: number; // How prominent the memory is, 0-1
+    
+    // Persisted Metadata
+    traceDetails?: TraceDetails;
 }
 
 export interface CognitiveProcess {

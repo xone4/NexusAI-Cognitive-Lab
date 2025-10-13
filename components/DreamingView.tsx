@@ -1,9 +1,14 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { nexusAIService } from '../services/nexusAIService';
-import type { DreamProcessUpdate, SystemDirective } from '../types';
+import type { DreamProcessUpdate, SystemDirective, ActiveView } from '../types';
 import DashboardCard from './DashboardCard';
 import { SparklesIcon, BrainCircuitIcon, CheckCircleIcon, LightBulbIcon } from './Icons';
+
+interface DreamingViewProps {
+    onSubmitQuery: (query: string) => void;
+    setActiveView: (view: ActiveView) => void;
+}
 
 const DreamStage: React.FC<{ message: string; isComplete: boolean }> = ({ message, isComplete }) => (
     <div className="flex items-center gap-3 text-lg transition-all duration-500">
@@ -18,7 +23,7 @@ const DreamStage: React.FC<{ message: string; isComplete: boolean }> = ({ messag
     </div>
 );
 
-const DreamingView: React.FC = () => {
+const DreamingView: React.FC<DreamingViewProps> = ({ onSubmitQuery, setActiveView }) => {
     const { t } = useTranslation();
     const [dreamState, setDreamState] = useState<DreamProcessUpdate>({
         stage: 'IDLE',
@@ -36,6 +41,12 @@ const DreamingView: React.FC = () => {
     const handleStartDream = () => {
         setProgress([]);
         nexusAIService.initiateDreamCycle();
+    };
+
+    const handleDirectiveClick = (directive: SystemDirective) => {
+        const query = `Reflect on the new directive: "${directive.text}". How does this change my approach to problem-solving? Provide concrete examples.`;
+        onSubmitQuery(query);
+        setActiveView('dashboard');
     };
     
     useEffect(() => {
@@ -82,8 +93,10 @@ const DreamingView: React.FC = () => {
                      <div className="p-4 space-y-3">
                         <h4 className="font-semibold text-nexus-text">{t('dreaming.newDirectives')}</h4>
                         {dreamState.newDirectives.map(directive => (
-                            <div key={directive.id} className="bg-nexus-dark/50 p-3 rounded-xl">
-                                <p className="text-sm italic text-nexus-secondary">"{directive.text}"</p>
+                            <div key={directive.id} 
+                                 onClick={() => handleDirectiveClick(directive)}
+                                 className="bg-nexus-dark/50 p-3 rounded-xl transition-all duration-300 hover:bg-nexus-surface/50 hover:border-nexus-primary border border-transparent cursor-pointer group">
+                                <p className="text-sm italic text-nexus-secondary group-hover:text-nexus-primary">"{directive.text}"</p>
                             </div>
                         ))}
                      </div>

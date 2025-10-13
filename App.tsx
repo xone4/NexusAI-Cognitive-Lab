@@ -169,7 +169,7 @@ const App: React.FC = () => {
     return () => {
         cleanupPromise.then(cleanup => cleanup && cleanup());
     };
-}, [handleLog, handlePerformanceUpdate, handleReplicaUpdate, handleToolsUpdate, handleToolchainsUpdate, handleBehaviorsUpdate, handleConstitutionsUpdate, handleEvolutionUpdate, handleCognitiveProcessUpdate, handleArchivesUpdate, settings]);
+}, []);
 
   const spawnReplica = useCallback((parentId: string) => {
     nexusAIService.spawnReplica(parentId);
@@ -303,7 +303,7 @@ const App: React.FC = () => {
                   onArchiveTrace={handleArchiveTrace}
                   onExtractBehavior={handleExtractBehavior}
                   onRerunTrace={handleRerunTrace}
-                  onTranslate={nexusAIService.translateResponse}
+                  onTranslate={(messageId, text, lang) => nexusAIService.translateResponse(messageId, text, lang)}
                   language={settings.language}
                 />}
                 <SuggestionTray
@@ -400,6 +400,8 @@ const App: React.FC = () => {
       case 'evolution':
         return evolutionState && <EvolutionChamber
                  evolutionState={evolutionState}
+                 archivedTraces={archivedTraces}
+                 behaviors={behaviors}
                />;
       case 'memory':
         return <MemoryExplorerView
@@ -408,7 +410,7 @@ const App: React.FC = () => {
                   onDeleteTrace={nexusAIService.deleteTrace}
                 />;
       case 'dreaming':
-        return <DreamingView />;
+        return <DreamingView onSubmitQuery={submitQuery} setActiveView={setActiveView} />;
       case 'dashboard':
       default:
         return renderDashboard();

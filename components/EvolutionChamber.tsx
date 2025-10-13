@@ -1,14 +1,16 @@
 import React, { useState, useCallback, useMemo, memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import type { EvolutionState, EvolutionConfig, FitnessGoal, IndividualPlan, PlanStep, ChatMessage } from '../types';
+import type { EvolutionState, EvolutionConfig, FitnessGoal, IndividualPlan, PlanStep, ChatMessage, Behavior } from '../types';
 import { nexusAIService } from '../services/nexusAIService';
 import DashboardCard from './DashboardCard';
-import { DnaIcon, PlayIcon, LinkIcon, XCircleIcon, SparklesIcon, BrainCircuitIcon } from './Icons';
+import MemorySelectorModal from './MemorySelectorModal';
+import { DnaIcon, PlayIcon, LinkIcon, XCircleIcon, SparklesIcon, BrainCircuitIcon, BookOpenIcon } from './Icons';
 
 interface EvolutionChamberProps {
     evolutionState: EvolutionState;
-    // No longer need allTools or onCreateToolchain, as this is now self-contained for problem solving.
+    archivedTraces: ChatMessage[];
+    behaviors: Behavior[];
 }
 
 const planToText = (plan: PlanStep[]) => {
@@ -44,13 +46,15 @@ const IndividualPlanCard: React.FC<{
         </div>
     );
 });
+IndividualPlanCard.displayName = "IndividualPlanCard";
 
-const EvolutionChamber: React.FC<EvolutionChamberProps> = ({ evolutionState }) => {
+const EvolutionChamber: React.FC<EvolutionChamberProps> = ({ evolutionState, archivedTraces, behaviors }) => {
     const { t } = useTranslation();
     const [problemStatement, setProblemStatement] = useState(evolutionState.problemStatement);
     const [config, setConfig] = useState<EvolutionConfig>(evolutionState.config);
     const [selectedIndividualId, setSelectedIndividualId] = useState<string | null>(null);
     const [isSynthesizing, setIsSynthesizing] = useState(false);
+    const [isMemorySelectorOpen, setIsMemorySelectorOpen] = useState(false);
     
     const { isRunning, progress, population, statusMessage, finalEnsembleResult } = evolutionState;
 
@@ -79,11 +83,31 @@ const EvolutionChamber: React.FC<EvolutionChamberProps> = ({ evolutionState }) =
         setIsSynthesizing(false);
     };
 
+    const handleSelectFromMemory = (item: ChatMessage | Behavior) => {
+        let formattedProblem = '';
+        if ('userQuery' in item) { // It's a ChatMessage (trace)
+            formattedProblem = `Problem: Evolve a more efficient or creative plan to solve the original query: "${item.userQuery}".\n\nContext from original answer:\n${item.text?.substring(0, 200)}...`;
+        } else { // It's a Behavior
+            formattedProblem = `Problem: Apply the core principles of the learned behavior "${item.name}" to a new, more challenging scenario.\n\nCore Strategy to evolve:\n${item.strategy}`;
+        }
+        setProblemStatement(formattedProblem);
+        setIsMemorySelectorOpen(false);
+    };
+
     const selectedIndividual = useMemo(() => {
         return population.find(p => p.id === selectedIndividualId) || null;
     }, [selectedIndividualId, population]);
 
     return (
+        <>
+        {isMemorySelectorOpen && (
+            <MemorySelectorModal
+                archivedTraces={archivedTraces}
+                behaviors={behaviors}
+                onClose={() => setIsMemorySelectorOpen(false)}
+                onSelect={handleSelectFromMemory}
+            />
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-full">
             {/* --- Left Panel: Controls --- */}
             <div className="lg:col-span-2 flex flex-col gap-6">
@@ -95,7 +119,10 @@ const EvolutionChamber: React.FC<EvolutionChamberProps> = ({ evolutionState }) =
                         disabled={isRunning}
                         className="w-full h-24 p-2 bg-nexus-dark rounded-xl text-sm resize-none focus:ring-1 focus:ring-nexus-primary"
                     />
-                    <button onClick={handleInitialize} disabled={isRunning || !problemStatement.trim()} className="w-full mt-2 btn-primary">{t('evolution.initializePopulation')}</button>
+                    <div className="flex gap-2 mt-2">
+                        <button onClick={() => setIsMemorySelectorOpen(true)} disabled={isRunning} className="flex-1 btn-secondary"><BookOpenIcon className="w-4 h-4" /> {t('evolution.loadFromMemory')}</button>
+                        <button onClick={handleInitialize} disabled={isRunning || !problemStatement.trim()} className="flex-1 btn-primary">{t('evolution.initializePopulation')}</button>
+                    </div>
                 </DashboardCard>
 
                 <DashboardCard title={t('evolution.geneticOperators')} icon={<SparklesIcon />} defaultOpen>
@@ -187,6 +214,7 @@ const EvolutionChamber: React.FC<EvolutionChamberProps> = ({ evolutionState }) =
                 .btn-primary:disabled, .btn-secondary:disabled { background-color: #18213a80 !important; color: #a0a0a80 !important; border-color: #18213a !important; cursor: not-allowed; }
             `}</style>
         </div>
+        </>
     );
 };
 

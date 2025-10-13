@@ -341,7 +341,8 @@
     "synthesizing": "Synthesizing...",
     "finalAnswer": "Final Ensembled Answer",
     "problemRequired": "A problem statement is required to initialize the population.",
-    "visualBalance": "Maximize Visual Balance"
+    "visualBalance": "Maximize Visual Balance",
+    "loadFromMemory": "Load from Memory"
   },
   "memory": {
     "title": "Memory Explorer",
