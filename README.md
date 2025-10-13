@@ -5,9 +5,9 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![Gemini API](https://img.shields.io/badge/Gemini_API-Google-blue?logo=google)](https://ai.google.dev/)
 
-> A living cognitive shaping environment for cultivating a digital entity with an emotional past, a conscious present, and a directable future.
+> A living cognitive shaping environment for cultivating a digital entity that evolves, dreams, and reasons. It has an emotional past, a conscious present, and a directable future.
 
-The NexusAI Cognitive Lab has evolved. It is no longer just an interface but a crucible for implementing and directing an **Agent 2.0** architecture. This paradigm shifts from simple, reactive loops to a proactive, structured, and deeply engineered cognitive process. As a **Cognitive Architect**, you now have the tools to guide an intelligence that plans, delegates, remembers, and executes with unprecedented clarity.
+The NexusAI Cognitive Lab has evolved. It is no longer just an interface but a crucible for implementing and directing an **Agent 2.0** architecture. This paradigm shifts from simple, reactive loops to a proactive, structured, and deeply engineered cognitive process. As a **Cognitive Architect**, you now have the tools to guide an intelligence that plans, delegates, remembers, evolves, and improves itself with unprecedented clarity.
 
 ## Table of Contents
 
@@ -44,9 +44,9 @@ Our implementation is built on four foundational pillars that define a Deep Agen
 -   **The Cognitive Canvas**: A fluid interface centered on the AI's transparent thought process—from planning and delegation to execution and synthesis.
 -   **Orchestrator-Sub-Agent Model**: Witness the core AI delegate tasks to its Cognitive Replicas, and watch their status change in real-time in the Replicas view.
 -   **Interactive Co-Cognitive Authoring**: Review, edit, and approve the AI's explicit plan before it's executed, making you a direct collaborator in its reasoning process.
--   **Living Memory (MEMORIA)**: Explore an emotionally-contextual archive of the AI's past "experiences," which it uses to learn and inform its actions.
--   **Evolutionary Problem Solving**: The "Evolution Chamber" uses genetic algorithms to evolve populations of plans, finding optimal solutions to highly complex problems.
--   **Cognitive Dreaming & Self-Improvement**: A dedicated "Dreaming Chamber" where the AI analyzes its collective memory to synthesize new high-level directives, allowing it to learn from experience and improve its core logic over time.
+-   **Living Memory & Metacognition (MEMORIA)**: Explore an emotionally-contextual archive of the AI's past "experiences." The AI can extract successful strategies from these memories into a **Metacognitive Behavior Handbook**, creating a library of reusable problem-solving patterns.
+-   **Evolutionary Problem Solving**: The **Evolution Chamber** uses genetic algorithms to tackle complex problems. It evolves populations of plans, visualizes their fitness over generations, and automatically converges on an optimal solution. Past memories and learned behaviors can be used as starting points for new evolutionary tasks.
+-   **Cognitive Dreaming & Self-Improvement**: A dedicated **Dreaming Chamber** where the AI analyzes its collective memory to synthesize new, high-level directives. This allows it to learn from experience, form abstract principles, and improve its core logic autonomously.
 -   **Architectural Plasticity**: The AI can dynamically `forge_tool` or `spawn_replica` as part of its plan, modifying its own capabilities to meet the demands of a task.
 
 ## System Architecture
@@ -89,12 +89,12 @@ This roadmap is aligned with the maturation of our Agent 2.0 architecture.
 
 ---
 ### **Phase 4: Proactive Cognition & Self-Improvement - ✅ Complete**
-*   **Outcome:** Evolved the AI from a reactive to a proactive system. The **Analysis Lab** and **Evolution Chamber** provide directed self-optimization, while the **Dreaming Chamber** enables autonomous metacognitive analysis and the generation of new self-improvement directives.
+*   **Outcome:** Evolved the AI from a reactive to a proactive system. The **Analysis Lab** provides directed self-optimization, the **Evolution Chamber** offers a powerful engine for solving complex problems through genetic algorithms, and the **Dreaming Chamber** enables autonomous metacognitive analysis and the generation of new self-improvement directives. The AI now actively learns from its past to improve its future.
 
 ---
 ### **Phase 5: Distributed Consciousness & Emergent Strategy - ⚙️ In Progress**
 *   **Objective:** Evolve the Sub-Agent network from a simple delegation system into a competitive, collaborative ecosystem where intelligence can emerge.
-*   **Progress:** The `broadcastProblem` functionality allows the Orchestrator to pose a problem to the entire network of Sub-Agents.
+*   **Progress:** The `broadcastProblem` functionality allows the Orchestrator to pose a problem to the entire network of Sub-Agents. A simulated bidding process is in place, forming the foundation for decentralized problem-solving.
 *   **Next Steps:**
     1.  **Cognitive Bidding System:** Implement a mechanism where active Sub-Agents can "bid" on a broadcasted problem by autonomously generating their own plans.
     2.  **Autonomous Orchestration:** The Orchestrator will analyze the bids and select the most promising plan, initiating a truly decentralized problem-solving process. The system will learn which Sub-Agents are most effective at which tasks.
