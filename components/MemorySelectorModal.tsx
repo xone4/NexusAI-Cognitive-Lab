@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Tab } from '@headlessui/react';
-import type { ChatMessage, Behavior } from '../types';
+import type { ChatMessage, PlaybookItem } from '../types';
 import { BookOpenIcon, BrainCircuitIcon } from './Icons';
 
 interface MemorySelectorModalProps {
     archivedTraces: ChatMessage[];
-    behaviors: Behavior[];
+    playbook: PlaybookItem[];
     onClose: () => void;
-    onSelect: (item: ChatMessage | Behavior) => void;
+    onSelect: (item: ChatMessage | PlaybookItem) => void;
 }
 
 const tabClasses = ({ selected }: { selected: boolean }) => `
@@ -20,11 +20,11 @@ const tabClasses = ({ selected }: { selected: boolean }) => `
     }
 `;
 
-const MemorySelectorModal: React.FC<MemorySelectorModalProps> = ({ archivedTraces, behaviors, onClose, onSelect }) => {
+const MemorySelectorModal: React.FC<MemorySelectorModalProps> = ({ archivedTraces, playbook, onClose, onSelect }) => {
     const { t } = useTranslation();
     
     const sortedTraces = [...archivedTraces].sort((a, b) => (b.archivedAt || 0) - (a.archivedAt || 0));
-    const sortedBehaviors = [...behaviors].sort((a, b) => b.lastUsed - a.lastUsed);
+    const sortedPlaybookItems = [...playbook].sort((a, b) => b.lastUsed - a.lastUsed);
 
     return (
         <div className="fixed inset-0 bg-nexus-dark/80 backdrop-blur-sm flex items-center justify-center z-50 animate-spawn-in">
@@ -47,7 +47,7 @@ const MemorySelectorModal: React.FC<MemorySelectorModalProps> = ({ archivedTrace
                                 <div className="flex items-center justify-center gap-2"><BookOpenIcon className="w-5 h-5"/> {t('memorySelector.archivedMemories', { count: sortedTraces.length })}</div>
                             </Tab>
                             <Tab className={tabClasses}>
-                                <div className="flex items-center justify-center gap-2"><BrainCircuitIcon className="w-5 h-5"/> {t('memorySelector.learnedBehaviors', { count: sortedBehaviors.length })}</div>
+                                <div className="flex items-center justify-center gap-2"><BrainCircuitIcon className="w-5 h-5"/> {t('memorySelector.learnedBehaviors', { count: sortedPlaybookItems.length })}</div>
                             </Tab>
                         </Tab.List>
                         <Tab.Panels className="mt-2 h-[calc(100%-44px)]">
@@ -63,10 +63,10 @@ const MemorySelectorModal: React.FC<MemorySelectorModalProps> = ({ archivedTrace
                             </Tab.Panel>
                              <Tab.Panel className="h-full rounded-xl bg-nexus-dark/20 p-2 focus:outline-none overflow-y-auto">
                                 <div className="space-y-2">
-                                    {sortedBehaviors.map(behavior => (
-                                        <div key={behavior.id} onClick={() => onSelect(behavior)} className="p-3 bg-nexus-surface/50 rounded-lg cursor-pointer hover:bg-nexus-primary/20 hover:border-nexus-primary border border-transparent">
-                                            <p className="font-semibold text-nexus-text">{behavior.name}</p>
-                                            <p className="text-sm text-nexus-text-muted italic truncate">"{behavior.description}"</p>
+                                    {sortedPlaybookItems.map(item => (
+                                        <div key={item.id} onClick={() => onSelect(item)} className="p-3 bg-nexus-surface/50 rounded-lg cursor-pointer hover:bg-nexus-primary/20 hover:border-nexus-primary border border-transparent">
+                                            <p className="font-semibold text-nexus-text">{item.description}</p>
+                                            <p className="text-sm text-nexus-text-muted italic truncate font-mono">{item.content}</p>
                                         </div>
                                     ))}
                                 </div>

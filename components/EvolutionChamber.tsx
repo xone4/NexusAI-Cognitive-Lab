@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import type { EvolutionState, EvolutionConfig, FitnessGoal, IndividualPlan, PlanStep, ChatMessage, Behavior, Language } from '../types';
+import type { EvolutionState, EvolutionConfig, FitnessGoal, IndividualPlan, PlanStep, ChatMessage, PlaybookItem, Language } from '../types';
 import { nexusAIService } from '../services/nexusAIService';
 import DashboardCard from './DashboardCard';
 import MemorySelectorModal from './MemorySelectorModal';
@@ -10,7 +10,7 @@ import { DnaIcon, PlayIcon, LinkIcon, XCircleIcon, SparklesIcon, BrainCircuitIco
 interface EvolutionChamberProps {
     evolutionState: EvolutionState;
     archivedTraces: ChatMessage[];
-    behaviors: Behavior[];
+    playbook: PlaybookItem[];
     onArchive: (trace: ChatMessage) => void;
     onExtractBehavior: (trace: ChatMessage) => void;
     onRerun: (problemStatement: string) => void;
@@ -54,7 +54,7 @@ const IndividualPlanCard: React.FC<{
 });
 IndividualPlanCard.displayName = "IndividualPlanCard";
 
-const EvolutionChamber: React.FC<EvolutionChamberProps> = ({ evolutionState, archivedTraces, behaviors, onArchive, onExtractBehavior, onRerun, onTranslate, language }) => {
+const EvolutionChamber: React.FC<EvolutionChamberProps> = ({ evolutionState, archivedTraces, playbook, onArchive, onExtractBehavior, onRerun, onTranslate, language }) => {
     const { t } = useTranslation();
     const [problemStatement, setProblemStatement] = useState(evolutionState.problemStatement);
     const [config, setConfig] = useState<EvolutionConfig>(evolutionState.config);
@@ -132,13 +132,12 @@ const EvolutionChamber: React.FC<EvolutionChamberProps> = ({ evolutionState, arc
         }
     };
 
-    const handleSelectFromMemory = (item: ChatMessage | Behavior) => {
+    const handleSelectFromMemory = (item: ChatMessage | PlaybookItem) => {
         let formattedProblem = '';
-        // FIX: Use 'role' as a discriminator for ChatMessage vs Behavior to ensure correct type narrowing.
         if ('role' in item) { // It's a ChatMessage (trace)
             formattedProblem = `Problem: Evolve a more efficient or creative plan to solve the original query: "${item.userQuery}".\n\nContext from original answer:\n${item.text?.substring(0, 200)}...`;
-        } else { // It's a Behavior
-            formattedProblem = `Problem: Apply the core principles of the learned behavior "${item.name}" to a new, more challenging scenario.\n\nCore Strategy to evolve:\n${item.strategy}`;
+        } else { // It's a PlaybookItem
+            formattedProblem = `Problem: Apply the core principles of the learned behavior "${item.description}" to a new, more challenging scenario.\n\nCore Strategy to evolve:\n${item.content}`;
         }
         setProblemStatement(formattedProblem);
         setIsMemorySelectorOpen(false);
@@ -153,7 +152,7 @@ const EvolutionChamber: React.FC<EvolutionChamberProps> = ({ evolutionState, arc
         {isMemorySelectorOpen && (
             <MemorySelectorModal
                 archivedTraces={archivedTraces}
-                behaviors={behaviors}
+                playbook={playbook}
                 onClose={() => setIsMemorySelectorOpen(false)}
                 onSelect={handleSelectFromMemory}
             />

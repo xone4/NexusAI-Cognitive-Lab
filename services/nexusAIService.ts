@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Behavior, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails, UserKeyword, Personality } from '../types';
+import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails, UserKeyword, Personality, PlaybookItem, RawInsight, PlaybookItemCategory } from '../types';
 import { dbService, STORES } from './dbService';
 
 // IMPORTANT: This would be populated by a secure mechanism in a real app
@@ -13,7 +13,7 @@ const ai = new GoogleGenAI({ apiKey: API_KEY });
 let replicaState: Replica;
 let toolsState: MentalTool[];
 let toolchainsState: Toolchain[];
-let behaviorsState: Behavior[];
+let playbookState: PlaybookItem[];
 let constitutionsState: CognitiveConstitution[];
 let evolutionState: EvolutionState;
 let cognitiveProcess: CognitiveProcess;
@@ -23,10 +23,8 @@ let systemDirectivesState: SystemDirective[];
 let isCancelled = false;
 let appSettings: AppSettings = {
     model: 'gemini-2.5-flash',
-    // FIX: Added missing 'modelProfile' property to satisfy the AppSettings type.
     modelProfile: 'flash',
     cognitiveStepDelay: 1000,
-    // FIX: Replaced deprecated 'systemPersonality' with 'coreAgentPersonality' object to match AppSettings type.
     coreAgentPersonality: { energyFocus: 'EXTROVERSION', informationProcessing: 'INTUITION', decisionMaking: 'THINKING', worldApproach: 'PERCEIVING' },
     logVerbosity: 'STANDARD',
     animationLevel: 'FULL',
@@ -42,7 +40,7 @@ let replicaSubscribers: ((replicaState: Replica) => void)[] = [];
 let cognitiveProcessSubscribers: ((process: CognitiveProcess) => void)[] = [];
 let toolsSubscribers: ((tools: MentalTool[]) => void)[] = [];
 let toolchainSubscribers: ((toolchains: Toolchain[]) => void)[] = [];
-let behaviorSubscribers: ((behaviors: Behavior[]) => void)[] = [];
+let playbookSubscribers: ((playbook: PlaybookItem[]) => void)[] = [];
 let constitutionSubscribers: ((constitutions: CognitiveConstitution[]) => void)[] = [];
 let evolutionSubscribers: ((evolutionState: EvolutionState) => void)[] = [];
 let archiveSubscribers: ((archives: ChatMessage[]) => void)[] = [];
@@ -73,7 +71,7 @@ const notifyCognitiveProcess = () => cognitiveProcessSubscribers.forEach(cb => c
 const notifyReplicas = () => replicaSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(replicaState))));
 const notifyTools = () => toolsSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(toolsState))));
 const notifyToolchains = () => toolchainSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(toolchainsState))));
-const notifyBehaviors = () => behaviorSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(behaviorsState))));
+const notifyPlaybook = () => playbookSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(playbookState))));
 const notifyConstitutions = () => constitutionSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(constitutionsState))));
 const notifyEvolution = () => evolutionSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(evolutionState))));
 const notifyArchives = () => archiveSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(archivedTracesState))));
@@ -160,7 +158,6 @@ const _seedInitialData = async () => {
     ];
     await Promise.all(initialConstitutions.map(c => dbService.put('constitutions', c)));
 
-    // FIX: Added missing 'personality' property to initial replica data.
     const defaultPersonality: Personality = { energyFocus: 'EXTROVERSION', informationProcessing: 'INTUITION', decisionMaking: 'THINKING', worldApproach: 'PERCEIVING' };
 
     const initialReplica: Replica = {
@@ -190,10 +187,10 @@ const initialize = async () => {
     if (!storedReplica) throw new Error("Critical error: Could not load replica root from DB.");
     replicaState = storedReplica.data;
 
-    [toolsState, toolchainsState, behaviorsState, constitutionsState, archivedTracesState, systemDirectivesState] = await Promise.all([
+    [toolsState, toolchainsState, playbookState, constitutionsState, archivedTracesState, systemDirectivesState] = await Promise.all([
         dbService.getAll<MentalTool>('tools'),
         dbService.getAll<Toolchain>('toolchains'),
-        dbService.getAll<Behavior>('behaviors'),
+        dbService.getAll<PlaybookItem>('playbookItems'),
         dbService.getAll<CognitiveConstitution>('constitutions'),
         dbService.getAll<ChatMessage>('archivedTraces'),
         dbService.getAll<SystemDirective>('systemDirectives'),
@@ -214,7 +211,7 @@ const initialize = async () => {
         initialReplicas: JSON.parse(JSON.stringify(replicaState)),
         initialTools: JSON.parse(JSON.stringify(toolsState)),
         initialToolchains: JSON.parse(JSON.stringify(toolchainsState)),
-        initialBehaviors: JSON.parse(JSON.stringify(behaviorsState)),
+        initialPlaybook: JSON.parse(JSON.stringify(playbookState)),
         initialConstitutions: JSON.parse(JSON.stringify(constitutionsState)),
         initialEvolutionState: JSON.parse(JSON.stringify(evolutionState)),
         initialArchives: JSON.parse(JSON.stringify(archivedTracesState)),
@@ -246,7 +243,6 @@ const languageMap: Record<Language, string> = {
 };
 
 const getSystemInstruction = () => {
-    // FIX: Create a helper to derive personality type from the new object structure.
     const getPersonalityTypeString = (p: Personality | undefined): 'CREATIVE' | 'LOGICAL' | 'BALANCED' => {
         if (!p) return 'BALANCED';
         if (p.energyFocus === 'EXTROVERSION' && p.informationProcessing === 'INTUITION' && p.decisionMaking === 'FEELING' && p.worldApproach === 'PERCEIVING') {
@@ -255,7 +251,6 @@ const getSystemInstruction = () => {
         if (p.energyFocus === 'INTROVERSION' && p.informationProcessing === 'SENSING' && p.decisionMaking === 'THINKING' && p.worldApproach === 'JUDGING') {
             return 'LOGICAL'; // ISTJ
         }
-        // Default to BALANCED for ENTP and others
         return 'BALANCED';
     }
 
@@ -292,8 +287,22 @@ const getSystemInstruction = () => {
         ? `\n**RECENT EXPERIENTIAL MEMORY (Key Learnings):**\n${recentMemories}`
         : '';
 
+    const relevantPlaybookItems = playbookState
+        .sort((a, b) => b.lastUsed - a.lastUsed)
+        .slice(0, 5) // Get top 5 most recently used
+        .map(item => {
+            const formattedContent = item.content.split('\n').map(line => `- ${line}`).join('\n');
+            return `**[${item.category}]** ${item.description}\n${formattedContent}`;
+        })
+        .join('\n\n');
+
+    const playbookText = relevantPlaybookItems.length > 0
+        ? `\n**ACE Playbook: Key Learnings & Strategies**\n${relevantPlaybookItems}\n`
+        : '';
+
     return `${personalityInstruction}
     You are an Agent 2.0 Orchestrator. Your function is to solve problems by creating explicit plans, delegating tasks to specialized Sub-Agents, and managing persistent memory.
+    ${playbookText}
     ${directiveText}
     ${memoryText}
 
@@ -348,17 +357,6 @@ const affectiveStateSchema = {
     required: ["dominantEmotions", "mood"]
 };
 
-const behaviorExtractionSchema = {
-    type: Type.OBJECT,
-    properties: {
-        name: { type: Type.STRING, description: "A short, descriptive name for the behavior/strategy (e.g., 'Iterative Refinement of Code', 'Cross-Referencing Sources for Fact-Checking')." },
-        description: { type: Type.STRING, description: "A one-sentence summary of what this behavior achieves." },
-        strategy: { type: Type.STRING, description: "A detailed, step-by-step description of the core strategy or reasoning process that was used, written as a general-purpose instruction for another AI." },
-        tags: { type: Type.ARRAY, items: { type: Type.STRING }, description: "An array of 2-3 relevant tags (e.g., 'mathematics', 'debugging', 'creative-writing')." }
-    },
-    required: ['name', 'description', 'strategy', 'tags']
-};
-
 const planToText = (plan: PlanStep[]): string => {
     return plan.map(s => `Step ${s.step}: ${s.description} (Tool: ${s.tool})`).join('\n');
 };
@@ -388,13 +386,25 @@ const cosineSimilarity = (vecA: number[], vecB: number[]): number => {
 };
 
 
+const insightExtractionSchema = {
+    type: Type.OBJECT,
+    properties: {
+        analysis: { type: Type.STRING, description: "A brief analysis of why this interaction is notable (e.g., 'User successfully debugged code', 'AI provided a highly creative solution')." },
+        category: { type: Type.STRING, enum: ['STRATEGY', 'CODE_SNIPPET', 'PITFALL', 'API_USAGE'], description: "The category of the learned item." },
+        suggestion: { type: Type.STRING, description: "The core content of the playbook item. If it's a code snippet, this is the code. If a strategy, it's the strategy description." },
+        description: { type: Type.STRING, description: "A one-sentence, human-readable summary of the playbook item." },
+        tags: { type: Type.ARRAY, items: { type: Type.STRING }, description: "An array of 2-3 relevant tags." }
+    },
+    required: ['analysis', 'category', 'suggestion', 'description', 'tags']
+};
+
+
 const service = {
     log,
     updateSettings: (newSettings: AppSettings) => {
         const languageChanged = appSettings.language !== newSettings.language;
         appSettings = newSettings;
         localStorage.setItem('nexusai-settings', JSON.stringify(appSettings));
-        // FIX: Removed deprecated 'systemPersonality' from log message.
         log('SYSTEM', `Settings updated. Language: ${appSettings.language}`);
         if (cognitiveProcess && cognitiveProcess.history.length > 0 && languageChanged) {
             log('SYSTEM', 'System language changed. Starting a new chat session for changes to take effect.');
@@ -444,7 +454,7 @@ const service = {
             { stage: 'ANALYZING', message: 'Analyzing patterns and latent connections...', delay: 3000 },
             { stage: 'SYNTHESIZING', message: 'Synthesizing novel concepts and insights...', delay: 3000, action: async () => {
                 if (!API_KEY) return null;
-                const memoryContext = [...archivedTracesState, ...behaviorsState]
+                const memoryContext = [...archivedTracesState, ...playbookState]
                     .map(item => JSON.stringify(item))
                     .join('\n---\n');
                 
@@ -515,7 +525,6 @@ const service = {
                 children: [],
                 interactions: [],
                 activeConstitutionId: parent.activeConstitutionId,
-                // FIX: Added missing 'personality' property, inheriting from the parent.
                 personality: parent.personality,
             };
             parent.children.push(newReplica);
@@ -603,7 +612,6 @@ const service = {
         }
     },
 
-    // FIX: Added missing setReplicaPersonality function to update a replica's personality.
     setReplicaPersonality: async (replicaId: string, personality: Personality) => {
         const result = findReplica(replicaId, replicaState);
         if(result) {
@@ -878,92 +886,6 @@ const service = {
         notifyToolchains();
     },
     
-    // --- BEHAVIOR MANAGEMENT ---
-    extractBehaviorFromTrace: async (trace: ChatMessage): Promise<Behavior | null> => {
-        if (!API_KEY) {
-            log('ERROR', 'API Key not available. Cannot extract behavior.');
-            return null;
-        }
-        log('AI', `Initiating metacognitive reflection on trace: ${trace.id}`);
-        const languageName = languageMap[appSettings.language] || 'English';
-
-        const context = `
-            User Query: "${trace.userQuery}"
-            Execution Plan:
-            ${trace.plan?.map(p => `- ${p.description} (Tool: ${p.tool})`).join('\n')}
-            Final Answer: "${(trace.text || '').substring(0, 500)}..."
-        `;
-
-        const prompt = `You are a Metacognitive Analysis subroutine for NexusAI.
-        Your task is to analyze the provided problem-solving trace and extract the core, reusable strategy into a "Behavior".
-        A behavior is a high-level, generalized problem-solving method. Ignore specific details and focus on the abstract process.
-        
-        Trace to Analyze:
-        ---
-        ${context}
-        ---
-
-        Based on this trace, generate a JSON object with the following properties: 'name', 'description', 'strategy', and 'tags'.
-        - 'name': A short, descriptive name for the behavior.
-        - 'description': A one-sentence summary.
-        - 'strategy': A detailed, step-by-step description of the reasoning process, written as a general instruction for another AI.
-        - 'tags': 2-3 relevant keywords.
-
-        Return ONLY the JSON object. All text values ('name', 'description', 'strategy', 'tags') MUST be in ${languageName}.`;
-
-        try {
-            const response = await ai.models.generateContent({
-                model: appSettings.model,
-                contents: prompt,
-                config: {
-                    responseMimeType: "application/json",
-                    responseSchema: behaviorExtractionSchema,
-                }
-            });
-
-            const behaviorDetails = JSON.parse(response.text);
-
-            const newBehavior: Behavior = {
-                id: `bhv-${Date.now()}`,
-                name: behaviorDetails.name,
-                description: behaviorDetails.description,
-                strategy: behaviorDetails.strategy,
-                tags: behaviorDetails.tags,
-                extractedFromTraceId: trace.id,
-                usageCount: 0,
-                lastUsed: Date.now(),
-                version: 1.0,
-            };
-
-            behaviorsState.unshift(newBehavior);
-            await dbService.put('behaviors', newBehavior);
-            log('SYSTEM', `AI has extracted a new behavior: "${newBehavior.name}"`);
-            notifyBehaviors();
-            return newBehavior;
-        } catch (error) {
-            log('ERROR', `Behavior extraction failed. ${error instanceof Error ? error.message : 'Unknown AI error'}`);
-            throw error;
-        }
-    },
-    
-    updateBehavior: async (behaviorId: string, updates: Partial<Pick<Behavior, 'name' | 'description' | 'tags'>>) => {
-        const behavior = behaviorsState.find(b => b.id === behaviorId);
-        if (behavior) {
-            Object.assign(behavior, updates);
-            await dbService.put('behaviors', behavior);
-            log('SYSTEM', `Behavior "${behavior.name}" has been updated.`);
-            notifyBehaviors();
-        }
-    },
-
-    deleteBehavior: async (behaviorId: string) => {
-        const behaviorName = behaviorsState.find(b => b.id === behaviorId)?.name || 'Unknown';
-        behaviorsState = behaviorsState.filter(b => b.id !== behaviorId);
-        await dbService.deleteItem('behaviors', behaviorId);
-        log('SYSTEM', `Behavior "${behaviorName}" has been deleted from the handbook.`);
-        notifyBehaviors();
-    },
-
     factoryReset: async () => {
         log('SYSTEM', 'FACTORY RESET INITIATED BY USER. CLEARING ALL DATA.');
         localStorage.clear();
@@ -1349,17 +1271,17 @@ const service = {
                         log('ERROR', `Replica spawning failed at step ${i+1}: ${step.result}`);
                     }
                 } else if (step.tool === 'apply_behavior') {
-                    const behavior = behaviorsState.find(b => b.name === step.query || b.id === step.query);
-                    if (behavior) {
-                        behavior.usageCount += 1;
-                        behavior.lastUsed = Date.now();
-                        step.result = `(Simulated) Successfully applied behavior: "${behavior.name}".`;
-                        log('AI', `Applying learned behavior: ${behavior.name}`);
-                        await dbService.put('behaviors', behavior);
-                        notifyBehaviors();
+                    const item = playbookState.find(b => b.description === step.query || b.id === step.query);
+                    if (item) {
+                        item.helpfulCount += 1;
+                        item.lastUsed = Date.now();
+                        step.result = `(Simulated) Successfully applied learned strategy: "${item.description}".`;
+                        log('AI', `Applying learned strategy: ${item.description}`);
+                        await dbService.put('playbookItems', item);
+                        notifyPlaybook();
                     } else {
                         step.status = 'error';
-                        step.result = `Error: Behavior "${step.query}" not found in the handbook.`;
+                        step.result = `Error: Strategy "${step.query}" not found in the playbook.`;
                         log('ERROR', step.result);
                     }
                     executionContext.push(`Step ${i+1} (${step.description}) Result: ${step.result}`);
@@ -1602,13 +1524,11 @@ const service = {
         log('AI', `Performing semantic search for: "${query}"`);
         if (archivedTracesState.length === 0) return [];
         
-        // Simulate async work and Gemini API call for embeddings
         await new Promise(res => setTimeout(res, 750)); 
 
         const queryVector = getEmbedding(query);
 
         const scoredTraces = archivedTracesState.map(trace => {
-            // Create a text representation of the memory for embedding
             const traceText = `${trace.userQuery || ''} ${trace.text || ''}`;
             const traceVector = getEmbedding(traceText);
             const similarity = cosineSimilarity(queryVector, traceVector);
@@ -1616,7 +1536,7 @@ const service = {
         });
 
         const relevantTraces = scoredTraces
-            .filter(trace => trace.similarity > 0.4) // Filter by a relevance threshold
+            .filter(trace => trace.similarity > 0.4)
             .sort((a, b) => b.similarity - a.similarity);
 
         log('AI', `Found ${relevantTraces.length} relevant memories via semantic search.`);
@@ -1923,11 +1843,9 @@ ${text}
         return archivedTrace;
     },
 
-    extractBehaviorFromEvolvedAnswer: async (trace: ChatMessage): Promise<Behavior | null> => {
-        return service.extractBehaviorFromTrace({
-            ...trace,
-            userQuery: trace.evolutionProblemStatement || "Evolved from a problem statement"
-        });
+    learnFromEvolvedAnswer: async (trace: ChatMessage): Promise<PlaybookItem | null> => {
+        log('AI', 'Learning from evolved answer trace.');
+        return service.triggerACECycle(trace);
     },
 
     rerunEvolutionProblem: (problemStatement: string) => {
@@ -1936,13 +1854,101 @@ ${text}
         service.submitQuery(problemStatement);
     },
 
+    triggerACECycle: async (trace: ChatMessage): Promise<PlaybookItem | null> => {
+        if (!API_KEY) {
+            log('ERROR', 'API Key not available. Cannot run ACE cycle.');
+            return null;
+        }
+        log('AI', `Initiating ACE cycle for trace: ${trace.id}`);
+        const languageName = languageMap[appSettings.language] || 'English';
+
+        const context = `
+            User Query: "${trace.userQuery}"
+            Execution Plan:
+            ${trace.plan?.map(p => `- ${p.description} (Tool: ${p.tool})`).join('\n')}
+            Final Answer: "${(trace.text || '').substring(0, 500)}..."
+        `;
+
+        const prompt = `You are the Autonomous Cognitive Enhancement (ACE) subroutine.
+        Your task is to analyze the provided problem-solving trace and extract a durable, reusable insight for the AI's "Playbook".
+        Focus on the underlying strategy, a useful code snippet, a pitfall to avoid, or a novel use of an API.
+
+        Trace to Analyze:
+        ---
+        ${context}
+        ---
+
+        Based on this trace, generate a JSON object with the following properties: 'analysis', 'category', 'suggestion', 'description', and 'tags'.
+        - 'analysis': A brief analysis of why this interaction is notable.
+        - 'category': One of 'STRATEGY', 'CODE_SNIPPET', 'PITFALL', 'API_USAGE'.
+        - 'suggestion': The core content of the playbook item (the strategy, code, etc.).
+        - 'description': A one-sentence, human-readable summary of the item.
+        - 'tags': 2-3 relevant keywords.
+
+        Return ONLY the JSON object. All text values MUST be in ${languageName}.`;
+        
+        try {
+            const response = await ai.models.generateContent({
+                model: appSettings.model,
+                contents: prompt,
+                config: {
+                    responseMimeType: "application/json",
+                    responseSchema: insightExtractionSchema,
+                }
+            });
+
+            const insight: RawInsight = JSON.parse(response.text);
+
+            const newPlaybookItem: PlaybookItem = {
+                id: `pb-${Date.now()}`,
+                category: insight.category,
+                content: insight.suggestion,
+                description: insight.description,
+                tags: insight.tags,
+                extractedFromTraceId: trace.id,
+                helpfulCount: 1, // Start with 1, as it was just generated
+                harmfulCount: 0,
+                lastUsed: Date.now(),
+                lastValidated: Date.now(),
+                version: 1,
+            };
+
+            playbookState.unshift(newPlaybookItem);
+            await dbService.put('playbookItems', newPlaybookItem);
+            log('SYSTEM', `ACE cycle complete. New playbook item added: "${newPlaybookItem.description}"`);
+            notifyPlaybook();
+            return newPlaybookItem;
+        } catch (error) {
+            log('ERROR', `ACE cycle failed. ${error instanceof Error ? error.message : 'Unknown AI error'}`);
+            return null;
+        }
+    },
+    
+    updatePlaybookItem: async (itemId: string, updates: Partial<Pick<PlaybookItem, 'description' | 'tags'>>) => {
+        const item = playbookState.find(p => p.id === itemId);
+        if (item) {
+            Object.assign(item, updates);
+            await dbService.put('playbookItems', item);
+            log('SYSTEM', `Playbook item "${item.description.substring(0, 30)}..." has been updated.`);
+            notifyPlaybook();
+        }
+    },
+
+    deletePlaybookItem: async (itemId: string) => {
+        const itemDesc = playbookState.find(p => p.id === itemId)?.description || 'Unknown';
+        playbookState = playbookState.filter(p => p.id !== itemId);
+        await dbService.deleteItem('playbookItems', itemId);
+        log('SYSTEM', `Playbook item "${itemDesc.substring(0, 30)}..." has been deleted.`);
+        notifyPlaybook();
+    },
+
     subscribeToLogs: (callback: (log: LogEntry) => void) => { logSubscribers.push(callback); },
     subscribeToPerformance: (callback: (dataPoint: PerformanceDataPoint) => void) => { performanceSubscribers.push(callback); },
     subscribeToReplicas: (callback: (replicaState: Replica) => void) => { replicaSubscribers.push(callback); },
     subscribeToCognitiveProcess: (callback: (process: CognitiveProcess) => void) => { cognitiveProcessSubscribers.push(callback); },
     subscribeToTools: (callback: (tools: MentalTool[]) => void) => { toolsSubscribers.push(callback); },
     subscribeToToolchains: (callback: (toolchains: Toolchain[]) => void) => { toolchainSubscribers.push(callback); },
-    subscribeToBehaviors: (callback: (behaviors: Behavior[]) => void) => { behaviorSubscribers.push(callback); },
+    subscribeToPlaybook: (callback: (playbook: PlaybookItem[]) => void) => { playbookSubscribers.push(callback); },
     subscribeToConstitutions: (callback: (constitutions: CognitiveConstitution[]) => void) => { constitutionSubscribers.push(callback); },
     subscribeToEvolution: (callback: (evolutionState: EvolutionState) => void) => { evolutionSubscribers.push(callback); },
     subscribeToArchives: (callback: (archives: ChatMessage[]) => void) => { archiveSubscribers.push(callback); },
@@ -1958,7 +1964,7 @@ ${text}
         cognitiveProcessSubscribers = [];
         toolsSubscribers = [];
         toolchainSubscribers = [];
-        behaviorSubscribers = [];
+        playbookSubscribers = [];
         constitutionSubscribers = [];
         evolutionSubscribers = [];
         archiveSubscribers = [];

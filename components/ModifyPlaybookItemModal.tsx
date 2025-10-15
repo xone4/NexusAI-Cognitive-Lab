@@ -1,28 +1,23 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-// FIX: Replaced non-existent 'Behavior' type with 'PlaybookItem' to resolve module export error.
 import type { PlaybookItem } from '../types';
 import { WrenchScrewdriverIcon } from './Icons';
 
-interface ModifyBehaviorModalProps {
-    // FIX: Updated prop type from 'Behavior' to 'PlaybookItem'.
-    behavior: PlaybookItem;
+interface ModifyPlaybookItemModalProps {
+    item: PlaybookItem;
     onClose: () => void;
-    // FIX: Updated 'onSave' signature to match 'PlaybookItem' properties, removing 'name'.
-    onSave: (behaviorId: string, updates: Partial<Pick<PlaybookItem, 'description' | 'tags'>>) => void;
+    onSave: (itemId: string, updates: Partial<Pick<PlaybookItem, 'description' | 'tags'>>) => void;
 }
 
-const ModifyBehaviorModal: React.FC<ModifyBehaviorModalProps> = ({ behavior, onClose, onSave }) => {
+const ModifyPlaybookItemModal: React.FC<ModifyPlaybookItemModalProps> = ({ item, onClose, onSave }) => {
     const { t } = useTranslation();
-    // FIX: Removed 'name' state as it does not exist on 'PlaybookItem'.
-    const [description, setDescription] = useState(behavior.description);
-    const [tags, setTags] = useState(behavior.tags.join(', '));
+    const [description, setDescription] = useState(item.description);
+    const [tags, setTags] = useState(item.tags.join(', '));
 
     const handleSave = (e: React.FormEvent) => {
         e.preventDefault();
         const tagArray = tags.split(',').map(t => t.trim()).filter(Boolean);
-        // FIX: Removed 'name' from the saved object.
-        onSave(behavior.id, { description, tags: tagArray });
+        onSave(item.id, { description, tags: tagArray });
         onClose();
     };
 
@@ -37,25 +32,30 @@ const ModifyBehaviorModal: React.FC<ModifyBehaviorModalProps> = ({ behavior, onC
                     </div>
                     
                     <div className="space-y-4">
-                        {/* FIX: Removed the input field for 'name'. */}
                         <div>
-                            <label htmlFor="bhv-description" className="block text-sm font-medium text-nexus-text-muted">{t('common.description')}</label>
+                            <label htmlFor="item-description" className="block text-sm font-medium text-nexus-text-muted">{t('common.description')}</label>
                             <textarea
-                                id="bhv-description"
+                                id="item-description"
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
                                 className="w-full mt-1 h-24 p-3 bg-nexus-dark/70 border border-nexus-surface rounded-xl focus:outline-none focus:ring-2 focus:ring-nexus-primary text-nexus-text resize-none font-mono text-sm"
                             />
                         </div>
                         <div>
-                            <label htmlFor="bhv-tags" className="block text-sm font-medium text-nexus-text-muted">{t('modifyTool.tagsCommaSeparated')}</label>
+                            <label htmlFor="item-tags" className="block text-sm font-medium text-nexus-text-muted">{t('modifyTool.tagsCommaSeparated')}</label>
                             <input
                                 type="text"
-                                id="bhv-tags"
+                                id="item-tags"
                                 value={tags}
                                 onChange={(e) => setTags(e.target.value)}
                                 className="w-full mt-1 p-3 bg-nexus-dark/70 border border-nexus-surface rounded-xl focus:outline-none focus:ring-2 focus:ring-nexus-primary text-nexus-text font-mono text-sm"
                             />
+                        </div>
+                         <div>
+                            <label className="block text-sm font-medium text-nexus-text-muted">Content (Read-only)</label>
+                            <p className="w-full mt-1 p-3 bg-nexus-dark/70 border border-nexus-surface rounded-xl text-nexus-text-muted font-mono text-sm h-24 overflow-y-auto">
+                                {item.content}
+                            </p>
                         </div>
                     </div>
                     
@@ -69,4 +69,4 @@ const ModifyBehaviorModal: React.FC<ModifyBehaviorModalProps> = ({ behavior, onC
     );
 };
 
-export default ModifyBehaviorModal;
+export default ModifyPlaybookItemModal;

@@ -1,20 +1,24 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Behavior } from '../types';
+// FIX: Replaced non-existent 'Behavior' type with 'PlaybookItem' to resolve module export error.
+import type { PlaybookItem } from '../types';
 import DashboardCard from './DashboardCard';
 import ModifyBehaviorModal from './ModifyBehaviorModal';
 import { BrainCircuitIcon, WrenchScrewdriverIcon, TrashIcon, ClockIcon } from './Icons';
 
 interface BehaviorManagerProps {
-    behaviors: Behavior[];
-    onUpdate: (behaviorId: string, updates: Partial<Pick<Behavior, 'name' | 'description' | 'tags'>>) => void;
+    // FIX: Updated prop type from 'Behavior[]' to 'PlaybookItem[]'.
+    behaviors: PlaybookItem[];
+    // FIX: Updated 'onUpdate' signature to match 'PlaybookItem' properties, removing 'name'.
+    onUpdate: (behaviorId: string, updates: Partial<Pick<PlaybookItem, 'description' | 'tags'>>) => void;
     onDelete: (behaviorId: string) => void;
 }
 
-const BehaviorCard: React.FC<{ behavior: Behavior; onEdit: (behavior: Behavior) => void; onDelete: (id: string) => void; }> = ({ behavior, onEdit, onDelete }) => {
+const BehaviorCard: React.FC<{ behavior: PlaybookItem; onEdit: (behavior: PlaybookItem) => void; onDelete: (id: string) => void; }> = ({ behavior, onEdit, onDelete }) => {
     const { t } = useTranslation();
     const handleDelete = () => {
-        if (window.confirm(t('behaviors.deleteConfirm', { name: behavior.name }))) {
+        // FIX: Replaced 'behavior.name' with 'behavior.description' as 'name' does not exist on 'PlaybookItem'.
+        if (window.confirm(t('behaviors.deleteConfirm', { name: behavior.description }))) {
             onDelete(behavior.id);
         }
     };
@@ -24,9 +28,10 @@ const BehaviorCard: React.FC<{ behavior: Behavior; onEdit: (behavior: Behavior) 
             <div className="flex justify-between items-start">
                 <div>
                     <h4 className="font-semibold text-nexus-text flex items-center gap-2">
-                        {behavior.name}
+                        {/* FIX: Replaced 'behavior.name' with 'behavior.description'. */}
+                        {behavior.description}
                     </h4>
-                    <p className="text-sm text-nexus-text-muted italic mt-1">"{behavior.description}"</p>
+                    {/* Redundant description removed, as it's now the title. */}
                 </div>
                 <div className="flex gap-2 flex-shrink-0 ml-4">
                     <button onClick={() => onEdit(behavior)} className="p-1 text-purple-400 hover:text-white" title={t('behaviors.editBehavior')}><WrenchScrewdriverIcon className="w-5 h-5"/></button>
@@ -45,11 +50,13 @@ const BehaviorCard: React.FC<{ behavior: Behavior; onEdit: (behavior: Behavior) 
                 <div>
                     <h5 className="text-xs font-semibold text-nexus-primary uppercase tracking-wider mb-1">{t('behaviors.strategy')}</h5>
                     <p className="text-sm text-nexus-text-muted whitespace-pre-wrap font-mono bg-nexus-dark/50 p-2 rounded-xl max-h-24 overflow-y-auto">
-                        {behavior.strategy}
+                        {/* FIX: Replaced 'behavior.strategy' with 'behavior.content'. */}
+                        {behavior.content}
                     </p>
                 </div>
                 <div className="flex items-center justify-between text-xs text-nexus-text-muted pt-2">
-                    <span>{t('behaviors.usageCount')}<span className="font-bold text-nexus-text">{behavior.usageCount}</span></span>
+                    {/* FIX: Replaced 'behavior.usageCount' with 'behavior.helpfulCount'. */}
+                    <span>{t('behaviors.usageCount')}<span className="font-bold text-nexus-text">{behavior.helpfulCount}</span></span>
                     <span className="flex items-center gap-1">
                         <ClockIcon className="w-3 h-3"/> {t('behaviors.lastUsed')} {new Date(behavior.lastUsed).toLocaleDateString()}
                     </span>
@@ -61,7 +68,7 @@ const BehaviorCard: React.FC<{ behavior: Behavior; onEdit: (behavior: Behavior) 
 
 const BehaviorManager: React.FC<BehaviorManagerProps> = ({ behaviors, onUpdate, onDelete }) => {
     const { t } = useTranslation();
-    const [behaviorToModify, setBehaviorToModify] = useState<Behavior | null>(null);
+    const [behaviorToModify, setBehaviorToModify] = useState<PlaybookItem | null>(null);
 
     return (
         <>

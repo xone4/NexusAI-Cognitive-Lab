@@ -103,9 +103,13 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
 
     const handleSave = () => {
         const newStep = { ...step, description: editContent };
-        if (step.tool === 'code_interpreter' || step.tool === 'induce_emotion') newStep.code = editCode;
-        else if (step.tool === 'generate_image') newStep.concept = editCode;
-        else newStep.query = editCode;
+        if (step.tool === 'code_interpreter') {
+            newStep.code = editCode;
+        } else if (step.tool === 'induce_emotion' || step.tool === 'generate_image') {
+            newStep.concept = editCode;
+        } else { // Covers google_search, recall_memory, etc.
+            newStep.query = editCode;
+        }
 
         onUpdate(newStep);
         setIsEditing(false);
@@ -115,7 +119,6 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
         switch (step.status) {
             case 'pending': return <div className="w-5 h-5 rounded-full border-2 border-nexus-text-muted/50" title="Pending" />;
             case 'executing': return <div className="w-5 h-5 relative"><div className="nexus-loader"></div></div>;
-            // FIX: Wrap icon in a div with title prop to fix invalid prop error.
             case 'complete': return <div title="Complete"><CheckCircleIcon className="w-5 h-5 text-nexus-secondary"/></div>;
             case 'error': return <div className="w-5 h-5 rounded-full bg-red-500" title="Error"/>;
             default: return null;
@@ -353,7 +356,6 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
                             <div className="flex justify-between items-center mb-2">
                                 <h4 className="font-bold text-nexus-primary uppercase tracking-wider text-sm">Synthesizing Answer</h4>
                                 {process.activeAffectiveState && (
-                                     // FIX: Moved title prop from icon to parent div to fix invalid prop error.
                                      <div className="relative group" title={`Influenced by mood: ${process.activeAffectiveState.mood}`}>
                                          <LightBulbIcon className="w-5 h-5 text-yellow-400" />
                                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-nexus-dark text-white text-xs rounded-md p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">
@@ -376,7 +378,6 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
                                 <h4 className="font-bold text-nexus-primary uppercase tracking-wider text-sm">Synthesized Answer</h4>
                                 <div className="flex items-center gap-2">
                                 {message.affectiveStateSnapshot && (
-                                     // FIX: Moved title prop from icon to parent div to fix invalid prop error.
                                      <div className="relative group" title={`Influenced by mood: ${message.affectiveStateSnapshot.mood}`}>
                                          <LightBulbIcon className="w-5 h-5 text-yellow-400" />
                                          <div className="absolute bottom-full end-0 mb-2 w-48 bg-nexus-dark text-white text-xs rounded-md p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">

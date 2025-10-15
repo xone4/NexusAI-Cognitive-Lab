@@ -49,14 +49,24 @@ export interface MentalTool {
   }[];
 }
 
-export interface Behavior {
+// --- ACE Playbook Types ---
+export type PlaybookItemCategory = 'STRATEGY' | 'CODE_SNIPPET' | 'PITFALL' | 'API_USAGE';
+
+export interface PlaybookItem {
   id: string;
-  name: string;
-  description: string; // AI-generated summary of the strategy
-  extractedFromTraceId: string; // The trace it originated from
-  strategy: string; // The core logic/strategy extracted by the AI
-  usageCount: number;
+  category: PlaybookItemCategory;
+  content: string; // The core strategy, snippet, or pitfall description
+  description: string; // A short, AI-generated summary
+  extractedFromTraceId: string;
+  
+  // ACE-specific metadata
+  helpfulCount: number;
+  harmfulCount: number;
   lastUsed: number;
+  lastValidated: number; // Timestamp of the last time it was confirmed helpful/harmful
+  
+  // For semantic search and refinement
+  embedding?: number[]; 
   version: number;
   tags: string[];
 }
@@ -319,4 +329,20 @@ export interface UserKeyword {
   id: string;
   keyword: string;
   timestamp: number;
+}
+
+// --- ACE Service Types ---
+export interface RawInsight {
+  analysis: string;
+  category: PlaybookItemCategory;
+  suggestion: string;
+  description: string;
+  tags: string[];
+}
+
+export type DeltaAction = 'ADD' | 'UPDATE' | 'NO_CHANGE';
+
+export interface DeltaUpdate {
+  action: DeltaAction;
+  payload?: any;
 }

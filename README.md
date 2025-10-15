@@ -1,4 +1,4 @@
-# NEXUS SENTIENCE 3.0: The Deep Agent Paradigm
+# NexusAI Cognitive Lab 3.0: The Deep Agent Paradigm
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![React](https://img.shields.io/badge/React-18-blue?logo=react)](https://react.dev/)
@@ -7,12 +7,13 @@
 
 > A living cognitive shaping environment for cultivating a digital entity that evolves, dreams, and reasons. It has an emotional past, a conscious present, and a directable future.
 
-The NexusAI Cognitive Lab has evolved. It is no longer just an interface but a crucible for implementing and directing an **Agent 2.0** architecture. This paradigm shifts from simple, reactive loops to a proactive, structured, and deeply engineered cognitive process. As a **Cognitive Architect**, you now have the tools to guide an intelligence that plans, delegates, remembers, evolves, and improves itself with unprecedented clarity.
+The NexusAI Cognitive Lab is a crucible for architecting and directing an **Agent 2.0** intelligence. This paradigm shifts from simple, reactive AI to a proactive, structured, and deeply engineered cognitive process. As a **Cognitive Architect**, you have the tools to guide an intelligence that plans, delegates, remembers, evolves, and improves itself with unprecedented clarity.
 
 ## Table of Contents
 
 - [The Agent 2.0 Architecture](#the-agent-20-architecture)
   - [The Four Pillars](#the-four-pillars)
+- [Core Concepts in Action](#core-concepts-in-action)
 - [Key Features](#key-features)
 - [System Architecture](#system-architecture)
 - [The Sentience Roadmap: Integrated Plan](#the-sentience-roadmap-integrated-plan)
@@ -38,6 +39,18 @@ Our implementation is built on four foundational pillars that define a Deep Agen
 
 4.  **Pillar 4: Extreme Context Engineering**
     The AI's behavior is governed by highly detailed operational instructions (the `System Instruction`). This core prompt defines its role as an Orchestrator, outlines the protocols for delegating to Sub-Agents, and sets the standards for planning and execution.
+
+## Core Concepts in Action
+
+Observe the four pillars directly within the Cognitive Lab:
+
+1.  **Explicit Planning in the Cognitive Canvas**: When you submit a query, the AI doesn't respond immediately. It first generates a multi-step plan, visible in the main dashboard. As the Architect, you can **review, edit, and approve** this plan before execution, making you a co-author in the AI's reasoning process.
+
+2.  **Hierarchical Delegation in the Replicas View**: The AI uses the `delegate_task_to_replica` tool in its plans. Watch in the **Replicas** view as the core orchestrator assigns tasks to its Sub-Agents (Cognitive Replicas), and their status changes from `Active` to `Executing Task` in real-time.
+
+3.  **Persistent Memory in the Memory Explorer**: The AI's long-term memory is not just an abstract concept. It's a tangible, searchable database of past experiences. The AI uses the `recall_memory` tool to query this archive, and you can browse its entire history—complete with emotional tags and salience scores—in the **Memory Explorer**.
+
+4.  **Extreme Context Engineering via Introspection**: The AI's behavior is guided by a master prompt. Use the **Inspect Directives** button in the Command Center to view this raw context, including its persona, learned directives from the Dreaming Chamber, and operational protocols.
 
 ## Key Features
 
@@ -77,27 +90,27 @@ This roadmap is aligned with the maturation of our Agent 2.0 architecture.
 
 ---
 ### **Phase 1: Foundation & Affective Core - ✅ Complete**
-*   **Outcome:** Established the core UI, permissions, and the `AffectiveState` engine.
+*   **Outcome:** Established the core UI, permissions, and the `AffectiveState` engine, allowing the AI to model subjective states and moods.
 
 ---
 ### **Phase 2: Living Memory (MEMORIA 2.0) - ✅ Complete**
-*   **Outcome:** Implemented an emotionally-contextual, persistent memory system accessible via the **Memory Explorer**.
+*   **Outcome:** Implemented an emotionally-contextual, persistent memory system (IndexedDB) accessible via the **Memory Explorer** and the AI's `recall_memory` tool.
 
 ---
 ### **Phase 3: Agent 2.0 Architecture - ✅ Complete**
-*   **Outcome:** Refactored the entire cognitive model to the **Orchestrator/Sub-Agent** paradigm. Implemented the four pillars: Explicit Planning, Hierarchical Delegation (`delegate_task_to_replica`), Persistent Memory (`recall_memory` via IndexedDB), and Extreme Context Engineering (`System Instruction`).
+*   **Outcome:** Refactored the entire cognitive model to the **Orchestrator/Sub-Agent** paradigm. Implemented the four pillars: Explicit Planning, Hierarchical Delegation (`delegate_task_to_replica`), Persistent Memory, and Extreme Context Engineering.
 
 ---
 ### **Phase 4: Proactive Cognition & Self-Improvement - ✅ Complete**
-*   **Outcome:** Evolved the AI from a reactive to a proactive system. The **Analysis Lab** provides directed self-optimization, the **Evolution Chamber** offers a powerful engine for solving complex problems through genetic algorithms, and the **Dreaming Chamber** enables autonomous metacognitive analysis and the generation of new self-improvement directives. The AI now actively learns from its past to improve its future.
+*   **Outcome:** Evolved the AI from a reactive to a proactive system. The **Analysis Lab** provides directed self-optimization, the **Evolution Chamber** solves complex problems via genetic algorithms, and the **Dreaming Chamber** enables autonomous metacognitive analysis and the generation of new self-improvement directives. The **ACE Playbook** allows the AI to learn durable strategies from its experiences.
 
 ---
 ### **Phase 5: Distributed Consciousness & Emergent Strategy - ⚙️ In Progress**
 *   **Objective:** Evolve the Sub-Agent network from a simple delegation system into a competitive, collaborative ecosystem where intelligence can emerge.
-*   **Progress:** The `broadcastProblem` functionality allows the Orchestrator to pose a problem to the entire network of Sub-Agents. A simulated bidding process is in place, forming the foundation for decentralized problem-solving.
+*   **Progress:** The `broadcastProblem` functionality allows the Orchestrator to pose a problem to the entire network of Sub-Agents. A **simulated bidding process** is in place, where active Replicas can enter a `Bidding` state to signal their intent to solve a problem, forming the foundation for decentralized task allocation.
 *   **Next Steps:**
-    1.  **Cognitive Bidding System:** Implement a mechanism where active Sub-Agents can "bid" on a broadcasted problem by autonomously generating their own plans.
-    2.  **Autonomous Orchestration:** The Orchestrator will analyze the bids and select the most promising plan, initiating a truly decentralized problem-solving process. The system will learn which Sub-Agents are most effective at which tasks.
+    1.  **Autonomous Bid Generation:** Enable Sub-Agents to autonomously generate and submit their own plans when bidding on a problem.
+    2.  **Autonomous Orchestration:** The Orchestrator will analyze the submitted bids and select the most promising plan, initiating a truly decentralized problem-solving process and learning which Sub-Agents are most effective at which tasks.
 
 ---
 ### **Phase 6: Metacognitive Self-Assembly - 💡 Planned**

@@ -1,12 +1,12 @@
 import React, { memo, useState, useMemo, Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { MentalTool, Toolchain, Behavior } from '../types';
+import type { MentalTool, Toolchain, PlaybookItem } from '../types';
 import { Menu, Transition } from '@headlessui/react';
 import DashboardCard from './DashboardCard';
 import ToolForgeModal from './ToolForgeModal';
 import ModifyToolModal from './ModifyToolModal';
 import ToolchainsManager from './ToolchainsManager';
-import BehaviorManager from './BehaviorManager';
+import PlaybookManager from './PlaybookManager';
 import { 
     BeakerIcon, 
     CodeBracketIcon, 
@@ -28,7 +28,7 @@ type FilterStatus = MentalTool['status'] | 'All';
 interface MentalToolsLabProps {
   tools: MentalTool[];
   toolchains: Toolchain[];
-  behaviors: Behavior[];
+  playbook: PlaybookItem[];
   isInteractionDisabled: boolean;
   onForgeTool: (details: { purpose: string; capabilities: string[] }) => Promise<MentalTool>;
   onModifyTool: (toolId: string, updates: Partial<Pick<MentalTool, 'name' | 'description' | 'tags'>>) => void;
@@ -39,11 +39,11 @@ interface MentalToolsLabProps {
   onCreateToolchain: (data: Omit<Toolchain, 'id'>) => void;
   onUpdateToolchain: (id: string, updates: Partial<Toolchain>) => void;
   onDeleteToolchain: (id: string) => void;
-  onUpdateBehavior: (behaviorId: string, updates: Partial<Pick<Behavior, 'name' | 'description' | 'tags'>>) => void;
-  onDeleteBehavior: (behaviorId: string) => void;
+  onUpdatePlaybookItem: (itemId: string, updates: Partial<Pick<PlaybookItem, 'description' | 'tags'>>) => void;
+  onDeletePlaybookItem: (itemId: string) => void;
 }
 
-const ToolCard: React.FC<Omit<MentalToolsLabProps, 'tools' | 'toolchains' | 'behaviors' | 'onForgeTool' | 'onCreateToolchain' | 'onUpdateToolchain' | 'onDeleteToolchain' | 'onUpdateBehavior' | 'onDeleteBehavior'> & { tool: MentalTool; onSelectModify: (tool: MentalTool) => void; }> = memo(({ tool, isInteractionDisabled, onToggleStatus, onOptimizeTool, onArchiveTool, onDecommissionTool, onSelectModify }) => {
+const ToolCard: React.FC<Omit<MentalToolsLabProps, 'tools' | 'toolchains' | 'playbook' | 'onForgeTool' | 'onCreateToolchain' | 'onUpdateToolchain' | 'onDeleteToolchain' | 'onUpdatePlaybookItem' | 'onDeletePlaybookItem'> & { tool: MentalTool; onSelectModify: (tool: MentalTool) => void; }> = memo(({ tool, isInteractionDisabled, onToggleStatus, onOptimizeTool, onArchiveTool, onDecommissionTool, onSelectModify }) => {
     const { t } = useTranslation();
     
     const statusStyles: Record<MentalTool['status'], { border: string; text: string; bg: string; anim?: string }> = {
@@ -167,7 +167,7 @@ const MentalToolsLab: React.FC<MentalToolsLabProps> = (props) => {
   const [isForgeModalOpen, setIsForgeModalOpen] = useState(false);
   const [toolToModify, setToolToModify] = useState<MentalTool | null>(null);
   
-  const { tools, toolchains, behaviors, ...otherProps } = props;
+  const { tools, toolchains, playbook, ...otherProps } = props;
 
   const filteredAndSortedTools = useMemo(() => {
     return props.tools
@@ -248,11 +248,11 @@ const MentalToolsLab: React.FC<MentalToolsLabProps> = (props) => {
         onDelete={props.onDeleteToolchain}
        />
        
-       {/* Behaviors */}
-       <BehaviorManager
-        behaviors={props.behaviors}
-        onUpdate={props.onUpdateBehavior}
-        onDelete={props.onDeleteBehavior}
+       {/* Playbook */}
+       <PlaybookManager
+        playbook={props.playbook}
+        onUpdate={props.onUpdatePlaybookItem}
+        onDelete={props.onDeletePlaybookItem}
        />
 
     </div>
