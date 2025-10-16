@@ -99,6 +99,13 @@ export interface PerformanceDataPoint {
   cpu: number;
   memory: number;
   rsiCycles: number;
+  networkLatency: number;
+  renderTime: number;
+  memoryBreakdown: {
+    replicas: number;
+    tools: number;
+    system: number;
+  };
 }
 
 export interface LogEntry {

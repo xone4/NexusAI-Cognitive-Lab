@@ -180,6 +180,26 @@ const _seedInitialData = async () => {
     log('SYSTEM', 'Database seeding complete.');
 };
 
+const generatePerformanceDataPoint = (): PerformanceDataPoint => {
+    const memory = Math.random() * 15 + 60;
+    const sysMem = Math.random() * 10 + 20;
+    const toolMem = Math.random() * 10 + 15;
+    const replicaMem = memory - sysMem - toolMem;
+
+    return {
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        cpu: Math.random() * 20 + 50,
+        memory: memory,
+        rsiCycles: Math.random() * 5 + 10,
+        networkLatency: Math.random() * 50 + 20,
+        renderTime: Math.random() * 10 + 5,
+        memoryBreakdown: {
+            replicas: Math.max(0, replicaMem),
+            tools: toolMem,
+            system: sysMem
+        }
+    };
+};
 
 const initialize = async () => {
     await _seedInitialData();
@@ -222,12 +242,26 @@ const initialize = async () => {
             { id: 'init-2', timestamp: Date.now() - 1000, level: 'SYSTEM', message: 'Persistent memory layer synced.' },
             { id: 'init-3', timestamp: Date.now() - 500, level: 'REPLICA', message: 'Replica Nexus-Core-α status: Active' },
         ] as LogEntry[],
-        initialPerfData: Array.from({ length: 30 }, (_, i) => ({
-            time: new Date(Date.now() - (30 - i) * 2000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-            cpu: Math.random() * 20 + 50,
-            memory: Math.random() * 15 + 60,
-            rsiCycles: Math.random() * 5 + 10,
-        })) as PerformanceDataPoint[],
+        initialPerfData: Array.from({ length: 30 }, (_, i) => {
+            const memory = Math.random() * 15 + 60;
+            const sysMem = Math.random() * 10 + 20;
+            const toolMem = Math.random() * 10 + 15;
+            const replicaMem = memory - sysMem - toolMem;
+
+            return {
+                time: new Date(Date.now() - (30 - i) * 2000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                cpu: Math.random() * 20 + 50,
+                memory: memory,
+                rsiCycles: Math.random() * 5 + 10,
+                networkLatency: Math.random() * 50 + 20,
+                renderTime: Math.random() * 10 + 5,
+                memoryBreakdown: {
+                    replicas: replicaMem > 0 ? replicaMem : 0,
+                    tools: toolMem,
+                    system: sysMem
+                }
+            };
+        }) as PerformanceDataPoint[],
     };
 };
 
@@ -456,6 +490,8 @@ const service = {
                 updateReplicaState(replicaState, replicaState);
                 notifyReplicas();
             }
+            const newDataPoint = generatePerformanceDataPoint();
+            performanceSubscribers.forEach(cb => cb(newDataPoint));
         }, 2000);
     },
 

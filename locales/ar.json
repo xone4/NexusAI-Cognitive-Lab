@@ -25,7 +25,9 @@
     "replicas": "النسخ",
     "tools": "الأدوات",
     "performance": "الأداء",
-    "logs": "السجلات"
+    "logs": "السجلات",
+    "memoryBreakdown": "توزيع الذاكرة",
+    "system": "النظام"
   },
   "status": {
     "online": "متصل",
@@ -446,7 +448,9 @@
   },
   "performanceCharts": {
     "initializing": "جاري تهيئة بيانات الأداء...",
-    "rsiCycles": "دورات RSI"
+    "rsiCycles": "دورات RSI",
+    "networkLatency": "زمن استجابة الشبكة",
+    "renderTime": "زمن العرض"
   },
   "toolForge": {
     "title": "صياغة أداة عقلية جديدة",

@@ -25,7 +25,9 @@
     "replicas": "Replicas",
     "tools": "Tools",
     "performance": "Performance",
-    "logs": "Logs"
+    "logs": "Logs",
+    "memoryBreakdown": "Memory Breakdown",
+    "system": "System"
   },
   "status": {
     "online": "Online",
@@ -446,7 +448,9 @@
   },
   "performanceCharts": {
     "initializing": "Initializing performance data...",
-    "rsiCycles": "RSI Cycles"
+    "rsiCycles": "RSI Cycles",
+    "networkLatency": "Network Latency",
+    "renderTime": "Render Time"
   },
   "toolForge": {
     "title": "Forge a New Mental Tool",

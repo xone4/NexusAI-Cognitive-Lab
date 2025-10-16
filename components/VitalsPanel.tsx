@@ -5,6 +5,7 @@ import DashboardCard from './DashboardCard';
 import LogStream from './LogStream';
 import PerformanceCharts from './PerformanceCharts';
 import SystemStatusControl from './SystemStatusControl';
+import MemoryBreakdownChart from './MemoryBreakdownChart';
 import { CpuChipIcon, BeakerIcon, CircleStackIcon, ChartPieIcon, ChevronLeftIcon, ChevronRightIcon, DocumentTextIcon } from './Icons';
 import { Tab } from '@headlessui/react';
 
@@ -94,8 +95,14 @@ const VitalsPanel: React.FC<VitalsPanelProps> = ({ status, onSetStatus, isIntera
                                 <Tab className={tabClasses}><div className="flex items-center justify-center gap-2"><DocumentTextIcon className="w-5 h-5"/> {t('vitals.logs')}</div></Tab>
                             </Tab.List>
                             <Tab.Panels className="mt-2 h-[calc(100%-44px)]">
-                                <Tab.Panel className="h-full rounded-xl bg-nexus-dark/20 p-2 focus:outline-none">
-                                    <PerformanceCharts data={performanceData} />
+                                <Tab.Panel className="h-full rounded-xl bg-nexus-dark/20 p-2 focus:outline-none flex flex-col">
+                                    <div className="flex-grow h-2/3">
+                                        <PerformanceCharts data={performanceData} />
+                                    </div>
+                                    <div className="flex-shrink-0 h-1/3 border-t border-nexus-surface/50 pt-2">
+                                        <h4 className="text-center text-sm font-semibold text-nexus-text-muted">{t('vitals.memoryBreakdown')}</h4>
+                                        <MemoryBreakdownChart data={performanceData[performanceData.length - 1]?.memoryBreakdown} />
+                                    </div>
                                 </Tab.Panel>
                                  <Tab.Panel className="h-full rounded-xl bg-nexus-dark/20 focus:outline-none">
                                     <LogStream logs={logs} />
