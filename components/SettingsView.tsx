@@ -66,6 +66,15 @@ const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSettingsChange 
         nexusAIService.factoryReset();
     }
   }
+  
+  const handleModelProfileChange = (v: ModelProfile) => {
+    const modelMap: Record<ModelProfile, string> = {
+        'lite': 'gemini-2.5-flash',
+        'flash': 'gemini-flash-latest',
+        'pro': 'gemini-2.5-pro'
+    };
+    setLocalSettings(p => ({ ...p, modelProfile: v, model: modelMap[v] }));
+  };
 
   const hasChanges = JSON.stringify(localSettings) !== JSON.stringify(settings);
   
@@ -104,7 +113,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSettingsChange 
                 description={t('settings.cognitiveProfileDesc')}
                 options={modelProfileOptions}
                 selected={localSettings.modelProfile}
-                onChange={(v) => setLocalSettings(p => ({...p, modelProfile: v}))}
+                onChange={handleModelProfileChange}
             />
           <div>
             <label htmlFor="delay-slider" className={`block text-sm font-medium text-nexus-text-muted mb-2 ${isRtl ? 'font-tahoma' : ''}`}>

@@ -42,7 +42,7 @@ const App: React.FC = () => {
 
   const [settings, setSettings] = useState<AppSettings>(() => {
     const defaultSettings: AppSettings = {
-      model: 'gemini-2.5-flash',
+      model: 'gemini-flash-latest',
       modelProfile: 'flash',
       cognitiveStepDelay: 1000,
       coreAgentPersonality: { energyFocus: 'EXTROVERSION', informationProcessing: 'INTUITION', decisionMaking: 'THINKING', worldApproach: 'PERCEIVING' }, // ENTP Default

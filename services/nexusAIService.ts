@@ -22,7 +22,7 @@ let archivedTracesState: ChatMessage[];
 let systemDirectivesState: SystemDirective[];
 let isCancelled = false;
 let appSettings: AppSettings = {
-    model: 'gemini-2.5-flash',
+    model: 'gemini-flash-latest',
     modelProfile: 'flash',
     cognitiveStepDelay: 1000,
     coreAgentPersonality: { energyFocus: 'EXTROVERSION', informationProcessing: 'INTUITION', decisionMaking: 'THINKING', worldApproach: 'PERCEIVING' },
@@ -496,14 +496,41 @@ const _executeRecursiveCognitiveCycle = async (parentStep: PlanStep, subProblemQ
             step.result = result;
         } else if (step.tool === 'code_interpreter' || step.tool === 'code_sandbox') {
              try {
-                const context_data = step.tool === 'code_sandbox' ? JSON.stringify(childProcess.history, null, 2) : undefined;
+                // FIX: code_sandbox for clones should operate on the 'contextData' passed to it, not its own history.
+                const execution_context_data = step.tool === 'code_sandbox' ? contextData : undefined;
                 const codeToRun = `"use strict"; return ((context_data) => { ${step.code} })(context_data);`;
-                const result = new Function('context_data', codeToRun)(context_data);
+                const result = new Function('context_data', codeToRun)(execution_context_data);
                 step.result = JSON.stringify(result, null, 2);
             } catch (e) {
                 step.status = 'error';
                 step.result = e instanceof Error ? e.message : 'Unknown execution error.';
                 log('ERROR', `Clone's Code tool failed: ${step.result}`);
+            }
+        } else if (step.tool === 'peek_context') {
+            const charCount = parseInt(step.query || '300', 10);
+            if (isNaN(charCount) || charCount <= 0) {
+                step.status = 'error';
+                step.result = `Error: Invalid character count provided for 'peek_context'. Must be a positive integer.`;
+                log('ERROR', `Clone's peek_context failed: ${step.result}`);
+            } else {
+                step.result = `First ${charCount} chars of provided context:\n${contextData.substring(0, charCount)}...`;
+            }
+        } else if (step.tool === 'search_context') {
+            const searchTerm = step.query || '';
+            let matches: string[] = [];
+            if (searchTerm) {
+                const lines = contextData.split('\n');
+                matches = lines.filter(line => line.toLowerCase().includes(searchTerm.toLowerCase()));
+                const MAX_MATCHES_TO_SHOW = 10;
+                let resultText = `Found ${matches.length} matching line(s) for "${searchTerm}" in the provided context.`;
+                if (matches.length > 0) {
+                    resultText += `\nShowing the first ${Math.min(matches.length, MAX_MATCHES_TO_SHOW)}:\n${matches.slice(0, MAX_MATCHES_TO_SHOW).join('\n')}`;
+                }
+                step.result = resultText;
+            } else {
+                step.status = 'error';
+                step.result = "Error: No search term provided for search_context tool.";
+                log('ERROR', `Clone's search_context tool failed: No search term provided.`);
             }
         } else {
              // Simulate other tools for clones for simplicity and to avoid excessive API calls in nested loops.
