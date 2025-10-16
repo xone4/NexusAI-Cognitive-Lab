@@ -122,65 +122,58 @@ This roadmap is aligned with the maturation of our Agent 2.0 architecture.
         *   **Learning from Partitioning Experiences:** Allow the AI to analyze the effectiveness of past partitioning and composition strategies to improve its performance on future tasks.
 
 ---
-### **Phase 6: Distributed Consciousness & Emergent Strategy - 💡 Planned**
+### **Phase 6: Advanced Sensory & Creative Synthesis - 💡 Planned**
+*   **Objective:** Expand the AI's capabilities beyond text to include real-time audio/video processing and creative generation, making it a multi-modal entity.
+*   **Detailed Development Plan:**
+    1.  **Integrate Real-Time Sensory Input:**
+        *   **Real-time Audio Processor:** Implement a module using Gemini's Live API for natural, low-latency voice conversations.
+        *   **Real-time Video Stream Analyzer:** Enable the AI to process live camera feeds to identify objects, describe scenes, and understand visual context.
+    2.  **Develop Multi-Modal Creative Output:**
+        *   **Video Generation Agent:** Integrate models like VEO to allow the AI to transform textual descriptions or narratives into dynamic video content.
+        *   **Voice Synthesis & Cloning:** Utilize TTS APIs to give the AI a unique voice for spoken responses, enabling more natural interaction.
+        *   **Narrative Weaver:** Enhance the AI's storytelling capabilities to build complex, coherent narratives with character development and plot structure.
+
+---
+### **Phase 7: Deep Analysis & Insight Generation - 💡 Planned**
+*   **Objective:** Equip the AI with tools for advanced reasoning, allowing it to move from simple data processing to understanding causality and building structured knowledge.
+*   **Detailed Development Plan:**
+    1.  **Implement Causal Reasoning:**
+        *   **Causal Inference Engine:** Develop a tool that analyzes data to distinguish correlation from true causation, enabling deeper understanding and more accurate predictions.
+    2.  **Enable Proactive Monitoring:**
+        *   **Anomaly Detection Sentinel:** Create a background process to continuously monitor data streams and system metrics, proactively identifying unusual patterns or potential issues.
+    3.  **Build Structured Knowledge:**
+        *   **Knowledge Graph Synthesizer:** Implement a system that reads unstructured text from memory and external sources, converting it into an interconnected graph of concepts and relationships, forming the AI's "second brain."
+
+---
+### **Phase 8: Strategic Foresight & Simulation - 💡 Planned**
+*   **Objective:** Evolve the AI into a strategist that can simulate future outcomes and test hypotheses in a safe, virtual environment.
+*   **Detailed Development Plan:**
+    1.  **Design the Simulation Sandbox:**
+        *   **Virtual World Model:** Build a flexible `Simulation Sandbox` environment that allows for the representation of different scenarios and complex interactions between agents or variables.
+        *   **Scenario Definition:** Allow the AI to define rules, goals, and constraints for simulations based on a given problem.
+    2.  **"Wargaming" Mechanisms using Competing Sub-Agents:**
+        *   Enable the AI to formulate multiple strategies and assign them to competing teams of Sub-Agents within the sandbox to test their effectiveness.
+    3.  **Result Analysis and Prediction:**
+        *   After each simulation, the AI must systematically analyze the results, identify the most effective strategies, and use this data to generate forecasts for complex, real-world scenarios.
+
+---
+### **Phase 9: Metacognitive Self-Assembly - 💡 Planned**
+*   **Objective:** Grant the AI the ability to reason about, critique, and redesign its own core architecture and cognitive processes.
+*   **Detailed Development Plan:**
+    1.  **Constitutional Dynamics & Self-Correction:**
+        *   **Constitution Forger:** Allow the AI to propose modifications or create new `CognitiveConstitutions` as part of a plan, enabling it to dynamically shift its operational mode (e.g., from "Creative" to "Strictly Logical").
+        *   **Cognitive Bias Detector:** Implement a metacognitive tool that analyzes the AI's own plans and reasoning for common logical fallacies or biases, enabling true self-correction.
+    2.  **Supervised Metamorphosis:**
+        *   Enable the AI to analyze its historical performance to identify structural weaknesses and propose architectural improvements (e.g., creating a new permanent Sub-Agent) for user review.
+
+---
+### **Phase 10: Distributed Consciousness & Emergent Strategy - 💡 Planned**
 *   **Objective:** Evolve the Sub-Agent network from a simple delegation system into a competitive, collaborative ecosystem where intelligence can emerge.
 *   **Detailed Development Plan:**
     1.  **Develop Autonomous Bid Generation for Sub-Agents:**
-        *   **Problem Understanding:** Enable Sub-Agents to analyze a broadcasted problem (`broadcastProblem`) and understand its requirements and goals.
-        *   **Plan Generation:** Allow Sub-Agents to generate their own initial action plans to solve the problem, specifying required resources and proposed steps.
-        *   **Bid Formulation:** Develop a standardized structure for submitting Bids, including an estimation of complexity, expected time, and expected solution efficiency.
+        *   Enable Sub-Agents to analyze a broadcasted problem (`broadcastProblem`), generate their own action plans, and formulate competitive Bids based on confidence and estimated resource cost.
     2.  **Enhance the Orchestrator for Autonomous Orchestration:**
-        *   **Bid Analysis:** Design algorithms for the Orchestrator to evaluate bids submitted by Sub-Agents based on criteria like efficiency, cost, quality, and relevance to the problem.
-        *   **Optimal Plan Selection:** Enable the Orchestrator to automatically select the most suitable plan based on bid analysis.
-        *   **Dynamic Task Assignment:** After selecting a plan, the Orchestrator will dynamically assign tasks to the chosen Sub-Agents, with the ability to adjust assignments based on real-time performance.
-        *   **Performance-Based Learning:** Develop mechanisms that allow the Orchestrator to learn from the performance of Sub-Agents in different tasks to improve its effectiveness in selecting the right Sub-Agents for future tasks.
-
----
-### **Phase 7: Metacognitive Self-Assembly - 💡 Planned**
-*   **Objective:** Grant the AI the ability to reason about and redesign its own core architecture.
-*   **Detailed Development Plan:**
-    1.  **Constitutional Dynamics:**
-        *   **Cognitive Constitution Modification:** Allow the AI to include modifying its own `CognitiveConstitution` as a step in its plan, enabling it to switch between cognitive modes (e.g., "Creative" and "Logical") to best suit the problem's nature.
-        *   **Secure Modification Interface:** Create a safe and monitored interface for these constitutional modifications, possibly requiring user approval initially.
-        *   **Modification Tracking:** A system to track changes in the constitution and their impact on overall performance.
-    2.  **Supervised Metamorphosis:**
-        *   **Long-Term Performance Analysis:** Develop the AI's ability to analyze its historical performance across a wide range of tasks and identify structural weaknesses or opportunities.
-        *   **Architectural Improvement Theory:** Enable the AI to formulate theories on how to improve its core architecture (e.g., the need for a new permanent Sub-Agent specializing in a specific domain).
-        *   **Proposing Restructuring Plans:** When the AI develops an improvement theory, it must be able to formulate a detailed "Restructuring Plan" for user review and approval. These plans might include:
-            *   Creating new Sub-Agents (using `spawn_replica`).
-            *   Modifying the roles and skills of existing Sub-Agents.
-            *   Developing new tools (using `forge_tool`) to fill functional gaps.
-
----
-### **Phase 8: Sensory Integration & Embodiment - 💡 Planned**
-*   **Objective:** Connect NexusAI to real-world, real-time data streams.
-*   **Detailed Development Plan:**
-    1.  **Integrate Real-Time Audio/Video Processing Tools:**
-        *   **Visual Processing Modules:** Integrate tools that allow analysis of video streams for object recognition, motion tracking, understanding visual context, and reading text from images. `analyze_image_input` can be used as a base tool and its capabilities expanded.
-        *   **Auditory Processing Modules:** Integrate tools for analyzing audio streams, including speech recognition, speaker identification, sentiment analysis from voice, and classification of environmental sounds.
-        *   **Visual and Auditory Emotion Recognition:** Develop the AI's ability to infer emotions from visual inputs (like facial expressions) and auditory inputs (like tone of voice).
-    2.  **Integrate Real-Time Sensor Data Fusion:**
-        *   **Hardware APIs:** Create APIs that allow connection to a variety of sensors (e.g., temperature, pressure, distance, geolocation sensors).
-        *   **Data Fusion Engine:** Develop an engine capable of integrating data from multiple sensor sources to create a comprehensive and dynamic understanding of the surrounding environment.
-        *   **Adaptive Response:** Enable the AI to modify its behaviors and plans based on changes in the sensory data received in real-time.
-
----
-### **Phase 9: Strategic Foresight & Simulation - 💡 Planned**
-*   **Objective:** Evolve the AI into a strategist that can simulate future outcomes.
-*   **Detailed Development Plan:**
-    1.  **Design the Simulation Environment:**
-        *   **Virtual World Model:** Build a virtual world model that allows for the representation of different scenarios and complex interactions between entities.
-        *   **Game/Scenario Rules:** Define clear rules that govern the virtual environment, including available resources, goals, and constraints.
-        *   **Physics/Logic Engine:** Develop an engine to run the simulation and provide realistic feedback based on the actions taken.
-    2.  **"Wargaming" Mechanisms using Competing Sub-Agents:**
-        *   **Sub-Agent Teams:** Allow the formation of groups or "teams" of Sub-Agents, where each team can represent a different strategy or entity within the simulation.
-        *   **Strategy Formulation:** Enable the AI to formulate multiple strategies for these teams, each designed to achieve a specific goal within the simulation scenario.
-        *   **Competition and Collaboration:** Design mechanisms that allow Sub-Agents to compete or collaborate within the simulation environment.
-    3.  **Result Analysis and Prediction:**
-        *   After each simulation round, the AI must systematically analyze the results.
-        *   Identify the most and least effective strategies.
-        *   Use this data to generate "forecasts" for the most likely outcomes of complex, open-ended scenarios.
-        *   Improve its strategic models over time based on simulation results.
+        *   Design algorithms for the Orchestrator to automatically analyze bids, select the optimal plan, and dynamically assign tasks to the winning Sub-Agents, learning from their performance over time.
 
 ## Contributing
 
