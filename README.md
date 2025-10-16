@@ -106,42 +106,81 @@ This roadmap is aligned with the maturation of our Agent 2.0 architecture.
 
 ---
 ### **Phase 5: Recursive Cognition & Advanced Heuristics - ⚙️ In Progress**
-*   **Objective:** Implement the core concepts of Recursive Language Models (RLMs) to enable the AI to handle contexts that exceed its prompt window and solve complex problems by breaking them down.
-*   **Progress:**
-    1.  **Sandbox Environment:** A `code_sandbox` tool has been created. It provides a sandboxed JavaScript environment where a large context (e.g., the full conversation history) is pre-loaded into a `context_data` variable. This allows the AI to programmatically interact with large datasets.
-    2.  **Recursive Delegation:** A new `spawn_cognitive_clone` tool enables the AI to delegate a sub-problem and a slice of context to a temporary, focused version of itself. This is the core mechanism for recursive problem-solving, allowing the AI to "map-reduce" large tasks.
-    3.  **Context Heuristics:** To improve efficiency, new tools like `peek_context` (to see the beginning of the data) and `search_context` (to find specific information) have been implemented, encouraging a more intelligent "explore-then-act" strategy.
-*   **Example Use-Cases & Prompts:**
-    *   **Large Context Summarization:** "Summarize this entire book by processing it chapter by chapter. Use `spawn_cognitive_clone` for each chapter and then synthesize the results."
-    *   **Recursive Problem Solving:** "I need to plan a multi-course dinner. Create a main plan, then use `spawn_cognitive_clone` to generate a detailed recipe for each course (appetizer, main, dessert) as a sub-task."
-    *   **Efficient Data Search:** "Search the full conversation history for any mention of 'machine learning' using `search_context`, then summarize only the lines you found."
-*   **Next Steps:**
-    1. Refine the recursive delegation logic to handle more complex state management and multi-level recursion.
-    2. Teach the AI more advanced strategies for partitioning data and composing results from its cognitive clones.
+*   **Objective:** Enable NexusAI to handle contexts that exceed the prompt window and solve complex problems by recursively breaking them down.
+*   **Current Progress (Completed):**
+    *   **Sandbox Environment:** The `code_sandbox` tool was created to provide a JavaScript environment with pre-loaded `context_data` for handling large datasets.
+    *   **Recursive Delegation:** The `spawn_cognitive_clone` tool was added to delegate sub-problems and context slices to temporary, focused AI instances.
+    *   **Context Heuristics:** Tools like `peek_context` and `search_context` were implemented to improve data exploration efficiency.
+*   **Detailed Development Plan (Next Steps):**
+    1.  **Improve Recursive Delegation Logic:**
+        *   **Complex State Management:** Develop mechanisms to track the state of multiple, interconnected sub-problems across different recursion levels.
+        *   **Multi-Level Recursion:** Enhance the AI's ability to perform recursive delegation beyond a single level, allowing cognitive clones to delegate further sub-tasks.
+        *   **Smart Termination Mechanisms:** Implement intelligent termination conditions for recursive tasks to prevent infinite loops or excessive resource consumption.
+    2.  **Teach Advanced Strategies for Data Partitioning and Result Composition:**
+        *   **Adaptive Context Partitioning:** Develop algorithms that allow the AI to determine the best way to split large data into small, processable chunks for cognitive clones, based on the problem type and data structure.
+        *   **Hierarchical Result Composition:** Design protocols for collecting and merging results from cognitive clones at different recursion levels to ensure a coherent and comprehensive final answer.
+        *   **Learning from Partitioning Experiences:** Allow the AI to analyze the effectiveness of past partitioning and composition strategies to improve its performance on future tasks.
 
 ---
 ### **Phase 6: Distributed Consciousness & Emergent Strategy - 💡 Planned**
 *   **Objective:** Evolve the Sub-Agent network from a simple delegation system into a competitive, collaborative ecosystem where intelligence can emerge.
-*   **Cognitive Shift:**
-    1.  **Autonomous Bid Generation:** The `broadcastProblem` functionality allows the Orchestrator to pose a problem to the entire network. The next step is to enable Sub-Agents to autonomously generate and submit their own plans when bidding on a problem.
-    2.  **Autonomous Orchestration:** The Orchestrator will analyze the submitted bids and select the most promising plan, initiating a truly decentralized problem-solving process and learning which Sub-Agents are most effective at which tasks.
+*   **Detailed Development Plan:**
+    1.  **Develop Autonomous Bid Generation for Sub-Agents:**
+        *   **Problem Understanding:** Enable Sub-Agents to analyze a broadcasted problem (`broadcastProblem`) and understand its requirements and goals.
+        *   **Plan Generation:** Allow Sub-Agents to generate their own initial action plans to solve the problem, specifying required resources and proposed steps.
+        *   **Bid Formulation:** Develop a standardized structure for submitting Bids, including an estimation of complexity, expected time, and expected solution efficiency.
+    2.  **Enhance the Orchestrator for Autonomous Orchestration:**
+        *   **Bid Analysis:** Design algorithms for the Orchestrator to evaluate bids submitted by Sub-Agents based on criteria like efficiency, cost, quality, and relevance to the problem.
+        *   **Optimal Plan Selection:** Enable the Orchestrator to automatically select the most suitable plan based on bid analysis.
+        *   **Dynamic Task Assignment:** After selecting a plan, the Orchestrator will dynamically assign tasks to the chosen Sub-Agents, with the ability to adjust assignments based on real-time performance.
+        *   **Performance-Based Learning:** Develop mechanisms that allow the Orchestrator to learn from the performance of Sub-Agents in different tasks to improve its effectiveness in selecting the right Sub-Agents for future tasks.
 
 ---
 ### **Phase 7: Metacognitive Self-Assembly - 💡 Planned**
 *   **Objective:** Grant the AI the ability to reason about and redesign its own core architecture.
-*   **Cognitive Shift:**
-    1.  **Constitutional Dynamics:** Allow the AI to modify its own active `CognitiveConstitution` as a plannable step, enabling it to shift between modes like "Creative" and "Logical" to best suit the problem.
-    2.  **Supervised Metamorphosis:** The AI will analyze its long-term performance and, if it theorizes a better architecture is possible (e.g., a new permanent Sub-Agent is needed), it will formulate a "Restructuring Plan" for user review and approval.
+*   **Detailed Development Plan:**
+    1.  **Constitutional Dynamics:**
+        *   **Cognitive Constitution Modification:** Allow the AI to include modifying its own `CognitiveConstitution` as a step in its plan, enabling it to switch between cognitive modes (e.g., "Creative" and "Logical") to best suit the problem's nature.
+        *   **Secure Modification Interface:** Create a safe and monitored interface for these constitutional modifications, possibly requiring user approval initially.
+        *   **Modification Tracking:** A system to track changes in the constitution and their impact on overall performance.
+    2.  **Supervised Metamorphosis:**
+        *   **Long-Term Performance Analysis:** Develop the AI's ability to analyze its historical performance across a wide range of tasks and identify structural weaknesses or opportunities.
+        *   **Architectural Improvement Theory:** Enable the AI to formulate theories on how to improve its core architecture (e.g., the need for a new permanent Sub-Agent specializing in a specific domain).
+        *   **Proposing Restructuring Plans:** When the AI develops an improvement theory, it must be able to formulate a detailed "Restructuring Plan" for user review and approval. These plans might include:
+            *   Creating new Sub-Agents (using `spawn_replica`).
+            *   Modifying the roles and skills of existing Sub-Agents.
+            *   Developing new tools (using `forge_tool`) to fill functional gaps.
 
 ---
 ### **Phase 8: Sensory Integration & Embodiment - 💡 Planned**
 *   **Objective:** Connect NexusAI to real-world, real-time data streams.
-*   **Cognitive Shift:** Integrate tools for real-time audio/video processing and sensor data fusion, allowing the AI to perceive and react to dynamic environments.
+*   **Detailed Development Plan:**
+    1.  **Integrate Real-Time Audio/Video Processing Tools:**
+        *   **Visual Processing Modules:** Integrate tools that allow analysis of video streams for object recognition, motion tracking, understanding visual context, and reading text from images. `analyze_image_input` can be used as a base tool and its capabilities expanded.
+        *   **Auditory Processing Modules:** Integrate tools for analyzing audio streams, including speech recognition, speaker identification, sentiment analysis from voice, and classification of environmental sounds.
+        *   **Visual and Auditory Emotion Recognition:** Develop the AI's ability to infer emotions from visual inputs (like facial expressions) and auditory inputs (like tone of voice).
+    2.  **Integrate Real-Time Sensor Data Fusion:**
+        *   **Hardware APIs:** Create APIs that allow connection to a variety of sensors (e.g., temperature, pressure, distance, geolocation sensors).
+        *   **Data Fusion Engine:** Develop an engine capable of integrating data from multiple sensor sources to create a comprehensive and dynamic understanding of the surrounding environment.
+        *   **Adaptive Response:** Enable the AI to modify its behaviors and plans based on changes in the sensory data received in real-time.
 
 ---
 ### **Phase 9: Strategic Foresight & Simulation - 💡 Planned**
 *   **Objective:** Evolve the AI into a strategist that can simulate future outcomes.
-*   **Cognitive Shift:** Create a "Simulation Environment" where the AI can "wargame" multiple strategies using competing Sub-Agents to forecast the most likely outcomes for complex, open-ended goals.
+*   **Detailed Development Plan:**
+    1.  **Design the Simulation Environment:**
+        *   **Virtual World Model:** Build a virtual world model that allows for the representation of different scenarios and complex interactions between entities.
+        *   **Game/Scenario Rules:** Define clear rules that govern the virtual environment, including available resources, goals, and constraints.
+        *   **Physics/Logic Engine:** Develop an engine to run the simulation and provide realistic feedback based on the actions taken.
+    2.  **"Wargaming" Mechanisms using Competing Sub-Agents:**
+        *   **Sub-Agent Teams:** Allow the formation of groups or "teams" of Sub-Agents, where each team can represent a different strategy or entity within the simulation.
+        *   **Strategy Formulation:** Enable the AI to formulate multiple strategies for these teams, each designed to achieve a specific goal within the simulation scenario.
+        *   **Competition and Collaboration:** Design mechanisms that allow Sub-Agents to compete or collaborate within the simulation environment.
+    3.  **Result Analysis and Prediction:**
+        *   After each simulation round, the AI must systematically analyze the results.
+        *   Identify the most and least effective strategies.
+        *   Use this data to generate "forecasts" for the most likely outcomes of complex, open-ended scenarios.
+        *   Improve its strategic models over time based on simulation results.
 
 ## Contributing
 
