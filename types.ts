@@ -151,6 +151,7 @@ export interface PlanStep {
     replicaId?: string; // For delegate_task_to_replica
     task?: string; // For delegate_task_to_replica
     personalityOverride?: Partial<Personality>;
+    childProcess?: CognitiveProcess; // For recursive delegation state management
 }
 
 // --- Affective Core Types ---

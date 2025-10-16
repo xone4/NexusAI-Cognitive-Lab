@@ -1,6 +1,8 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
 import type { CognitiveProcess, ChatMessage, PlanStep, CognitiveConstitution, GeneratedImage, Language } from '../types';
-import { BrainCircuitIcon, UserIcon, BookOpenIcon, CogIcon, CheckCircleIcon, CubeTransparentIcon, PlayIcon, PencilIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, PlusCircleIcon, CodeBracketIcon, LightBulbIcon, LinkIcon, ArrowRightIcon, PhotographIcon, SparklesIcon, ArchiveBoxArrowDownIcon, RefreshIcon, GlobeAltIcon, DocumentTextIcon, ShareIcon } from './Icons';
+import { useTranslation } from 'react-i18next';
+// FIX: Added ReplicaIcon to the import list to resolve a reference error.
+import { BrainCircuitIcon, UserIcon, BookOpenIcon, CogIcon, CheckCircleIcon, CubeTransparentIcon, PlayIcon, PencilIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, PlusCircleIcon, CodeBracketIcon, LightBulbIcon, LinkIcon, ArrowRightIcon, PhotographIcon, SparklesIcon, ArchiveBoxArrowDownIcon, RefreshIcon, GlobeAltIcon, DocumentTextIcon, ShareIcon, ReplicaIcon } from './Icons';
 
 interface CognitiveProcessVisualizerProps {
   process: CognitiveProcess;
@@ -87,6 +89,48 @@ const GeneratedImageViewer: React.FC<{ image: GeneratedImage }> = memo(({ image 
 });
 GeneratedImageViewer.displayName = 'GeneratedImageViewer';
 
+const SubProcessVisualizer: React.FC<{ process: CognitiveProcess }> = memo(({ process }) => {
+    const { t } = useTranslation();
+    const lastMessage = process.history[process.history.length - 1];
+    const plan = lastMessage?.plan;
+
+    if (!lastMessage) {
+        return <div className="text-xs text-yellow-400 italic mt-2 pl-4 border-l-2 border-yellow-400/30">Clone initializing...</div>;
+    }
+
+    const stateMessage = `Clone State: ${process.state}`;
+    
+    return (
+        <div className="mt-2 pl-4 border-l-2 border-nexus-primary/30 space-y-2">
+            <p className="text-xs font-semibold text-yellow-500">{stateMessage}</p>
+            {plan && (
+                <ul className="text-xs space-y-1">
+                    {plan.map((step, index) => {
+                        const isCurrent = lastMessage.currentStep === index;
+                        const statusIcon = step.status === 'complete' ? '✅' : step.status === 'executing' ? '⏳' : '▶';
+                        return (
+                            <li key={index} className={`flex items-start gap-2 ${isCurrent ? 'text-yellow-400 font-bold' : 'text-nexus-text-muted'}`}>
+                                <span>{statusIcon}</span>
+                                <div className="flex-grow">
+                                  <span className="truncate">{step.description}</span>
+                                  {step.childProcess && <SubProcessVisualizer process={step.childProcess} />}
+                                </div>
+                            </li>
+                        );
+                    })}
+                </ul>
+            )}
+            {process.state === 'Done' && lastMessage.text && (
+                 <div className="pt-1 border-t border-nexus-surface/50">
+                    <p className="text-xs font-semibold text-green-400">Clone Result:</p>
+                    <p className="text-xs text-nexus-text-muted italic">"{lastMessage.text.substring(0, 100)}..."</p>
+                </div>
+            )}
+        </div>
+    );
+});
+SubProcessVisualizer.displayName = 'SubProcessVisualizer';
+
 
 const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: boolean, onUpdate: (newStep: PlanStep) => void, onDelete: () => void, onMove: (direction: 'up' | 'down') => void, isFirst: boolean, isLast: boolean }> = ({ step, isCurrent, isEditable, onUpdate, onDelete, onMove, isFirst, isLast }) => {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -103,7 +147,7 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
 
     const handleSave = () => {
         const newStep = { ...step, description: editContent };
-        if (step.tool === 'code_interpreter') {
+        if (step.tool === 'code_interpreter' || step.tool === 'code_sandbox') {
             newStep.code = editCode;
         } else if (step.tool === 'induce_emotion' || step.tool === 'generate_image') {
             newStep.concept = editCode;
@@ -129,6 +173,7 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
         switch(step.tool) {
             case 'google_search': return <CubeTransparentIcon className="w-4 h-4 text-blue-400" />;
             case 'delegate_task_to_replica': return <ShareIcon className="w-4 h-4 text-green-400" />;
+            case 'spawn_cognitive_clone': return <ReplicaIcon className="w-4 h-4 text-yellow-500" />;
             case 'code_interpreter': return <CodeBracketIcon className="w-4 h-4 text-purple-400" />;
             case 'recall_memory': return <BookOpenIcon className="w-4 h-4 text-yellow-400" />;
             case 'induce_emotion': return <LightBulbIcon className="w-4 h-4 text-orange-400" />;
@@ -156,7 +201,7 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
         return <pre className="text-xs text-green-400/80 font-mono italic whitespace-pre-wrap">Result: {String(step.result)}</pre>;
     };
 
-    const isCodeEditable = ['code_interpreter', 'google_search', 'recall_memory', 'generate_image', 'analyze_image_input', 'induce_emotion', 'translate_text', 'summarize_text', 'replan'].includes(step.tool);
+    const isCodeEditable = ['code_interpreter', 'code_sandbox', 'google_search', 'recall_memory', 'generate_image', 'analyze_image_input', 'induce_emotion', 'translate_text', 'summarize_text', 'replan', 'spawn_cognitive_clone'].includes(step.tool);
 
     return (
         <li className={`p-2 rounded-xl transition-all duration-300 ${isCurrent ? 'bg-nexus-primary/10' : ''} ${isEditable ? 'hover:bg-nexus-surface/50' : ''}`}>
@@ -203,8 +248,11 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
                             </div>
                         </div>
                     ) : (
-                        <div className="flex items-center justify-between">
-                            <div className="flex-grow">{renderResult()}</div>
+                        <div className="flex items-start justify-between">
+                            <div className="flex-grow">
+                              {renderResult()}
+                              {step.childProcess && <SubProcessVisualizer process={step.childProcess} />}
+                            </div>
                             {isEditable && (
                                 <div className="flex-shrink-0 flex items-center gap-1">
                                     <button onClick={() => setIsEditing(true)} className="p-1 text-nexus-text-muted hover:text-nexus-primary" title="Edit Step"><PencilIcon className="w-4 h-4"/></button>

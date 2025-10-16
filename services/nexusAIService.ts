@@ -446,6 +446,103 @@ const insightExtractionSchema = {
 };
 
 
+const _executeRecursiveCognitiveCycle = async (parentStep: PlanStep, subProblemQuery: string, contextData: string): Promise<string> => {
+    if (!parentStep.childProcess) return "Error: childProcess not initialized";
+    
+    const childProcess = parentStep.childProcess;
+
+    // 1. Planning
+    childProcess.state = 'Planning';
+    log('REPLICA', `Clone is planning for sub-problem: "${subProblemQuery.substring(0, 50)}..."`);
+    notifyCognitiveProcess();
+
+    const subAgentSystemInstruction = getSystemInstruction().replace(
+        'You are an Agent 2.0 Orchestrator.', 
+        'You are a temporary, focused Cognitive Clone. Your goal is to solve a specific sub-problem delegated by your parent orchestrator.'
+    );
+    const planningPrompt = `You have been given the following sub-problem: "${subProblemQuery}".\nThe following data context is provided for your task:\n\n--- CONTEXT DATA ---\n${contextData}\n--- END CONTEXT ---\n\nCreate a step-by-step plan to solve ONLY this sub-problem.`;
+
+    const planResponse = await ai.models.generateContent({
+        model: appSettings.model, contents: planningPrompt,
+        config: { systemInstruction: subAgentSystemInstruction, responseMimeType: 'application/json', responseSchema: planSchema }
+    });
+    
+    const parsedPlan = JSON.parse(planResponse.text);
+    const subPlan = parsedPlan.plan.map((p: any) => ({ ...p, status: 'pending' })) as PlanStep[];
+
+    const modelMessage: ChatMessage = { id: `clone-msg-${Date.now()}`, role: 'model', text: '', plan: subPlan, state: 'awaiting_execution' };
+    childProcess.history.push(modelMessage);
+
+    // 2. Execution
+    childProcess.state = 'Executing';
+    modelMessage.state = 'executing';
+    log('REPLICA', `Clone begins executing a ${subPlan.length}-step plan.`);
+    notifyCognitiveProcess();
+    
+    const subExecutionContext: string[] = [];
+    for (let i = 0; i < subPlan.length; i++) {
+        if (isCancelled) throw new Error("Process cancelled by user.");
+        const step = subPlan[i];
+        modelMessage.currentStep = i;
+        step.status = 'executing';
+        log('REPLICA', `Clone executing step ${i+1}: ${step.description}`);
+        notifyCognitiveProcess();
+        
+        // --- Tool Execution Logic (mirrored from main executePlan) ---
+        if (step.tool === 'spawn_cognitive_clone') { // Recursive Call
+            step.childProcess = { state: 'Idle', history: [], activeAffectiveState: null };
+            notifyCognitiveProcess();
+            const result = await _executeRecursiveCognitiveCycle(step, step.query || '', step.code || '');
+            step.result = result;
+        } else if (step.tool === 'code_interpreter' || step.tool === 'code_sandbox') {
+             try {
+                const context_data = step.tool === 'code_sandbox' ? JSON.stringify(childProcess.history, null, 2) : undefined;
+                const codeToRun = `"use strict"; return ((context_data) => { ${step.code} })(context_data);`;
+                const result = new Function('context_data', codeToRun)(context_data);
+                step.result = JSON.stringify(result, null, 2);
+            } catch (e) {
+                step.status = 'error';
+                step.result = e instanceof Error ? e.message : 'Unknown execution error.';
+                log('ERROR', `Clone's Code tool failed: ${step.result}`);
+            }
+        } else {
+             // Simulate other tools for clones for simplicity and to avoid excessive API calls in nested loops.
+            await new Promise(res => setTimeout(res, appSettings.cognitiveStepDelay / 2));
+            step.result = `(Simulated clone result for ${step.tool})`;
+        }
+        // --- End Tool Execution ---
+
+        if (step.status !== 'error') step.status = 'complete';
+        subExecutionContext.push(`Step ${i+1} (${step.description}) Result: ${step.result}`);
+        notifyCognitiveProcess();
+        await new Promise(res => setTimeout(res, appSettings.cognitiveStepDelay / 2));
+    }
+    
+    // 3. Synthesis
+    modelMessage.currentStep = undefined;
+    childProcess.state = 'Synthesizing';
+    modelMessage.state = 'synthesizing';
+    log('REPLICA', `Clone is synthesizing its final answer.`);
+    notifyCognitiveProcess();
+
+    const synthesisPrompt = `You are a Cognitive Clone that has just finished executing a plan for the sub-problem: "${subProblemQuery}".
+    Execution Context:
+    ${subExecutionContext.join('\n')}
+    
+    Based ONLY on the execution context, provide a final, direct answer to the sub-problem. Do not add any conversational fluff.`;
+
+    const finalResponse = await ai.models.generateContent({ model: appSettings.model, contents: synthesisPrompt });
+
+    childProcess.state = 'Done';
+    modelMessage.state = 'done';
+    modelMessage.text = finalResponse.text;
+    log('REPLICA', `Clone has completed its task.`);
+    notifyCognitiveProcess();
+
+    return finalResponse.text;
+}
+
+
 const service = {
     log,
     updateSettings: (newSettings: AppSettings) => {
@@ -1222,15 +1319,19 @@ const service = {
                 } else if (step.tool === 'spawn_cognitive_clone') {
                     const task = step.query || 'No task provided.';
                     const subContext = step.code || 'No context provided.';
-                    log('AI', `Spawning cognitive clone for task: "${task}"`);
-                    const subAgentPrompt = `You are a focused sub-agent. Your ONLY task is to: ${task}. Use ONLY the following context to provide your answer. Do not plan, do not use tools. Just answer directly based on the context.\n\nCONTEXT:\n${subContext}\n\nANSWER:`;
+                    step.childProcess = { state: 'Idle', history: [], activeAffectiveState: null };
+                    log('AI', `Spawning recursive cognitive clone for task: "${task.substring(0, 70)}..."`);
+                    notifyCognitiveProcess();
                     try {
-                        const response = await ai.models.generateContent({ model: appSettings.model, contents: subAgentPrompt });
-                        step.result = response.text;
+                        const result = await _executeRecursiveCognitiveCycle(step, task, subContext);
+                        step.result = result;
                     } catch (e) {
                         step.status = 'error';
-                        step.result = `Cognitive clone failed: ${e instanceof Error ? e.message : 'Unknown AI error'}`;
+                        step.result = `Cognitive clone process failed: ${e instanceof Error ? e.message : 'Unknown AI error'}`;
                         log('ERROR', step.result);
+                        if (step.childProcess) {
+                            step.childProcess.state = 'Error';
+                        }
                     }
                     executionContext.push(`Step ${i+1} (${step.description}) Result from clone: ${step.result}`);
                 } else if (step.tool === 'delegate_task_to_replica') {
