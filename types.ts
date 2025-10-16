@@ -133,7 +133,7 @@ export type ThinkingState = 'Idle' | 'Receiving' | 'Planning' | 'AwaitingExecuti
 export interface PlanStep {
     step: number;
     description: string;
-    tool: 'google_search' | 'synthesize_answer' | 'code_interpreter' | 'recall_memory' | 'generate_image' | 'analyze_image_input' | 'forge_tool' | 'spawn_replica' | 'induce_emotion' | 'replan' | 'summarize_text' | 'translate_text' | 'analyze_sentiment' | 'execute_toolchain' | 'apply_behavior' | 'delegate_task_to_replica';
+    tool: 'google_search' | 'synthesize_answer' | 'code_interpreter' | 'code_sandbox' | 'recall_memory' | 'generate_image' | 'analyze_image_input' | 'forge_tool' | 'spawn_replica' | 'induce_emotion' | 'replan' | 'summarize_text' | 'translate_text' | 'analyze_sentiment' | 'execute_toolchain' | 'apply_behavior' | 'delegate_task_to_replica' | 'spawn_cognitive_clone' | 'peek_context' | 'search_context';
     query?: string;
     code?: string;
     concept?: string; // For induce_emotion & generate_image

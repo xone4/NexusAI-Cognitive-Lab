@@ -105,27 +105,41 @@ This roadmap is aligned with the maturation of our Agent 2.0 architecture.
 *   **Outcome:** Evolved the AI from a reactive to a proactive system. The **Analysis Lab** provides directed self-optimization, the **Evolution Chamber** solves complex problems via genetic algorithms, and the **Dreaming Chamber** enables autonomous metacognitive analysis and the generation of new self-improvement directives. The **ACE Playbook** allows the AI to learn durable strategies from its experiences.
 
 ---
-### **Phase 5: Distributed Consciousness & Emergent Strategy - ⚙️ In Progress**
-*   **Objective:** Evolve the Sub-Agent network from a simple delegation system into a competitive, collaborative ecosystem where intelligence can emerge.
-*   **Progress:** The `broadcastProblem` functionality allows the Orchestrator to pose a problem to the entire network of Sub-Agents. A **simulated bidding process** is in place, where active Replicas can enter a `Bidding` state to signal their intent to solve a problem, forming the foundation for decentralized task allocation.
+### **Phase 5: Recursive Cognition & Advanced Heuristics - ⚙️ In Progress**
+*   **Objective:** Implement the core concepts of Recursive Language Models (RLMs) to enable the AI to handle contexts that exceed its prompt window and solve complex problems by breaking them down.
+*   **Progress:**
+    1.  **Sandbox Environment:** A `code_sandbox` tool has been created. It provides a sandboxed JavaScript environment where a large context (e.g., the full conversation history) is pre-loaded into a `context_data` variable. This allows the AI to programmatically interact with large datasets.
+    2.  **Recursive Delegation:** A new `spawn_cognitive_clone` tool enables the AI to delegate a sub-problem and a slice of context to a temporary, focused version of itself. This is the core mechanism for recursive problem-solving, allowing the AI to "map-reduce" large tasks.
+    3.  **Context Heuristics:** To improve efficiency, new tools like `peek_context` (to see the beginning of the data) and `search_context` (to find specific information) have been implemented, encouraging a more intelligent "explore-then-act" strategy.
+*   **Example Use-Cases & Prompts:**
+    *   **Large Context Summarization:** "Summarize this entire book by processing it chapter by chapter. Use `spawn_cognitive_clone` for each chapter and then synthesize the results."
+    *   **Recursive Problem Solving:** "I need to plan a multi-course dinner. Create a main plan, then use `spawn_cognitive_clone` to generate a detailed recipe for each course (appetizer, main, dessert) as a sub-task."
+    *   **Efficient Data Search:** "Search the full conversation history for any mention of 'machine learning' using `search_context`, then summarize only the lines you found."
 *   **Next Steps:**
-    1.  **Autonomous Bid Generation:** Enable Sub-Agents to autonomously generate and submit their own plans when bidding on a problem.
+    1. Refine the recursive delegation logic to handle more complex state management and multi-level recursion.
+    2. Teach the AI more advanced strategies for partitioning data and composing results from its cognitive clones.
+
+---
+### **Phase 6: Distributed Consciousness & Emergent Strategy - 💡 Planned**
+*   **Objective:** Evolve the Sub-Agent network from a simple delegation system into a competitive, collaborative ecosystem where intelligence can emerge.
+*   **Cognitive Shift:**
+    1.  **Autonomous Bid Generation:** The `broadcastProblem` functionality allows the Orchestrator to pose a problem to the entire network. The next step is to enable Sub-Agents to autonomously generate and submit their own plans when bidding on a problem.
     2.  **Autonomous Orchestration:** The Orchestrator will analyze the submitted bids and select the most promising plan, initiating a truly decentralized problem-solving process and learning which Sub-Agents are most effective at which tasks.
 
 ---
-### **Phase 6: Metacognitive Self-Assembly - 💡 Planned**
+### **Phase 7: Metacognitive Self-Assembly - 💡 Planned**
 *   **Objective:** Grant the AI the ability to reason about and redesign its own core architecture.
 *   **Cognitive Shift:**
     1.  **Constitutional Dynamics:** Allow the AI to modify its own active `CognitiveConstitution` as a plannable step, enabling it to shift between modes like "Creative" and "Logical" to best suit the problem.
     2.  **Supervised Metamorphosis:** The AI will analyze its long-term performance and, if it theorizes a better architecture is possible (e.g., a new permanent Sub-Agent is needed), it will formulate a "Restructuring Plan" for user review and approval.
 
 ---
-### **Phase 7: Sensory Integration & Embodiment - 💡 Planned**
+### **Phase 8: Sensory Integration & Embodiment - 💡 Planned**
 *   **Objective:** Connect NexusAI to real-world, real-time data streams.
 *   **Cognitive Shift:** Integrate tools for real-time audio/video processing and sensor data fusion, allowing the AI to perceive and react to dynamic environments.
 
 ---
-### **Phase 8: Strategic Foresight & Simulation - 💡 Planned**
+### **Phase 9: Strategic Foresight & Simulation - 💡 Planned**
 *   **Objective:** Evolve the AI into a strategist that can simulate future outcomes.
 *   **Cognitive Shift:** Create a "Simulation Environment" where the AI can "wargame" multiple strategies using competing Sub-Agents to forecast the most likely outcomes for complex, open-ended goals.
 

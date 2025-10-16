@@ -171,6 +171,7 @@ const _seedInitialData = async () => {
 
     const initialTools: MentalTool[] = [
         { id: 'tool-code', name: 'Code Interpreter', description: 'Executes sandboxed JavaScript code for logical operations and calculations.', capabilities: ['Execution', 'Logic'], tags: ['core', 'execution'], status: 'Active', version: 1.0, complexity: 95, usageHistory: [] },
+        { id: 'tool-sandbox', name: 'Code Sandbox', description: 'Executes sandboxed JS code in an environment with a pre-loaded \'context_data\' variable for processing large contexts.', capabilities: ['Execution', 'Context Processing'], tags: ['core', 'sandbox'], status: 'Active', version: 1.0, complexity: 90, usageHistory: [] },
         { id: 'tool-search', name: 'Web Search Agent', description: 'Accesses and retrieves real-time information from the web.', capabilities: ['Search', 'Real-time Data'], tags: ['core', 'web'], status: 'Active', version: 1.0, complexity: 70, usageHistory: [] },
         { id: 'tool-2', name: 'Fractal Data Miner', description: 'Analyzes data structures using fractal geometry.', capabilities: ['Data Mining', 'Pattern Reco.'], tags: ['analysis', 'data'], status: 'Idle', version: 2.3, complexity: 88, usageHistory: [{timestamp: Date.now() - 3600000, task: 'Initial system diagnostics'}] },
     ];
@@ -231,7 +232,7 @@ const initialize = async () => {
 };
 
 
-const planSchema = { type: Type.OBJECT, properties: { plan: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { step: { type: Type.INTEGER }, description: { type: Type.STRING }, tool: { type: Type.STRING, enum: ['google_search', 'synthesize_answer', 'code_interpreter', 'recall_memory', 'generate_image', 'analyze_image_input', 'forge_tool', 'spawn_replica', 'induce_emotion', 'replan', 'summarize_text', 'translate_text', 'analyze_sentiment', 'execute_toolchain', 'apply_behavior', 'delegate_task_to_replica'] }, query: { type: Type.STRING }, code: { type: Type.STRING }, concept: { type: Type.STRING }, inputRef: { type: Type.INTEGER }, replicaId: { type: Type.STRING }, task: { type: Type.STRING } }, required: ['step', 'description', 'tool'] } } }, required: ['plan'] };
+const planSchema = { type: Type.OBJECT, properties: { plan: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { step: { type: Type.INTEGER }, description: { type: Type.STRING }, tool: { type: Type.STRING, enum: ['google_search', 'synthesize_answer', 'code_interpreter', 'code_sandbox', 'recall_memory', 'generate_image', 'analyze_image_input', 'forge_tool', 'spawn_replica', 'induce_emotion', 'replan', 'summarize_text', 'translate_text', 'analyze_sentiment', 'execute_toolchain', 'apply_behavior', 'delegate_task_to_replica', 'spawn_cognitive_clone', 'peek_context', 'search_context'] }, query: { type: Type.STRING }, code: { type: Type.STRING }, concept: { type: Type.STRING }, inputRef: { type: Type.INTEGER }, replicaId: { type: Type.STRING }, task: { type: Type.STRING } }, required: ['step', 'description', 'tool'] } } }, required: ['plan'] };
 
 const languageMap: Record<Language, string> = {
     'en': 'English',
@@ -316,13 +317,25 @@ const getSystemInstruction = () => {
     You MUST delegate tasks to your active Sub-Agents based on their 'purpose' using the 'delegate_task_to_replica' tool.
     ${replicaSummary.join('\n')}
 
+    **RECURSIVE & CONTEXT-AWARE TOOLS:**
+    For tasks involving large amounts of data or long contexts (like the full conversation history), you have a special set of tools.
+    The full context is pre-loaded into a variable named \`context_data\`. You CANNOT see its full content directly.
+    Your workflow should be:
+    1.  **Explore**: Use \`peek_context\` to get an idea of the data's structure.
+    2.  **Find/Extract**: Use \`search_context\` to find specific information, or use \`code_sandbox\` to write code to parse and extract relevant chunks of data.
+    3.  **Delegate/Recurse**: If a problem can be broken down (e.g., summarize each chapter of a book), use \`spawn_cognitive_clone\` to delegate the sub-task (e.g., summarizing one chapter) to a temporary, focused clone of yourself. Pass the data chunk to the clone via the 'code' parameter.
+
     **PLANNING PROTOCOL:**
     Your plan must be a JSON object. For any task that matches a Sub-Agent's specialty, you MUST use the \`delegate_task_to_replica\` tool.
 
     **Available Tools:**
-    - \`delegate_task_to_replica\`: CRITICAL. Delegates a sub-task to a specialized Sub-Agent. Use the 'replicaId' and 'task' properties.
+    - \`delegate_task_to_replica\`: CRITICAL. Delegates a sub-task to a specialized Sub-Agent. Use 'replicaId' and 'task'.
+    - \`spawn_cognitive_clone\`: Delegates a sub-problem to a temporary clone of yourself. Use 'query' for the task and 'code' for the data context.
     - \`google_search\`: For queries requiring up-to-date information.
     - \`code_interpreter\`: Executes sandboxed JavaScript code. Must return a value.
+    - \`code_sandbox\`: Executes JS code in a sandboxed environment with a pre-loaded \`context_data\` variable.
+    - \`peek_context\`: Shows the first N characters of \`context_data\`. Use 'query' to specify N (e.g., '500').
+    - \`search_context\`: Searches for a string within \`context_data\`. Use 'query' for the search term.
     - \`recall_memory\`: To search your long-term memory.
     - \`induce_emotion\`: To set an internal "Affective State" for subjective concepts.
     - \`generate_image\`: To create an image from a detailed concept.
@@ -945,10 +958,10 @@ const service = {
     
     getSuggestedQueries: async (suggestionProfile: SuggestionProfile = 'medium', keywords: string = ''): Promise<string[]> => {
         const staticFallbacks = [
-            "Calculate the Fibonacci sequence up to the 15th number using the code interpreter.",
+            "Summarize our entire conversation, breaking it down into logical sections.",
             "What are the latest developments in AI-driven drug discovery?",
-            "Generate a novel mental tool for analyzing sentiment in multi-modal data streams.",
-            "Devise a plan to find hidden correlations in this sample dataset: [1, 5, 2, 8, 3, 9, 4, 1, 5]",
+            "Find every time we discussed 'AI tools' in our chat history and list them.",
+            "Analyze my messages in this chat to find the average query length using the code sandbox.",
         ];
         
         if (!API_KEY) {
@@ -1128,6 +1141,62 @@ const service = {
                         log('ERROR', `Code interpreter failed at step ${i+1}: ${step.result}`);
                     }
                      executionContext.push(`Step ${i+1} (${step.description}) Code Output: ${step.result}`);
+                } else if (step.tool === 'code_sandbox') {
+                    try {
+                        const context_data = JSON.stringify(cognitiveProcess.history, null, 2);
+                        const codeToRun = `"use strict"; return ((context_data) => { ${step.code} })(context_data);`;
+                        const result = new Function('context_data', codeToRun)(context_data);
+                        step.result = JSON.stringify(result, null, 2);
+                    } catch (e) {
+                        step.status = 'error';
+                        step.result = e instanceof Error ? e.message : 'Unknown execution error.';
+                        log('ERROR', `Code sandbox failed at step ${i+1}: ${step.result}`);
+                    }
+                    executionContext.push(`Step ${i+1} (${step.description}) Code Sandbox Output: ${step.result}`);
+                } else if (step.tool === 'peek_context') {
+                    const context_data = JSON.stringify(cognitiveProcess.history, null, 2);
+                    const charCount = parseInt(step.query || '500', 10);
+                    if (isNaN(charCount) || charCount <= 0) {
+                        step.status = 'error';
+                        step.result = `Error: Invalid character count provided for 'peek_context'. Must be a positive integer.`;
+                        log('ERROR', `Peek context failed at step ${i+1}: ${step.result}`);
+                    } else {
+                        step.result = `First ${charCount} chars of context_data:\n${context_data.substring(0, charCount)}...`;
+                        executionContext.push(`Step ${i+1} (${step.description}) Result: Peeked at context.`);
+                    }
+                } else if (step.tool === 'search_context') {
+                    const context_data = JSON.stringify(cognitiveProcess.history, null, 2);
+                    const searchTerm = step.query || '';
+                    let matches: string[] = [];
+                    if (searchTerm) {
+                        const lines = context_data.split('\n');
+                        matches = lines.filter(line => line.toLowerCase().includes(searchTerm.toLowerCase()));
+                        const MAX_MATCHES_TO_SHOW = 15;
+                        let resultText = `Found ${matches.length} matching line(s) for "${searchTerm}".`;
+                        if (matches.length > 0) {
+                            resultText += `\nShowing the first ${Math.min(matches.length, MAX_MATCHES_TO_SHOW)}:\n${matches.slice(0, MAX_MATCHES_TO_SHOW).join('\n')}`;
+                        }
+                        step.result = resultText;
+                    } else {
+                        step.status = 'error';
+                        step.result = "Error: No search term provided for search_context tool.";
+                        log('ERROR', `Search context failed at step ${i+1}: No search term provided.`);
+                    }
+                    executionContext.push(`Step ${i+1} (${step.description}) Result: Searched context for "${searchTerm}". Found ${matches.length} result(s).`);
+                } else if (step.tool === 'spawn_cognitive_clone') {
+                    const task = step.query || 'No task provided.';
+                    const subContext = step.code || 'No context provided.';
+                    log('AI', `Spawning cognitive clone for task: "${task}"`);
+                    const subAgentPrompt = `You are a focused sub-agent. Your ONLY task is to: ${task}. Use ONLY the following context to provide your answer. Do not plan, do not use tools. Just answer directly based on the context.\n\nCONTEXT:\n${subContext}\n\nANSWER:`;
+                    try {
+                        const response = await ai.models.generateContent({ model: appSettings.model, contents: subAgentPrompt });
+                        step.result = response.text;
+                    } catch (e) {
+                        step.status = 'error';
+                        step.result = `Cognitive clone failed: ${e instanceof Error ? e.message : 'Unknown AI error'}`;
+                        log('ERROR', step.result);
+                    }
+                    executionContext.push(`Step ${i+1} (${step.description}) Result from clone: ${step.result}`);
                 } else if (step.tool === 'delegate_task_to_replica') {
                     const replicaId = step.replicaId;
                     const taskDescription = step.task || "No task specified";
