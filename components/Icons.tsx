@@ -51,6 +51,7 @@ import {
   ChevronRight,
   MessageCircleMore,
   Dices,
+  Download,
   type LucideProps,
 } from 'lucide-react';
 
@@ -110,3 +111,5 @@ export const ChevronLeftIcon: React.FC<IconProps> = (props) => <ChevronLeft {...
 export const ChevronRightIcon: React.FC<IconProps> = (props) => <ChevronRight {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;
 export const ChatBubbleBottomCenterTextIcon: React.FC<IconProps> = (props) => <MessageCircleMore {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;
 export const DicesIcon: React.FC<IconProps> = (props) => <Dices {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;
+export const CopyIcon: React.FC<IconProps> = (props) => <Copy {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;
+export const DownloadIcon: React.FC<IconProps> = (props) => <Download {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;

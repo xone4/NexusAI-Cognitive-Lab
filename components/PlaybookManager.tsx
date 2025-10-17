@@ -4,6 +4,7 @@ import type { PlaybookItem, PlaybookItemCategory } from '../types';
 import DashboardCard from './DashboardCard';
 import ModifyPlaybookItemModal from './ModifyPlaybookItemModal';
 import { BrainCircuitIcon, WrenchScrewdriverIcon, TrashIcon, ClockIcon, CheckCircleIcon, XCircleIcon, SparklesIcon, CodeBracketIcon, CubeTransparentIcon } from './Icons';
+import TextActionOverlay from './TextActionOverlay';
 
 interface PlaybookManagerProps {
     playbook: PlaybookItem[];
@@ -44,9 +45,12 @@ const PlaybookItemCard: React.FC<{ item: PlaybookItem; onEdit: (item: PlaybookIt
             <div className="mt-3 pt-3 border-t border-nexus-surface/30 space-y-2">
                 <div>
                     <h5 className="text-xs font-semibold text-nexus-primary uppercase tracking-wider mb-1">{t('behaviors.strategy')}</h5>
-                    <p className="text-sm text-nexus-text-muted whitespace-pre-wrap font-mono bg-nexus-dark/50 p-2 rounded-xl max-h-24 overflow-y-auto">
-                        {item.content}
-                    </p>
+                    <div className="relative group">
+                        <TextActionOverlay content={item.content} filename={`playbook-item-${item.id}.txt`} />
+                        <p className="text-sm text-nexus-text-muted whitespace-pre-wrap font-mono bg-nexus-dark/50 p-2 rounded-xl max-h-24 overflow-y-auto">
+                            {item.content}
+                        </p>
+                    </div>
                 </div>
                 <div className="flex items-center justify-between text-xs text-nexus-text-muted pt-2">
                     <div className="flex gap-4">

@@ -3,6 +3,7 @@ import type { CognitiveProcess, ChatMessage, PlanStep, CognitiveConstitution, Ge
 import { useTranslation } from 'react-i18next';
 // FIX: Added ReplicaIcon to the import list to resolve a reference error.
 import { BrainCircuitIcon, UserIcon, BookOpenIcon, CogIcon, CheckCircleIcon, CubeTransparentIcon, PlayIcon, PencilIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, PlusCircleIcon, CodeBracketIcon, LightBulbIcon, LinkIcon, ArrowRightIcon, PhotographIcon, SparklesIcon, ArchiveBoxArrowDownIcon, RefreshIcon, GlobeAltIcon, DocumentTextIcon, ShareIcon, ReplicaIcon } from './Icons';
+import TextActionOverlay from './TextActionOverlay';
 
 interface CognitiveProcessVisualizerProps {
   process: CognitiveProcess;
@@ -406,9 +407,9 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
                                 {process.activeAffectiveState && (
                                      <div className="relative group" title={`Influenced by mood: ${process.activeAffectiveState.mood}`}>
                                          <LightBulbIcon className="w-5 h-5 text-yellow-400" />
-                                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-nexus-dark text-white text-xs rounded-md p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">
+                                         <div className="absolute bottom-full end-0 mb-2 w-48 bg-nexus-dark text-white text-xs rounded-md p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">
                                              Influenced by active Affective State.
-                                             <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-nexus-dark"></div>
+                                             <div className="absolute top-full end-3 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-nexus-dark"></div>
                                          </div>
                                      </div>
                                 )}
@@ -439,14 +440,18 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
                                 </button>
                                 </div>
                              </div>
-                             <div className={`${isResponseCollapsed ? 'max-h-32 overflow-hidden relative' : ''}`}>
+                             <div className={`${isResponseCollapsed ? 'max-h-32 overflow-hidden' : ''} relative group`}>
+                                 <TextActionOverlay content={String(message.text || "...")} filename={`nexus-ai-response-${message.id}.txt`} />
                                  <pre className="text-sm whitespace-pre-wrap font-sans text-nexus-text">{String(message.text || "...")}</pre>
                                  {isResponseCollapsed && <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-nexus-surface/80 to-transparent"></div>}
                              </div>
                              {translatedText && (
                                 <div className="mt-3 pt-3 border-t border-dashed border-nexus-surface/50">
                                     <h5 className="text-xs font-semibold text-nexus-secondary">Translation:</h5>
-                                    <pre className="text-sm whitespace-pre-wrap font-sans text-nexus-text-muted">{translatedText}</pre>
+                                    <div className="relative group">
+                                        <TextActionOverlay content={translatedText} filename={`nexus-ai-translation-${message.id}.txt`} />
+                                        <pre className="text-sm whitespace-pre-wrap font-sans text-nexus-text-muted">{translatedText}</pre>
+                                    </div>
                                 </div>
                              )}
                             <div className="flex justify-center items-center gap-2 flex-wrap mt-4">
@@ -490,7 +495,10 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
         }
         
         return (
-            <pre className="text-sm whitespace-pre-wrap font-sans text-nexus-text">{String(message.text || "...")}</pre>
+            <div className="relative group">
+                <TextActionOverlay content={String(message.text || "...")} filename={`nexus-ai-response-${message.id}.txt`} />
+                <pre className="text-sm whitespace-pre-wrap font-sans text-nexus-text">{String(message.text || "...")}</pre>
+            </div>
         );
     }
 

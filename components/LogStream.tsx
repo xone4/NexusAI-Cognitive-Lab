@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, memo } from 'react';
+import React, { useEffect, useRef, memo, useMemo } from 'react';
 import type { LogEntry } from '../types';
+import TextActionOverlay from './TextActionOverlay';
 
 interface LogStreamProps {
   logs: LogEntry[];
@@ -30,6 +31,12 @@ const LogItem = memo(({ log }: { log: LogEntry }) => (
 const LogStream: React.FC<LogStreamProps> = ({ logs }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const logContent = useMemo(() => 
+    logs.map(log => 
+        `[${new Date(log.timestamp).toLocaleTimeString()}] [${log.level}] ${log.message}`
+    ).join('\n'), 
+  [logs]);
+
   useEffect(() => {
     const element = scrollRef.current;
     if (element) {
@@ -42,7 +49,8 @@ const LogStream: React.FC<LogStreamProps> = ({ logs }) => {
   }, [logs]);
 
   return (
-    <div ref={scrollRef} className="h-full overflow-y-auto bg-nexus-dark/50 rounded-xl p-3 font-mono text-xs">
+    <div ref={scrollRef} className="h-full overflow-y-auto bg-nexus-dark/50 rounded-xl p-3 font-mono text-xs relative group">
+      <TextActionOverlay content={logContent} filename="nexus-logs.txt" />
       {logs.map(log => (
         <LogItem key={log.id} log={log} />
       ))}

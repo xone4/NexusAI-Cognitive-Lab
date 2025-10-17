@@ -425,6 +425,9 @@
     "copied": "Copied!",
     "close": "Close"
   },
+  "textActions": {
+    "download": "Download"
+  },
   "errorBoundary": {
     "title": "Interface Anomaly",
     "heading": "An unexpected error occurred.",

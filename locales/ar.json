@@ -425,6 +425,9 @@
     "copied": "تم النسخ!",
     "close": "إغلاق"
   },
+  "textActions": {
+    "download": "تحميل"
+  },
   "errorBoundary": {
     "title": "خلل في الواجهة",
     "heading": "حدث خطأ غير متوقع.",

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { nexusAIService } from '../services/nexusAIService';
-import { DocumentMagnifyingGlassIcon, CheckCircleIcon, DocumentTextIcon } from './Icons';
+import { DocumentMagnifyingGlassIcon } from './Icons';
+import TextActionOverlay from './TextActionOverlay';
 
 interface RawIntrospectionModalProps {
     onClose: () => void;
@@ -13,36 +14,13 @@ interface RawContext {
     affectiveStateSchema: string;
 }
 
-const useCopyToClipboard = () => {
-    const { t } = useTranslation();
-    const [copied, setCopied] = useState(false);
-
-    const copy = useCallback((text: string) => {
-        navigator.clipboard.writeText(text).then(() => {
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        });
-    }, []);
-
-    const copyText = copied ? t('introspection.copied') : t('introspection.copy');
-    return [copied, copy, copyText] as const;
-};
-
 const CodeBlock: React.FC<{ title: string, content: string }> = ({ title, content }) => {
-    const [copied, copy, copyText] = useCopyToClipboard();
-
     return (
-         <div className="bg-nexus-dark/50 p-4 rounded-xl">
+         <div className="bg-nexus-dark/50 p-4 rounded-xl relative group">
             <div className="flex justify-between items-center mb-2">
                 <h4 className="font-semibold text-nexus-secondary">{title}</h4>
-                <button
-                    onClick={() => copy(content)}
-                    className="flex items-center gap-2 text-xs bg-nexus-surface px-2 py-1 rounded-full text-nexus-text-muted hover:bg-nexus-primary hover:text-nexus-dark transition-all"
-                >
-                    {copied ? <CheckCircleIcon className="w-4 h-4 text-green-400" /> : <DocumentTextIcon className="w-4 h-4" />}
-                    {copyText}
-                </button>
             </div>
+            <TextActionOverlay content={content} filename={`${title.toLowerCase().replace(/\s/g, '-')}.txt`} />
             <pre className="w-full text-xs text-nexus-text-muted bg-nexus-dark/70 p-3 rounded-xl overflow-auto max-h-48 font-mono">
                 <code>{content}</code>
             </pre>

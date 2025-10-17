@@ -4,6 +4,7 @@ import type { ChatMessage, PlanStep, GeneratedImage } from '../types';
 import { nexusAIService } from '../services/nexusAIService';
 import AffectiveStateVisualizer from './QualiaVectorVisualizer';
 import { DocumentMagnifyingGlassIcon, CheckCircleIcon, CogIcon, CodeBracketIcon, CubeTransparentIcon, LightBulbIcon, PhotographIcon, SparklesIcon, XCircleIcon, BrainCircuitIcon, ChatBubbleLeftRightIcon, UserIcon } from './Icons';
+import TextActionOverlay from './TextActionOverlay';
 
 interface CognitiveTraceInspectorProps {
     trace: ChatMessage;
@@ -44,7 +45,7 @@ const DetailedPlanStep: React.FC<{ step: PlanStep }> = ({ step }) => {
     
     const renderResult = () => {
         if (step.status === 'error') {
-            return <pre className="text-xs whitespace-pre-wrap text-red-400 font-mono bg-red-500/10 p-2 rounded-xl">{String(step.result)}</pre>;
+            return <div className="relative group"><TextActionOverlay content={String(step.result)} filename={`step-${step.step}-error.txt`} /><pre className="text-xs whitespace-pre-wrap text-red-400 font-mono bg-red-500/10 p-2 rounded-xl">{String(step.result)}</pre></div>;
         }
         if (!step.result) return <p className="text-xs text-nexus-text-muted italic">{t('traceInspector.noResult')}</p>;
         
@@ -64,7 +65,7 @@ const DetailedPlanStep: React.FC<{ step: PlanStep }> = ({ step }) => {
             )
         }
         
-        return <pre className="text-xs whitespace-pre-wrap text-green-400 font-mono bg-green-500/10 p-2 rounded-xl">{String(step.result)}</pre>;
+        return <div className="relative group"><TextActionOverlay content={String(step.result)} filename={`step-${step.step}-result.txt`} /><pre className="text-xs whitespace-pre-wrap text-green-400 font-mono bg-green-500/10 p-2 rounded-xl">{String(step.result)}</pre></div>;
     };
 
     return (
@@ -78,7 +79,10 @@ const DetailedPlanStep: React.FC<{ step: PlanStep }> = ({ step }) => {
                 {(step.query || step.code || step.concept) && (
                     <div>
                         <h5 className="text-xs font-bold text-nexus-text-muted">{t('traceInspector.input')}</h5>
-                        <pre className="text-xs whitespace-pre-wrap text-nexus-text-muted font-mono bg-nexus-dark/70 p-2 rounded-xl">{step.query || step.code || step.concept}</pre>
+                        <div className="relative group">
+                            <TextActionOverlay content={step.query || step.code || step.concept || ''} filename={`step-${step.step}-input.txt`} />
+                            <pre className="text-xs whitespace-pre-wrap text-nexus-text-muted font-mono bg-nexus-dark/70 p-2 rounded-xl">{step.query || step.code || step.concept}</pre>
+                        </div>
                     </div>
                 )}
                 <div>
@@ -145,7 +149,8 @@ const CognitiveTraceInspector: React.FC<CognitiveTraceInspectorProps> = ({ trace
     const DiscussionModelMessage: React.FC<{text: string}> = ({ text }) => (
         <div className="flex justify-start my-2 animate-spawn-in">
              <BrainCircuitIcon className="w-8 h-8 text-nexus-secondary mr-3 flex-shrink-0" />
-            <div className="bg-nexus-dark rounded-xl rounded-bl-none max-w-xl p-3 shadow-md">
+            <div className="bg-nexus-dark rounded-xl rounded-bl-none max-w-xl p-3 shadow-md relative group">
+                <TextActionOverlay content={text} filename="discussion-response.txt" />
                 <pre className="text-sm whitespace-pre-wrap font-sans text-nexus-text">{text}</pre>
             </div>
         </div>
@@ -160,7 +165,10 @@ const CognitiveTraceInspector: React.FC<CognitiveTraceInspectorProps> = ({ trace
                             <p className="italic">"{trace.userQuery}"</p>
                         </DetailCard>
                          <DetailCard label={t('traceInspector.finalAnswer')} className="md:col-span-2">
-                            <pre className="text-sm whitespace-pre-wrap font-sans text-nexus-text bg-nexus-dark/50 p-3 rounded-xl max-h-64 overflow-y-auto">{String(trace.text || '')}</pre>
+                            <div className="relative group">
+                                <TextActionOverlay content={String(trace.text || '')} filename={`trace-${trace.id}-answer.txt`} />
+                                <pre className="text-sm whitespace-pre-wrap font-sans text-nexus-text bg-nexus-dark/50 p-3 rounded-xl max-h-64 overflow-y-auto">{String(trace.text || '')}</pre>
+                            </div>
                         </DetailCard>
                          <DetailCard label={t('traceInspector.metrics')}>
                             <p>{t('traceInspector.planSteps')}: {trace.plan?.length || 0}</p>
@@ -189,9 +197,12 @@ const CognitiveTraceInspector: React.FC<CognitiveTraceInspectorProps> = ({ trace
                         )}
                         {isLoadingReflection && <p className="text-nexus-text-muted animate-pulse">{t('traceInspector.reflecting')}</p>}
                         {details.reflection && (
-                             <pre className="text-sm whitespace-pre-wrap font-sans text-nexus-text text-left bg-nexus-dark/50 p-4 rounded-xl overflow-y-auto">
-                                 {String(details.reflection || '')}
-                             </pre>
+                             <div className="relative group">
+                                <TextActionOverlay content={String(details.reflection || '')} filename={`trace-${trace.id}-reflection.txt`} />
+                                 <pre className="text-sm whitespace-pre-wrap font-sans text-nexus-text text-left bg-nexus-dark/50 p-4 rounded-xl overflow-y-auto">
+                                     {String(details.reflection || '')}
+                                 </pre>
+                             </div>
                         )}
                     </div>
                 );

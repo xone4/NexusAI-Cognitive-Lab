@@ -39,6 +39,9 @@ const App: React.FC = () => {
   const [isRawIntrospectionOpen, setIsRawIntrospectionOpen] = useState(false);
   const [activeTrace, setActiveTrace] = useState<ChatMessage | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isVitalsPanelOpen, setIsVitalsPanelOpen] = useState(false);
+  const isRtl = i18n.dir() === 'rtl';
+
 
   const [settings, setSettings] = useState<AppSettings>(() => {
     const defaultSettings: AppSettings = {
@@ -336,56 +339,44 @@ const App: React.FC = () => {
   }, [replicas]);
 
   const renderDashboard = () => (
-    <div className="flex h-full relative overflow-hidden">
-        <div className="flex-1 flex flex-col h-full bg-nexus-bg">
-            <div className="flex-grow h-full overflow-hidden relative">
-                 {cognitiveProcess && <CognitiveProcessVisualizer
-                  process={cognitiveProcess}
-                  constitutions={constitutions}
-                  onExecutePlan={executePlan}
-                  onUpdatePlanStep={updatePlanStep}
-                  onReorderPlan={reorderPlan}
-                  onAddPlanStep={addPlanStep}
-                  onDeletePlanStep={deletePlanStep}
-                  onSavePlanAsToolchain={handleSavePlanAsToolchain}
-                  onArchiveTrace={handleArchiveTrace}
-                  onExtractBehavior={handleExtractBehavior}
-                  onRerunTrace={handleRerunTrace}
-                  onTranslate={(messageId, text, lang) => nexusAIService.translateResponse(messageId, text, lang)}
-                  language={settings.language}
-                />}
-                <SuggestionTray
-                  process={cognitiveProcess}
-                  permissions={cognitivePermissions}
-                  onSubmitQuery={submitQuery}
-                />
-            </div>
-
-            <div className="flex-shrink-0 bg-nexus-dark/80 backdrop-blur-md border-t border-nexus-surface z-20 p-2">
-                 <CognitiveCommandCenter
-                  permissions={cognitivePermissions}
-                  process={cognitiveProcess}
-                  settings={settings}
-                  onSubmitQuery={submitQuery}
-                  onCancelQuery={cancelQuery}
-                  onNewChat={startNewChat}
-                  onSpawnReplica={() => spawnReplica(replicas?.id || 'nexus-core')} 
-                  onGoToForge={() => setActiveView('tools')}
-                  onOpenIntrospection={() => setIsRawIntrospectionOpen(true)}
-                  onGoToDreaming={() => setActiveView('dreaming')}
-                />
-            </div>
+    <div className="flex flex-col h-full bg-nexus-bg">
+        <div className="flex-grow h-full overflow-hidden relative">
+             {cognitiveProcess && <CognitiveProcessVisualizer
+              process={cognitiveProcess}
+              constitutions={constitutions}
+              onExecutePlan={executePlan}
+              onUpdatePlanStep={updatePlanStep}
+              onReorderPlan={reorderPlan}
+              onAddPlanStep={addPlanStep}
+              onDeletePlanStep={deletePlanStep}
+              onSavePlanAsToolchain={handleSavePlanAsToolchain}
+              onArchiveTrace={handleArchiveTrace}
+              onExtractBehavior={handleExtractBehavior}
+              onRerunTrace={handleRerunTrace}
+              onTranslate={(messageId, text, lang) => nexusAIService.translateResponse(messageId, text, lang)}
+              language={settings.language}
+            />}
+            <SuggestionTray
+              process={cognitiveProcess}
+              permissions={cognitivePermissions}
+              onSubmitQuery={submitQuery}
+            />
         </div>
 
-        <VitalsPanel
-            status={systemStatus}
-            onSetStatus={(s: SystemStatus) => setSystemStatus(s)}
-            isInteractionDisabled={!cognitivePermissions.canUseManualControls}
-            replicaCount={replicaCount}
-            toolCount={tools.length}
-            performanceData={performanceData}
-            logs={logs}
-        />
+        <div className="flex-shrink-0 bg-nexus-dark/80 backdrop-blur-md border-t border-nexus-surface z-20 p-2">
+             <CognitiveCommandCenter
+              permissions={cognitivePermissions}
+              process={cognitiveProcess}
+              settings={settings}
+              onSubmitQuery={submitQuery}
+              onCancelQuery={cancelQuery}
+              onNewChat={startNewChat}
+              onSpawnReplica={() => spawnReplica(replicas?.id || 'nexus-core')} 
+              onGoToForge={() => setActiveView('tools')}
+              onOpenIntrospection={() => setIsRawIntrospectionOpen(true)}
+              onGoToDreaming={() => setActiveView('dreaming')}
+            />
+        </div>
     </div>
   );
 
@@ -477,12 +468,27 @@ const App: React.FC = () => {
       <Sidebar activeView={activeView} setActiveView={setActiveView} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
-        <main className="flex-1 overflow-y-auto p-6 bg-nexus-bg">
+        <main className={`flex-1 overflow-y-auto p-6 bg-nexus-bg transition-[margin] duration-500 ease-in-out ${isVitalsPanelOpen && activeView === 'dashboard' ? (isRtl ? 'ml-96' : 'mr-96') : ''}`}>
           <ErrorBoundary key={activeView}>
              {renderView()}
           </ErrorBoundary>
         </main>
       </div>
+
+      {activeView === 'dashboard' &&
+        <VitalsPanel
+            isOpen={isVitalsPanelOpen}
+            setIsOpen={setIsVitalsPanelOpen}
+            status={systemStatus}
+            onSetStatus={(s: SystemStatus) => setSystemStatus(s)}
+            isInteractionDisabled={!cognitivePermissions.canUseManualControls}
+            replicaCount={replicaCount}
+            toolCount={tools.length}
+            performanceData={performanceData}
+            logs={logs}
+        />
+      }
+
       {isRawIntrospectionOpen && <RawIntrospectionModal onClose={() => setIsRawIntrospectionOpen(false)} />}
       {activeTrace && <CognitiveTraceInspector trace={activeTrace} onClose={() => setActiveTrace(null)} />}
     </div>
