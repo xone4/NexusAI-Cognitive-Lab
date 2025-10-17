@@ -97,55 +97,75 @@ const findReplica = (id: string, node: Replica): {parent: Replica | null, node: 
 
 
 const updateReplicaState = (node: Replica, root: Replica) => {
-    if (node.status === 'Active' || node.status === 'Spawning' || node.status === 'Executing Task') {
-        node.load += (Math.random() - 0.5) * 5;
-        node.efficiency += (Math.random() - 0.45) * 2; // Can go up or down slightly
-        node.memoryUsage += (Math.random() - 0.5) * 4;
-        node.cpuUsage += (Math.random() - 0.5) * 6;
+    // New logic: Base metrics on actual system state
+    const activeReplicas = (r: Replica): number => r.children.reduce((acc, child) => acc + activeReplicas(child), r.status === 'Active' || r.status === 'Executing Task' ? 1 : 0);
+    const totalActiveReplicas = activeReplicas(root);
+    const lastMessage = cognitiveProcess?.history[cognitiveProcess.history.length - 1];
+    const currentPlanSteps = (lastMessage?.role === 'model' && lastMessage.plan) ? lastMessage.plan.length : 0;
 
-        // Clamp values
-        node.load = Math.max(10, Math.min(95, node.load));
-        node.efficiency = Math.max(50, Math.min(100, node.efficiency));
-        node.memoryUsage = Math.max(10, Math.min(90, node.memoryUsage));
-        node.cpuUsage = Math.max(10, Math.min(95, node.cpuUsage));
+    // Cognitive Load Calculation
+    const baseLoad = 10;
+    const replicaLoad = totalActiveReplicas * 5;
+    const planLoad = currentPlanSteps * 3;
+    const processStateLoad = (cognitiveProcess?.state === 'Executing' || cognitiveProcess?.state === 'Planning') ? 20 : 0;
+    node.load = baseLoad + replicaLoad + planLoad + processStateLoad + (Math.random() * 5); // Add some jitter
+    if (node.status === 'Dormant') node.load = Math.random() * 10;
+    node.load = Math.max(0, Math.min(100, node.load));
+    
+    // Context Utilization (Memory) Calculation
+    const historySize = cognitiveProcess?.history.length || 0;
+    const worldModelSize = worldModelState?.entities.length || 0;
+    node.memoryUsage = (historySize * 0.5) + (worldModelSize * 0.2) + 10 + (Math.random() * 5);
+    if (node.status === 'Dormant') node.memoryUsage = 5 + Math.random() * 5;
+    node.memoryUsage = Math.max(0, Math.min(100, node.memoryUsage));
 
-        // Simulate interactions
-        node.interactions = node.interactions?.filter(i => i.intensity > 0.1 && Math.random() > 0.1) || []; // Decay old/weak interactions
-        node.interactions.forEach(i => i.intensity -= 0.05); // Reduce intensity over time
+    // Processing Cycles (CPU) Calculation
+    let cpu = 5 + (Math.random() * 5); // Base idle
+    if (cognitiveProcess) {
+        switch(cognitiveProcess.state) {
+            case 'Planning':
+            case 'Synthesizing':
+                cpu = 40 + Math.random() * 15;
+                break;
+            case 'Executing':
+                cpu = 70 + Math.random() * 25;
+                break;
+        }
+    }
+     if (node.status === 'Dormant') cpu = Math.random() * 5;
+    node.cpuUsage = Math.max(0, Math.min(100, cpu));
 
-        if (node.status === 'Active' && Math.random() < 0.2) { // 20% chance to form a new interaction
-            const activeReplicas: Replica[] = [];
+
+    // Learning Rate (Efficiency) remains event-driven, but we prevent random decay
+    node.efficiency = Math.max(50, Math.min(100, node.efficiency));
+    if (node.status === 'Dormant') {
+        node.efficiency = Math.max(0, node.efficiency - 0.05);
+    }
+
+    // Simulate interactions for active nodes
+    if (node.status === 'Active' || node.status === 'Executing Task') {
+        node.interactions = node.interactions?.filter(i => i.intensity > 0.1 && Math.random() > 0.1) || [];
+        node.interactions.forEach(i => i.intensity -= 0.05);
+
+        if (Math.random() < 0.2) {
+            const activeNodes: Replica[] = [];
             const collectActive = (n: Replica) => {
-                if (n.id !== node.id && n.status === 'Active') activeReplicas.push(n);
+                if (n.id !== node.id && (n.status === 'Active' || n.status === 'Executing Task')) activeNodes.push(n);
                 n.children.forEach(collectActive);
             }
             collectActive(root);
 
-            if (activeReplicas.length > 0) {
-                const target = activeReplicas[Math.floor(Math.random() * activeReplicas.length)];
+            if (activeNodes.length > 0) {
+                const target = activeNodes[Math.floor(Math.random() * activeNodes.length)];
                 if (!node.interactions.some(i => i.targetId === target.id)) {
-                    const newInteraction: Interaction = {
-                        targetId: target.id,
-                        type: 'data_flow',
-                        intensity: 0.5 + Math.random() * 0.5 // Start with high intensity
-                    };
-                    node.interactions.push(newInteraction);
+                    node.interactions.push({ targetId: target.id, type: 'data_flow', intensity: 0.5 + Math.random() * 0.5 });
                 }
             }
         }
-
-    } else if (node.status === 'Dormant') {
-        node.load -= Math.random() * 2;
-        node.efficiency -= Math.random() * 0.1;
-        node.memoryUsage -= Math.random() * 1;
-        node.cpuUsage -= Math.random() * 1;
-        node.interactions = []; // Dormant replicas don't interact
-
-        node.load = Math.max(0, node.load);
-        node.efficiency = Math.max(0, node.efficiency);
-        node.memoryUsage = Math.max(0, node.memoryUsage);
-        node.cpuUsage = Math.max(0, node.cpuUsage);
+    } else {
+        node.interactions = [];
     }
+
     node.children.forEach(child => updateReplicaState(child, root));
 };
 
@@ -1734,6 +1754,12 @@ const service = {
             await dbService.put('archivedTraces', archivedTrace);
             log('SYSTEM', `Trace for query "${archivedTrace.userQuery}" has been archived with details.`);
             
+            // Increment efficiency on successful archive
+            const coreReplica = findReplica('nexus-core', replicaState);
+            if (coreReplica) {
+                coreReplica.node.efficiency = Math.min(100, coreReplica.node.efficiency + 2);
+            }
+            
             cognitiveProcess.history.splice(modelMessageIndex - 1, 2);
             
             if (cognitiveProcess.history.length === 0) {
@@ -2162,6 +2188,11 @@ ${text}
             playbookState.unshift(newPlaybookItem);
             await dbService.put('playbookItems', newPlaybookItem);
             log('SYSTEM', `ACE cycle complete. New playbook item added: "${newPlaybookItem.description}"`);
+             // Boost efficiency on successful learning
+            const coreReplica = findReplica('nexus-core', replicaState);
+            if (coreReplica) {
+                coreReplica.node.efficiency = Math.min(100, coreReplica.node.efficiency + 5);
+            }
             notifyPlaybook();
             return newPlaybookItem;
         } catch (error) {

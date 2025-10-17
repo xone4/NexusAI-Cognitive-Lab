@@ -32,8 +32,8 @@ const PerformanceCharts: React.FC<PerformanceChartsProps> = ({ data }) => {
             labelStyle={{ color: '#e0e0e0' }}
         />
         <Legend wrapperStyle={{fontSize: "14px"}} />
-        <Line yAxisId="left" type="monotone" dataKey="cpu" name={t('replicas.cpu')} stroke="#00aaff" strokeWidth={2} dot={false} />
-        <Line yAxisId="left" type="monotone" dataKey="memory" name={t('replicas.memory')} stroke="#00e5ff" strokeWidth={2} dot={false} />
+        <Line yAxisId="left" type="monotone" dataKey="cpu" name={t('replicas.processingCycles')} stroke="#00aaff" strokeWidth={2} dot={false} />
+        <Line yAxisId="left" type="monotone" dataKey="memory" name={t('replicas.contextUtilization')} stroke="#00e5ff" strokeWidth={2} dot={false} />
         <Line yAxisId="right" type="monotone" dataKey="rsiCycles" name={t('performanceCharts.rsiCycles')} stroke="#ff00aa" strokeWidth={2} dot={false} />
         
         <Line yAxisId="ms" type="monotone" dataKey="networkLatency" name={t('performanceCharts.networkLatency')} stroke="#facc15" strokeWidth={2} dot={false} />

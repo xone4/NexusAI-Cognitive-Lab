@@ -31,12 +31,14 @@ const statusColors: Record<Replica['status'], { text: string; border: string; bg
 };
 
 const StatBar: React.FC<{ label: string; value: number; color: string; max?: number }> = ({ label, value, color, max = 100 }) => {
+    const { t } = useTranslation();
     const percentage = (value / max) * 100;
+    const isLearningRate = label === t('replicas.learningRate');
     return (
         <div>
             <div className="flex justify-between items-baseline mb-1">
                 <span className="text-xs font-semibold text-nexus-text-muted">{label}</span>
-                <span className="text-sm font-bold text-nexus-text">{value.toFixed(0)}{label === 'Efficiency' ? '%' : ''}</span>
+                <span className="text-sm font-bold text-nexus-text">{value.toFixed(0)}{isLearningRate ? '%' : ''}</span>
             </div>
             <div className="w-full bg-nexus-dark/50 rounded-full h-2 overflow-hidden">
                 <div 
@@ -189,10 +191,10 @@ const ReplicaCard: React.FC<Omit<ReplicasViewProps, 'rootReplica'> & { replica: 
                     </div>
 
                     <div className="space-y-3">
-                        <StatBar label={t('replicas.load')} value={replica.load} color="bg-nexus-primary" />
-                        <StatBar label={t('replicas.efficiency')} value={replica.efficiency} color="bg-green-500" />
-                        <StatBar label={t('replicas.memory')} value={replica.memoryUsage} color={color.bg} />
-                        <StatBar label={t('replicas.cpu')} value={replica.cpuUsage} color={color.bg} />
+                        <StatBar label={t('replicas.cognitiveLoad')} value={replica.load} color="bg-nexus-primary" />
+                        <StatBar label={t('replicas.learningRate')} value={replica.efficiency} color="bg-green-500" />
+                        <StatBar label={t('replicas.contextUtilization')} value={replica.memoryUsage} color={color.bg} />
+                        <StatBar label={t('replicas.processingCycles')} value={replica.cpuUsage} color={color.bg} />
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 pt-2 border-t border-nexus-surface/30">
