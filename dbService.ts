@@ -1,7 +1,6 @@
 // A simple IndexedDB wrapper service
 const DB_NAME = 'NexusAI-Memory';
 const DB_VERSION = 1;
-// FIX: Added 'worldModel' to STORES to support this feature.
 export const STORES = ['appState', 'tools', 'toolchains', 'playbookItems', 'archivedTraces', 'constitutions', 'systemDirectives', 'userKeywords', 'worldModel'];
 
 let db: IDBDatabase | null = null;

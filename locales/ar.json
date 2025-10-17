@@ -8,6 +8,7 @@
     "controlCenter": "مركز التحكم",
     "replicas": "النسخ المتماثلة",
     "mentalTools": "الأدوات العقلية",
+    "worldModel": "نموذج العالم",
     "memoryExplorer": "مستكشف الذاكرة",
     "evolutionChamber": "غرفة التطور",
     "dreamingChamber": "غرفة الأحلام",
@@ -493,5 +494,17 @@
     "learnedBehaviors": "السلوكيات المكتسبة ({{count}})",
     "queryPrefix": "الاستعلام:",
     "close": "إغلاق"
+  },
+  "worldModel": {
+    "title": "مصور نموذج العالم",
+    "description": "تمثيل ديناميكي ومتطور للفهم الموحد للذكاء الاصطناعي للمفاهيم والكيانات وعلاقاتها.",
+    "corePrinciples": "المبادئ الأساسية",
+    "keyEntities": "الكيانات الرئيسية",
+    "noPrinciples": "لم يتم استنتاج أي مبادئ بعد.",
+    "noEntities": "نموذج العالم متناثر حاليًا.",
+    "entityDetails": "تفاصيل الكيان",
+    "type": "النوع",
+    "summary": "ملخص",
+    "properties": "الخصائص"
   }
 }

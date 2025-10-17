@@ -116,7 +116,7 @@ export interface LogEntry {
   source?: string; // Optional Replica ID
 }
 
-export type ActiveView = 'dashboard' | 'replicas' | 'tools' | 'architecture' | 'analysis' | 'settings' | 'evolution' | 'memory' | 'dreaming';
+export type ActiveView = 'dashboard' | 'replicas' | 'tools' | 'architecture' | 'analysis' | 'settings' | 'evolution' | 'memory' | 'dreaming' | 'world_model';
 
 export type LogVerbosity = 'STANDARD' | 'VERBOSE';
 export type AnimationLevel = 'FULL' | 'MINIMAL' | 'NONE';
@@ -140,7 +140,7 @@ export type ThinkingState = 'Idle' | 'Receiving' | 'Planning' | 'AwaitingExecuti
 export interface PlanStep {
     step: number;
     description: string;
-    tool: 'google_search' | 'synthesize_answer' | 'code_interpreter' | 'code_sandbox' | 'recall_memory' | 'generate_image' | 'analyze_image_input' | 'forge_tool' | 'spawn_replica' | 'induce_emotion' | 'replan' | 'summarize_text' | 'translate_text' | 'analyze_sentiment' | 'execute_toolchain' | 'apply_behavior' | 'delegate_task_to_replica' | 'spawn_cognitive_clone' | 'peek_context' | 'search_context';
+    tool: 'google_search' | 'synthesize_answer' | 'code_interpreter' | 'code_sandbox' | 'recall_memory' | 'generate_image' | 'analyze_image_input' | 'forge_tool' | 'spawn_replica' | 'induce_emotion' | 'replan' | 'summarize_text' | 'translate_text' | 'analyze_sentiment' | 'execute_toolchain' | 'apply_behavior' | 'delegate_task_to_replica' | 'spawn_cognitive_clone' | 'peek_context' | 'search_context' | 'world_model';
     query?: string;
     code?: string;
     concept?: string; // For induce_emotion & generate_image
@@ -353,4 +353,41 @@ export type DeltaAction = 'ADD' | 'UPDATE' | 'NO_CHANGE';
 export interface DeltaUpdate {
   action: DeltaAction;
   payload?: any;
+}
+
+// --- World Model Types ---
+export type WorldModelEntityType = 'CONCEPT' | 'PERSON' | 'PLACE' | 'OBJECT' | 'EVENT' | 'ORGANIZATION';
+export type WorldModelRelationshipType = 'IS_A' | 'HAS_A' | 'PART_OF' | 'CAUSES' | 'RELATED_TO' | 'LOCATED_IN' | 'INTERACTS_WITH';
+
+export interface WorldModelEntity {
+  id: string;
+  name: string;
+  type: WorldModelEntityType;
+  properties: Record<string, any>;
+  summary: string; // AI-generated summary
+  lastUpdated: number;
+}
+
+export interface WorldModelRelationship {
+  id: string;
+  sourceId: string;
+  targetId: string;
+  type: WorldModelRelationshipType;
+  description: string;
+  strength: number; // 0 to 1
+  lastUpdated: number;
+}
+
+export interface WorldModelPrinciple {
+  id: string;
+  statement: string; // e.g., "Market volatility increases with unexpected political events."
+  confidence: number; // 0 to 1
+  sourceTraceId?: string; // ID of the ChatMessage it was derived from
+}
+
+export interface WorldModel {
+  entities: WorldModelEntity[];
+  relationships: WorldModelRelationship[];
+  principles: WorldModelPrinciple[];
+  lastUpdated: number;
 }

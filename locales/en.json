@@ -8,6 +8,7 @@
     "controlCenter": "Control Center",
     "replicas": "Replicas",
     "mentalTools": "Mental Tools",
+    "worldModel": "World Model",
     "memoryExplorer": "Memory Explorer",
     "evolutionChamber": "Evolution Chamber",
     "dreamingChamber": "Dreaming Chamber",
@@ -495,5 +496,17 @@
     "learnedBehaviors": "Learned Behaviors ({{count}})",
     "queryPrefix": "Query:",
     "close": "Close"
+  },
+  "worldModel": {
+    "title": "World Model Visualizer",
+    "description": "An evolving, dynamic representation of the AI's unified understanding of concepts, entities, and their relationships.",
+    "corePrinciples": "Core Principles",
+    "keyEntities": "Key Entities",
+    "noPrinciples": "No principles deduced yet.",
+    "noEntities": "World model is currently sparse.",
+    "entityDetails": "Entity Details",
+    "type": "Type",
+    "summary": "Summary",
+    "properties": "Properties"
   }
 }

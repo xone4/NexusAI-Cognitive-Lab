@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails, UserKeyword, Personality, PlaybookItem, RawInsight, PlaybookItemCategory } from '../types';
+// FIX: Added WorldModel to the type imports.
+import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails, UserKeyword, Personality, PlaybookItem, RawInsight, PlaybookItemCategory, WorldModel } from '../types';
 import { dbService, STORES } from './dbService';
 
 // IMPORTANT: This would be populated by a secure mechanism in a real app
@@ -16,6 +17,8 @@ let toolchainsState: Toolchain[];
 let playbookState: PlaybookItem[];
 let constitutionsState: CognitiveConstitution[];
 let evolutionState: EvolutionState;
+// FIX: Added state management for the World Model.
+let worldModelState: WorldModel | null = null;
 let cognitiveProcess: CognitiveProcess;
 let cognitiveNetworkState: CognitiveNetworkState = { activeProblems: [] };
 let archivedTracesState: ChatMessage[];
@@ -45,6 +48,8 @@ let constitutionSubscribers: ((constitutions: CognitiveConstitution[]) => void)[
 let evolutionSubscribers: ((evolutionState: EvolutionState) => void)[] = [];
 let archiveSubscribers: ((archives: ChatMessage[]) => void)[] = [];
 let dreamProcessSubscribers: ((update: DreamProcessUpdate) => void)[] = [];
+// FIX: Added subscriber array for the World Model.
+let worldModelSubscribers: ((worldModel: WorldModel) => void)[] = [];
 
 
 let traceDetailsCache = new Map<string, TraceDetails>();
@@ -76,6 +81,8 @@ const notifyConstitutions = () => constitutionSubscribers.forEach(cb => cb(JSON.
 const notifyEvolution = () => evolutionSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(evolutionState))));
 const notifyArchives = () => archiveSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(archivedTracesState))));
 const notifyDreamProcess = (update: DreamProcessUpdate) => dreamProcessSubscribers.forEach(cb => cb(update));
+// FIX: Added a notifier function for World Model updates.
+const notifyWorldModel = () => worldModelSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(worldModelState!))));
 
 const findReplica = (id: string, node: Replica): {parent: Replica | null, node: Replica, index: number} | null => {
     if (node.id === id) return {parent: null, node, index: -1};
@@ -208,14 +215,18 @@ const initialize = async () => {
     if (!storedReplica) throw new Error("Critical error: Could not load replica root from DB.");
     replicaState = storedReplica.data;
 
-    [toolsState, toolchainsState, playbookState, constitutionsState, archivedTracesState, systemDirectivesState] = await Promise.all([
+    // FIX: Added world model to initialization logic.
+    let storedWorldModel;
+    [toolsState, toolchainsState, playbookState, constitutionsState, archivedTracesState, systemDirectivesState, storedWorldModel] = await Promise.all([
         dbService.getAll<MentalTool>('tools'),
         dbService.getAll<Toolchain>('toolchains'),
         dbService.getAll<PlaybookItem>('playbookItems'),
         dbService.getAll<CognitiveConstitution>('constitutions'),
         dbService.getAll<ChatMessage>('archivedTraces'),
         dbService.getAll<SystemDirective>('systemDirectives'),
+        dbService.get<WorldModel>('worldModel', 'singleton'),
     ]);
+    worldModelState = storedWorldModel ?? { id: 'singleton', entities: [], relationships: [], principles: [], lastUpdated: Date.now() };
 
     cognitiveProcess = { state: 'Idle', history: [], activeAffectiveState: null };
     evolutionState = {
@@ -237,6 +248,8 @@ const initialize = async () => {
         initialEvolutionState: JSON.parse(JSON.stringify(evolutionState)),
         initialArchives: JSON.parse(JSON.stringify(archivedTracesState)),
         initialCognitiveProcess: JSON.parse(JSON.stringify(cognitiveProcess)),
+        // FIX: Added initialWorldModel to the returned object.
+        initialWorldModel: JSON.parse(JSON.stringify(worldModelState)),
         initialLogs: [
             { id: 'init-1', timestamp: Date.now() - 2000, level: 'SYSTEM', message: 'NexusAI Cognitive Core Initializing...' },
             { id: 'init-2', timestamp: Date.now() - 1000, level: 'SYSTEM', message: 'Persistent memory layer synced.' },
@@ -2186,6 +2199,8 @@ ${text}
     subscribeToEvolution: (callback: (evolutionState: EvolutionState) => void) => { evolutionSubscribers.push(callback); },
     subscribeToArchives: (callback: (archives: ChatMessage[]) => void) => { archiveSubscribers.push(callback); },
     subscribeToDreamProcess: (callback: (update: DreamProcessUpdate) => void) => { dreamProcessSubscribers.push(callback); },
+    // FIX: Added subscribeToWorldModel to the service.
+    subscribeToWorldModel: (callback: (worldModel: WorldModel) => void) => { worldModelSubscribers.push(callback); },
     unsubscribeFromDreamProcess: (callback: (update: DreamProcessUpdate) => void) => {
         dreamProcessSubscribers = dreamProcessSubscribers.filter(cb => cb !== callback);
     },
@@ -2202,6 +2217,8 @@ ${text}
         evolutionSubscribers = [];
         archiveSubscribers = [];
         dreamProcessSubscribers = [];
+        // FIX: Added world model subscribers to the cleanup logic.
+        worldModelSubscribers = [];
     }
 };
 

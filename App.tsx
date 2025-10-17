@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+// FIX: Removed unused import 'WorldModel' to clean up dependencies.
 import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, ActiveView, CognitiveProcess, AppSettings, Toolchain, ChatMessage, PlanStep, CognitiveConstitution, EvolutionState, PlaybookItem, Language, Personality } from './types';
 import { nexusAIService } from './services/nexusAIService';
 import Header from './components/Header';
@@ -19,6 +20,7 @@ import CognitiveCommandCenter from './components/CognitiveCommandCenter';
 import VitalsPanel from './components/VitalsPanel';
 import SuggestionTray from './components/SuggestionTray';
 import DreamingView from './components/DreamingView';
+import WorldModelView from './components/WorldModelView';
 
 type SystemStatus = 'Online' | 'Degraded' | 'Offline' | 'Initializing';
 
@@ -31,6 +33,7 @@ const App: React.FC = () => {
   const [playbook, setPlaybook] = useState<PlaybookItem[]>([]);
   const [constitutions, setConstitutions] = useState<CognitiveConstitution[]>([]);
   const [evolutionState, setEvolutionState] = useState<EvolutionState | null>(null);
+  const [worldModel, setWorldModel] = useState<any | null>(null);
   const [archivedTraces, setArchivedTraces] = useState<ChatMessage[]>([]);
   const [performanceData, setPerformanceData] = useState<PerformanceDataPoint[]>([]);
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -142,6 +145,10 @@ const App: React.FC = () => {
     setEvolutionState(newState);
   }, []);
 
+  const handleWorldModelUpdate = useCallback((newWorldModelState: any) => {
+    setWorldModel(newWorldModelState);
+  }, []);
+
   const handleCognitiveProcessUpdate = useCallback((process: CognitiveProcess) => {
     setCognitiveProcess(process);
   }, []);
@@ -160,7 +167,7 @@ const App: React.FC = () => {
     const initializeApp = async () => {
       nexusAIService.updateSettings(settings);
   
-      const { initialReplicas, initialTools, initialToolchains, initialPlaybook, initialConstitutions, initialEvolutionState, initialLogs, initialPerfData, initialCognitiveProcess, initialArchives } = await nexusAIService.initialize();
+      const { initialReplicas, initialTools, initialToolchains, initialPlaybook, initialConstitutions, initialEvolutionState, initialLogs, initialPerfData, initialCognitiveProcess, initialArchives, initialWorldModel } = await nexusAIService.initialize();
       setReplicas(initialReplicas);
       setTools(initialTools);
       setToolchains(initialToolchains);
@@ -168,6 +175,7 @@ const App: React.FC = () => {
       setConstitutions(initialConstitutions);
       setEvolutionState(initialEvolutionState);
       setArchivedTraces(initialArchives);
+      setWorldModel(initialWorldModel);
       setLogs(initialLogs);
       setPerformanceData(initialPerfData);
       setCognitiveProcess(initialCognitiveProcess);
@@ -182,6 +190,7 @@ const App: React.FC = () => {
       nexusAIService.subscribeToPlaybook(handlePlaybookUpdate);
       nexusAIService.subscribeToConstitutions(handleConstitutionsUpdate);
       nexusAIService.subscribeToEvolution(handleEvolutionUpdate);
+      nexusAIService.subscribeToWorldModel(handleWorldModelUpdate);
       nexusAIService.subscribeToCognitiveProcess(handleCognitiveProcessUpdate);
       nexusAIService.subscribeToArchives(handleArchivesUpdate);
   
@@ -457,6 +466,8 @@ const App: React.FC = () => {
                 />;
       case 'dreaming':
         return <DreamingView onSubmitQuery={submitQuery} setActiveView={setActiveView} />;
+      case 'world_model':
+        return <WorldModelView worldModel={worldModel} />;
       case 'dashboard':
       default:
         return renderDashboard();

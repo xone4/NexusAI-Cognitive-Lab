@@ -2,7 +2,7 @@ import React, { memo, useEffect, useRef, useState } from 'react';
 import type { CognitiveProcess, ChatMessage, PlanStep, CognitiveConstitution, GeneratedImage, Language } from '../types';
 import { useTranslation } from 'react-i18next';
 // FIX: Added ReplicaIcon to the import list to resolve a reference error.
-import { BrainCircuitIcon, UserIcon, BookOpenIcon, CogIcon, CheckCircleIcon, CubeTransparentIcon, PlayIcon, PencilIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, PlusCircleIcon, CodeBracketIcon, LightBulbIcon, LinkIcon, ArrowRightIcon, PhotographIcon, SparklesIcon, ArchiveBoxArrowDownIcon, RefreshIcon, GlobeAltIcon, DocumentTextIcon, ShareIcon, ReplicaIcon } from './Icons';
+import { BrainCircuitIcon, UserIcon, BookOpenIcon, CogIcon, CheckCircleIcon, CubeTransparentIcon, PlayIcon, PencilIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, PlusCircleIcon, CodeBracketIcon, LightBulbIcon, LinkIcon, ArrowRightIcon, PhotographIcon, SparklesIcon, ArchiveBoxArrowDownIcon, RefreshIcon, GlobeAltIcon, DocumentTextIcon, ShareIcon, ReplicaIcon, DicesIcon } from './Icons';
 import TextActionOverlay from './TextActionOverlay';
 
 interface CognitiveProcessVisualizerProps {
@@ -176,6 +176,7 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
             case 'delegate_task_to_replica': return <ShareIcon className="w-4 h-4 text-green-400" />;
             case 'spawn_cognitive_clone': return <ReplicaIcon className="w-4 h-4 text-yellow-500" />;
             case 'code_interpreter': return <CodeBracketIcon className="w-4 h-4 text-purple-400" />;
+            case 'world_model': return <DicesIcon className="w-4 h-4 text-cyan-300" />;
             case 'recall_memory': return <BookOpenIcon className="w-4 h-4 text-yellow-400" />;
             case 'induce_emotion': return <LightBulbIcon className="w-4 h-4 text-orange-400" />;
             case 'generate_image': return <PhotographIcon className="w-4 h-4 text-green-400" />;
