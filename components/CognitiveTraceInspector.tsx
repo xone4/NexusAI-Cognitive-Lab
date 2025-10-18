@@ -1,27 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, Fragment, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Tab } from '@headlessui/react';
 import type { ChatMessage, PlanStep, GeneratedImage } from '../types';
 import { nexusAIService } from '../services/nexusAIService';
 import AffectiveStateVisualizer from './QualiaVectorVisualizer';
-import { DocumentMagnifyingGlassIcon, CheckCircleIcon, CogIcon, CodeBracketIcon, CubeTransparentIcon, LightBulbIcon, PhotographIcon, SparklesIcon, XCircleIcon, BrainCircuitIcon, ChatBubbleLeftRightIcon, UserIcon } from './Icons';
+import { DocumentMagnifyingGlassIcon, CheckCircleIcon, CogIcon, CodeBracketIcon, CubeTransparentIcon, LightBulbIcon, PhotographIcon, SparklesIcon, XCircleIcon, BrainCircuitIcon, ChatBubbleLeftRightIcon, UserIcon, TrajectoryIcon, DocumentTextIcon } from './Icons';
 import TextActionOverlay from './TextActionOverlay';
+import CognitiveTrajectoryVisualizer from './CognitiveTrajectoryVisualizer';
 
 interface CognitiveTraceInspectorProps {
     trace: ChatMessage;
     onClose: () => void;
 }
-
-type InspectorTab = 'summary' | 'flow' | 'reflection' | 'discuss';
-
-const TabButton: React.FC<{ active: boolean; onClick: () => void; children: React.ReactNode }> = ({ active, onClick, children }) => (
-    <button
-        onClick={onClick}
-        className={`px-4 py-2 text-sm font-semibold transition-colors duration-200 border-b-2
-        ${active ? 'border-nexus-primary text-nexus-primary' : 'border-transparent text-nexus-text-muted hover:text-nexus-text'}`}
-    >
-        {children}
-    </button>
-);
 
 const DetailCard: React.FC<{ label: string; children: React.ReactNode; className?: string }> = ({ label, children, className }) => (
     <div className={`bg-nexus-dark/50 p-3 rounded-xl ${className}`}>
@@ -97,11 +87,18 @@ const DetailedPlanStep: React.FC<{ step: PlanStep }> = ({ step }) => {
 
 const CognitiveTraceInspector: React.FC<CognitiveTraceInspectorProps> = ({ trace, onClose }) => {
     const { t } = useTranslation();
-    const [activeTab, setActiveTab] = useState<InspectorTab>('summary');
     const [details, setDetails] = useState(() => nexusAIService.getArchivedTraceDetails(trace.id));
     const [isLoadingReflection, setIsLoadingReflection] = useState(false);
     const [discussionInput, setDiscussionInput] = useState('');
     const [isDiscussing, setIsDiscussing] = useState(false);
+    const [isClosing, setIsClosing] = useState(false);
+
+    const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+            onClose();
+        }, 500); // Animation duration
+    };
 
     const handleGenerateReflection = async () => {
         setIsLoadingReflection(true);
@@ -156,136 +153,155 @@ const CognitiveTraceInspector: React.FC<CognitiveTraceInspectorProps> = ({ trace
         </div>
     );
     
-    const renderTabContent = () => {
-        switch(activeTab) {
-            case 'summary':
-                return (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <DetailCard label={t('traceInspector.userQuery')} className="md:col-span-2">
-                            <p className="italic">"{trace.userQuery}"</p>
-                        </DetailCard>
-                         <DetailCard label={t('traceInspector.finalAnswer')} className="md:col-span-2">
-                            <div className="relative group">
-                                <TextActionOverlay content={String(trace.text || '')} filename={`trace-${trace.id}-answer.txt`} />
-                                <pre className="text-sm whitespace-pre-wrap font-sans text-nexus-text bg-nexus-dark/50 p-3 rounded-xl max-h-64 overflow-y-auto">{String(trace.text || '')}</pre>
-                            </div>
-                        </DetailCard>
-                         <DetailCard label={t('traceInspector.metrics')}>
-                            <p>{t('traceInspector.planSteps')}: {trace.plan?.length || 0}</p>
-                            <p>{t('traceInspector.constitution')}: {trace.constitutionId || t('traceInspector.default')}</p>
-                         </DetailCard>
-                         <DetailCard label={t('traceInspector.affectiveStateSnapshot')}>
-                             <div className="h-48">
-                                <AffectiveStateVisualizer activeState={trace.affectiveStateSnapshot || null} />
-                            </div>
-                         </DetailCard>
-                    </div>
-                );
-            case 'flow':
-                return (
-                    <div className="space-y-3">
-                        {trace.plan?.map(step => <DetailedPlanStep key={step.step} step={step} />)}
-                    </div>
-                );
-            case 'reflection':
-                 return (
-                    <div className="text-center py-4">
-                        {!details.reflection && !isLoadingReflection && (
-                             <button onClick={handleGenerateReflection} className="flex items-center gap-2 mx-auto bg-nexus-primary text-nexus-dark font-bold py-2 px-4 rounded-full hover:bg-nexus-secondary">
-                                 <BrainCircuitIcon className="w-5 h-5"/> {t('traceInspector.generateReflection')}
-                            </button>
-                        )}
-                        {isLoadingReflection && <p className="text-nexus-text-muted animate-pulse">{t('traceInspector.reflecting')}</p>}
-                        {details.reflection && (
-                             <div className="relative group">
-                                <TextActionOverlay content={String(details.reflection || '')} filename={`trace-${trace.id}-reflection.txt`} />
-                                 <pre className="text-sm whitespace-pre-wrap font-sans text-nexus-text text-left bg-nexus-dark/50 p-4 rounded-xl overflow-y-auto">
-                                     {String(details.reflection || '')}
-                                 </pre>
-                             </div>
-                        )}
-                    </div>
-                );
-            default:
-                return null;
-        }
-    };
+    const tabClasses = ({ selected }: { selected: boolean }) => `
+        w-full px-3 py-2.5 text-sm font-semibold rounded-lg text-left
+        flex items-center gap-3
+        transition-colors duration-200
+        ${selected
+            ? 'bg-nexus-primary/20 text-nexus-primary'
+            : 'text-nexus-text-muted hover:bg-nexus-surface hover:text-nexus-text'
+        }`;
+        
+    // Close on escape key
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                handleClose();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     return (
-        <div className="fixed inset-0 bg-nexus-dark/80 backdrop-blur-sm flex items-center justify-center z-50 animate-spawn-in">
-            <div className="bg-nexus-surface p-6 rounded-xl shadow-2xl w-full max-w-4xl border border-nexus-primary/50 flex flex-col max-h-[90vh]">
-                 <div className="flex-shrink-0 flex justify-between items-start">
-                    <div className="flex items-center gap-3 mb-4">
+        <>
+            <div className={`fixed inset-0 bg-nexus-dark/60 backdrop-blur-sm z-50 transition-opacity duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'}`} onClick={handleClose} />
+            
+            <div className={`fixed top-0 right-0 h-full w-full max-w-4xl bg-nexus-surface shadow-2xl z-50 flex flex-col ${isClosing ? 'animate-slide-out-right' : 'animate-slide-in-right'}`}>
+                 <header className="flex-shrink-0 flex justify-between items-center p-4 border-b border-nexus-surface/50">
+                    <div className="flex items-center gap-3">
                         <DocumentMagnifyingGlassIcon className="w-8 h-8 text-nexus-primary"/>
                         <div>
                             <h3 className="text-xl font-bold text-nexus-text">{t('traceInspector.title')}</h3>
                             <p className="text-xs text-nexus-text-muted">{new Date(trace.archivedAt!).toLocaleString()}</p>
                         </div>
                     </div>
-                     <button onClick={onClose} className="text-nexus-text-muted hover:text-white text-2xl font-bold">&times;</button>
-                 </div>
+                     <button onClick={handleClose} className="text-nexus-text-muted hover:text-white text-2xl font-bold">&times;</button>
+                 </header>
                 
-                 <div className="flex-shrink-0 border-b border-nexus-surface mb-4">
-                    <TabButton active={activeTab === 'summary'} onClick={() => setActiveTab('summary')}>{t('traceInspector.summary')}</TabButton>
-                    <TabButton active={activeTab === 'flow'} onClick={() => setActiveTab('flow')}>{t('traceInspector.executionFlow')}</TabButton>
-                    <TabButton active={activeTab === 'reflection'} onClick={() => setActiveTab('reflection')}>{t('traceInspector.aiReflection')}</TabButton>
-                    <TabButton active={activeTab === 'discuss'} onClick={() => setActiveTab('discuss')}>
-                        <div className="flex items-center gap-2">
-                            <ChatBubbleLeftRightIcon className="w-5 h-5"/>
-                            {t('traceInspector.discussTrace')}
-                        </div>
-                    </TabButton>
-                 </div>
-
-                {activeTab === 'discuss' ? (
-                    <div className="flex-grow flex flex-col overflow-hidden">
-                        <div className="flex-grow overflow-y-auto p-2 pr-4 space-y-2">
-                             {(details.discussion || []).length === 0 && (
-                                 <div className="flex flex-col items-center justify-center h-full text-center text-nexus-text-muted">
-                                    <ChatBubbleLeftRightIcon className="w-16 h-16"/>
-                                    <p className="mt-4 font-semibold text-lg">{t('traceInspector.discussionHub')}</p>
-                                    <p className="text-sm">{t('traceInspector.discussionHubDesc')}</p>
-                                 </div>
-                             )}
-                            {(details.discussion || []).map((msg, index) => (
-                                msg.role === 'user'
-                                    ? <DiscussionUserMessage key={index} text={msg.text} />
-                                    : <DiscussionModelMessage key={index} text={msg.text} />
-                            ))}
-                            {isDiscussing && (
-                                <div className="flex justify-start my-2 animate-spawn-in">
-                                     <BrainCircuitIcon className="w-8 h-8 text-nexus-secondary mr-3 flex-shrink-0" />
-                                    <div className="bg-nexus-dark rounded-xl rounded-bl-none max-w-lg p-3 shadow-md">
-                                        <p className="text-sm text-nexus-text-muted animate-pulse">{t('traceInspector.thinking')}</p>
-                                    </div>
-                                </div>
+                 <div className="flex-grow flex min-h-0">
+                    <Tab.Group vertical>
+                        <Tab.List className="w-56 flex-shrink-0 p-3 space-y-1 border-r border-nexus-surface/50">
+                            <Tab className={tabClasses}><DocumentTextIcon className="w-5 h-5"/>{t('traceInspector.summary')}</Tab>
+                            <Tab className={tabClasses}><CogIcon className="w-5 h-5"/>{t('traceInspector.executionFlow')}</Tab>
+                            {trace.cognitiveTrajectory && (
+                                <Tab className={tabClasses}><TrajectoryIcon className="w-5 h-5"/> {t('traceInspector.geometry')}</Tab>
                             )}
-                        </div>
-                        <form onSubmit={handleSendDiscussionMessage} className="flex-shrink-0 p-2 pt-4 border-t border-nexus-surface flex gap-2">
-                            <input
-                                type="text"
-                                value={discussionInput}
-                                onChange={(e) => setDiscussionInput(e.target.value)}
-                                placeholder={t('traceInspector.discussPlaceholder')}
-                                disabled={isDiscussing}
-                                className="flex-grow bg-nexus-dark/70 border border-nexus-surface rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-nexus-primary text-nexus-text text-sm"
-                            />
-                            <button
-                                type="submit"
-                                disabled={isDiscussing || !discussionInput.trim()}
-                                className="bg-nexus-primary text-nexus-dark font-bold py-2 px-4 rounded-full hover:bg-nexus-secondary disabled:opacity-50"
-                            >
-                                {t('traceInspector.send')}
-                            </button>
-                        </form>
-                    </div>
-                ) : (
-                    <div className="flex-grow overflow-y-auto pr-4 p-2">
-                        {renderTabContent()}
-                    </div>
-                )}
+                            <Tab className={tabClasses}><BrainCircuitIcon className="w-5 h-5"/>{t('traceInspector.aiReflection')}</Tab>
+                            <Tab className={tabClasses}><ChatBubbleLeftRightIcon className="w-5 h-5"/>{t('traceInspector.discussTrace')}</Tab>
+                        </Tab.List>
+
+                        <Tab.Panels as={Fragment}>
+                            <div className="flex-grow overflow-y-auto">
+                                <Tab.Panel className="p-6">
+                                    <div className="space-y-4">
+                                        <DetailCard label={t('traceInspector.userQuery')}>
+                                            <p className="italic">"{trace.userQuery}"</p>
+                                        </DetailCard>
+                                        <DetailCard label={t('traceInspector.finalAnswer')}>
+                                            <div className="relative group">
+                                                <TextActionOverlay content={String(trace.text || '')} filename={`trace-${trace.id}-answer.txt`} />
+                                                <pre className="text-sm whitespace-pre-wrap font-sans text-nexus-text bg-nexus-dark/50 p-3 rounded-xl max-h-64 overflow-y-auto">{String(trace.text || '')}</pre>
+                                            </div>
+                                        </DetailCard>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <DetailCard label={t('traceInspector.metrics')}>
+                                                <p>{t('traceInspector.planSteps')}: {trace.plan?.length || 0}</p>
+                                                <p>{t('traceInspector.constitution')}: {trace.constitutionId || t('traceInspector.default')}</p>
+                                            </DetailCard>
+                                            <DetailCard label={t('traceInspector.affectiveStateSnapshot')}>
+                                                <div className="h-48">
+                                                    <AffectiveStateVisualizer activeState={trace.affectiveStateSnapshot || null} />
+                                                </div>
+                                            </DetailCard>
+                                        </div>
+                                    </div>
+                                </Tab.Panel>
+                                <Tab.Panel className="p-6">
+                                    <div className="space-y-3">
+                                        {trace.plan?.map(step => <DetailedPlanStep key={step.step} step={step} />)}
+                                    </div>
+                                </Tab.Panel>
+                                {trace.cognitiveTrajectory && (
+                                    <Tab.Panel className="p-6">
+                                        <CognitiveTrajectoryVisualizer trajectory={trace.cognitiveTrajectory} />
+                                    </Tab.Panel>
+                                )}
+                                <Tab.Panel className="p-6">
+                                    <div className="text-center py-4">
+                                        {!details.reflection && !isLoadingReflection && (
+                                            <button onClick={handleGenerateReflection} className="flex items-center gap-2 mx-auto bg-nexus-primary text-nexus-dark font-bold py-2 px-4 rounded-full hover:bg-nexus-secondary">
+                                                <BrainCircuitIcon className="w-5 h-5"/> {t('traceInspector.generateReflection')}
+                                            </button>
+                                        )}
+                                        {isLoadingReflection && <p className="text-nexus-text-muted animate-pulse">{t('traceInspector.reflecting')}</p>}
+                                        {details.reflection && (
+                                            <div className="relative group">
+                                                <TextActionOverlay content={String(details.reflection || '')} filename={`trace-${trace.id}-reflection.txt`} />
+                                                <pre className="text-sm whitespace-pre-wrap font-sans text-nexus-text text-left bg-nexus-dark/50 p-4 rounded-xl overflow-y-auto">
+                                                    {String(details.reflection || '')}
+                                                </pre>
+                                            </div>
+                                        )}
+                                    </div>
+                                </Tab.Panel>
+                                <Tab.Panel className="h-full flex flex-col">
+                                    <div className="flex-grow overflow-y-auto p-4 space-y-2">
+                                        {(details.discussion || []).length === 0 && (
+                                            <div className="flex flex-col items-center justify-center h-full text-center text-nexus-text-muted">
+                                                <ChatBubbleLeftRightIcon className="w-16 h-16"/>
+                                                <p className="mt-4 font-semibold text-lg">{t('traceInspector.discussionHub')}</p>
+                                                <p className="text-sm">{t('traceInspector.discussionHubDesc')}</p>
+                                            </div>
+                                        )}
+                                        {(details.discussion || []).map((msg, index) => (
+                                            msg.role === 'user'
+                                                ? <DiscussionUserMessage key={index} text={msg.text} />
+                                                : <DiscussionModelMessage key={index} text={msg.text} />
+                                        ))}
+                                        {isDiscussing && (
+                                            <div className="flex justify-start my-2 animate-spawn-in">
+                                                <BrainCircuitIcon className="w-8 h-8 text-nexus-secondary mr-3 flex-shrink-0" />
+                                                <div className="bg-nexus-dark rounded-xl rounded-bl-none max-w-lg p-3 shadow-md">
+                                                    <p className="text-sm text-nexus-text-muted animate-pulse">{t('traceInspector.thinking')}</p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <form onSubmit={handleSendDiscussionMessage} className="flex-shrink-0 p-4 border-t border-nexus-surface/50 flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={discussionInput}
+                                            onChange={(e) => setDiscussionInput(e.target.value)}
+                                            placeholder={t('traceInspector.discussPlaceholder')}
+                                            disabled={isDiscussing}
+                                            className="flex-grow bg-nexus-dark/70 border border-nexus-surface rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-nexus-primary text-nexus-text text-sm"
+                                        />
+                                        <button
+                                            type="submit"
+                                            disabled={isDiscussing || !discussionInput.trim()}
+                                            className="bg-nexus-primary text-nexus-dark font-bold py-2 px-4 rounded-full hover:bg-nexus-secondary disabled:opacity-50"
+                                        >
+                                            {t('traceInspector.send')}
+                                        </button>
+                                    </form>
+                                </Tab.Panel>
+                            </div>
+                        </Tab.Panels>
+                    </Tab.Group>
+                </div>
             </div>
-        </div>
+        </>
     );
 };
 

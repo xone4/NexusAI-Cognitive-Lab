@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 // FIX: Removed unused import 'WorldModel' to clean up dependencies.
-import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, ActiveView, CognitiveProcess, AppSettings, Toolchain, ChatMessage, PlanStep, CognitiveConstitution, EvolutionState, PlaybookItem, Language, Personality } from './types';
+import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, ActiveView, CognitiveProcess, AppSettings, Toolchain, ChatMessage, PlanStep, CognitiveConstitution, EvolutionState, PlaybookItem, Language, Personality, WorldModelEntity } from './types';
 import { nexusAIService } from './services/nexusAIService';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -324,6 +324,10 @@ const App: React.FC = () => {
       setActiveView('dashboard');
   }, []);
   
+  const handleUpdateWorldModelEntity = useCallback((entity: WorldModelEntity) => {
+    nexusAIService.updateWorldModelEntity(entity);
+  }, []);
+
   const cognitivePermissions = useMemo(() => {
     const state = cognitiveProcess?.state ?? 'Idle';
     const isProcessing = state === 'Receiving' || state === 'Executing' || state === 'Synthesizing' || state === 'Planning';
@@ -467,7 +471,10 @@ const App: React.FC = () => {
       case 'dreaming':
         return <DreamingView onSubmitQuery={submitQuery} setActiveView={setActiveView} />;
       case 'world_model':
-        return <WorldModelView worldModel={worldModel} />;
+        return <WorldModelView 
+                  worldModel={worldModel} 
+                  onUpdateEntity={handleUpdateWorldModelEntity}
+                />;
       case 'dashboard':
       default:
         return renderDashboard();

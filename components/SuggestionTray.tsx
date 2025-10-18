@@ -13,7 +13,7 @@ interface SuggestionTrayProps {
 const SuggestionTray: React.FC<SuggestionTrayProps> = ({ process, permissions, onSubmitQuery }) => {
   const { t } = useTranslation();
   const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [loadingSuggestions, setLoadingSuggestions] = useState(true);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [suggestionProfile, setSuggestionProfile] = useState<SuggestionProfile>('medium');
   const [keywords, setKeywords] = useState('');
   const [isGeneratingKeywords, setIsGeneratingKeywords] = useState(false);
@@ -27,13 +27,6 @@ const SuggestionTray: React.FC<SuggestionTrayProps> = ({ process, permissions, o
       .then(setSuggestions)
       .finally(() => setLoadingSuggestions(false));
   }, []);
-
-  useEffect(() => {
-    if (isVisible) {
-      fetchSuggestions(suggestionProfile, keywords);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isVisible]);
 
   const handleSuggestionProfileChange = (profile: SuggestionProfile) => {
     if (suggestionProfile !== profile) {
@@ -116,7 +109,7 @@ const SuggestionTray: React.FC<SuggestionTrayProps> = ({ process, permissions, o
 
             {loadingSuggestions ? (
                <div className="text-sm text-center py-4 text-nexus-text-muted animate-pulse">{t('dashboard.generatingSuggestions')}</div>
-            ) : (
+            ) : suggestions.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {suggestions.map((s, i) => (
                   <button
@@ -129,6 +122,10 @@ const SuggestionTray: React.FC<SuggestionTrayProps> = ({ process, permissions, o
                   </button>
                 ))}
               </div>
+            ) : (
+                <div className="text-sm text-center py-4 text-nexus-text-muted">
+                    {t('dashboard.generateSuggestionsPrompt')}
+                </div>
             )}
         </div>
     </div>

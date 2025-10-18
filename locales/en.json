@@ -48,7 +48,8 @@
     "keywordsPlaceholder": "Add keywords to guide suggestions...",
     "generateFromKeywords": "Generate suggestions from keywords",
     "generate": "Generate",
-    "randomKeywords": "Generate random keywords"
+    "randomKeywords": "Generate random keywords",
+    "generateSuggestionsPrompt": "Select a profile or enter keywords to generate suggestions."
   },
   "commandCenter": {
     "query": "Query",
@@ -394,6 +395,7 @@
     "title": "Cognitive Trace Inspector",
     "summary": "Summary",
     "executionFlow": "Execution Flow",
+    "geometry": "Cognitive Geometry",
     "aiReflection": "AI Reflection",
     "discussTrace": "Discuss Trace",
     "userQuery": "User Query",
@@ -414,7 +416,21 @@
     "thinking": "Thinking...",
     "discussPlaceholder": "Ask about this trace...",
     "send": "Send",
-    "affectiveStateDormant": "Affective State Dormant"
+    "affectiveStateDormant": "Affective State Dormant",
+    "noGeometry": "No Geometric Data",
+    "noGeometryDesc": "Cognitive trajectory data was not recorded for this trace.",
+    "trajectorySummary": "Trajectory Summary",
+    "avgVelocity": "Avg. Velocity",
+    "avgCurvature": "Avg. Curvature",
+    "maxCurvature": "Max Curvature",
+    "pathLength": "Path Length",
+    "totalDistance": "Total Distance",
+    "trajectoryPlot": "Cognitive Trajectory Plot",
+    "trajectorySteps": "Trajectory Steps",
+    "step": "Step",
+    "thought": "Thought/Action",
+    "velocity": "Velocity",
+    "curvature": "Curvature"
   },
   "introspection": {
     "title": "Core Directives & Schemas",

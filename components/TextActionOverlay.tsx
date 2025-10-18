@@ -9,7 +9,6 @@ interface TextActionOverlayProps {
 }
 
 const TextActionOverlay: React.FC<TextActionOverlayProps> = ({ content, filename = 'nexus-ai-export.txt', className = '' }) => {
-  // FIX: Destructured i18n from useTranslation to resolve reference error.
   const { t, i18n } = useTranslation();
   const [copied, setCopied] = useState(false);
 

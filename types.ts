@@ -174,6 +174,28 @@ export interface TraceDetails {
     translations?: Partial<Record<Language, string>>;
 }
 
+// --- Cognitive Geometry Types ---
+export interface CognitiveMetricStep {
+  step: number;
+  thought: string;
+  position: number[]; // embedding
+  velocity: number; // norm
+  curvature: number;
+}
+
+export interface CognitiveTrajectorySummary {
+  avgVelocity: number;
+  avgCurvature: number;
+  maxCurvature: number;
+  totalDistance: number;
+  pathLength: number;
+}
+
+export interface CognitiveTrajectory {
+  steps: CognitiveMetricStep[];
+  summary: CognitiveTrajectorySummary;
+}
+
 export interface ChatMessage {
     id: string;
     role: 'user' | 'model';
@@ -202,6 +224,9 @@ export interface ChatMessage {
     // For semantic search
     embedding?: number[];
     similarity?: number;
+
+    // For Cognitive Geometry
+    cognitiveTrajectory?: CognitiveTrajectory;
 }
 
 export interface CognitiveProcess {
@@ -386,6 +411,8 @@ export interface WorldModelPrinciple {
 }
 
 export interface WorldModel {
+  // FIX: Add id property to WorldModel to satisfy dbService requirements.
+  id: string;
   entities: WorldModelEntity[];
   relationships: WorldModelRelationship[];
   principles: WorldModelPrinciple[];

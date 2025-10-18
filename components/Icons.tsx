@@ -52,6 +52,8 @@ import {
   MessageCircleMore,
   Dices,
   Download,
+  Spline,
+  Save,
   type LucideProps,
 } from 'lucide-react';
 
@@ -113,3 +115,5 @@ export const ChatBubbleBottomCenterTextIcon: React.FC<IconProps> = (props) => <M
 export const DicesIcon: React.FC<IconProps> = (props) => <Dices {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;
 export const CopyIcon: React.FC<IconProps> = (props) => <Copy {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;
 export const DownloadIcon: React.FC<IconProps> = (props) => <Download {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;
+export const TrajectoryIcon: React.FC<IconProps> = (props) => <Spline {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;
+export const SaveIcon: React.FC<IconProps> = (props) => <Save {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;

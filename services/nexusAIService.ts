@@ -1,7 +1,8 @@
 import { GoogleGenAI, Type } from "@google/genai";
-// FIX: Added WorldModel to the type imports.
-import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails, UserKeyword, Personality, PlaybookItem, RawInsight, PlaybookItemCategory, WorldModel } from '../types';
+import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails, UserKeyword, Personality, PlaybookItem, RawInsight, PlaybookItemCategory, WorldModel, WorldModelEntity, CognitiveTrajectory } from '../types';
+// FIX: Import STORES from dbService to be used in factoryReset.
 import { dbService, STORES } from './dbService';
+import * as geometryService from './geometryService';
 
 // IMPORTANT: This would be populated by a secure mechanism in a real app
 const API_KEY = process.env.API_KEY;
@@ -17,7 +18,6 @@ let toolchainsState: Toolchain[];
 let playbookState: PlaybookItem[];
 let constitutionsState: CognitiveConstitution[];
 let evolutionState: EvolutionState;
-// FIX: Added state management for the World Model.
 let worldModelState: WorldModel | null = null;
 let cognitiveProcess: CognitiveProcess;
 let cognitiveNetworkState: CognitiveNetworkState = { activeProblems: [] };
@@ -48,11 +48,45 @@ let constitutionSubscribers: ((constitutions: CognitiveConstitution[]) => void)[
 let evolutionSubscribers: ((evolutionState: EvolutionState) => void)[] = [];
 let archiveSubscribers: ((archives: ChatMessage[]) => void)[] = [];
 let dreamProcessSubscribers: ((update: DreamProcessUpdate) => void)[] = [];
-// FIX: Added subscriber array for the World Model.
 let worldModelSubscribers: ((worldModel: WorldModel) => void)[] = [];
 
 
 let traceDetailsCache = new Map<string, TraceDetails>();
+
+class TrajectoryTracker {
+    private taskId: string;
+    private steps: { thought: string; position: number[] }[] = [];
+
+    constructor(taskId: string, initialPrompt: string) {
+        this.taskId = taskId;
+        log('SYSTEM', `[Geometry] Trajectory tracker initialized for task ${taskId}.`);
+        // The initial state before any thought is the prompt itself.
+        this.addStep('Initial State (User Query)', initialPrompt);
+    }
+
+    addStep(thought: string, context: string) {
+        try {
+            const embedding = geometryService.getEmbedding(context);
+            this.steps.push({ thought, position: embedding });
+            log('INFO', `[Geometry] Step ${this.steps.length}: ${thought} - Position captured.`);
+        } catch (e) {
+            log('ERROR', `[Geometry] Failed to generate embedding for step "${thought}": ${e instanceof Error ? e.message : 'Unknown error'}`);
+        }
+    }
+
+    finalize(): CognitiveTrajectory | undefined {
+        if (this.steps.length < 2) {
+            log('WARN', '[Geometry] Not enough steps to finalize a meaningful trajectory.');
+            return undefined;
+        }
+        const trajectory = geometryService.analyzeTrajectory(this.steps);
+        log('SYSTEM', `[Geometry] Trajectory finalized for task ${this.taskId}. Path Length: ${trajectory.summary.pathLength}, Avg. Curvature: ${trajectory.summary.avgCurvature.toFixed(4)}.`);
+        return trajectory;
+    }
+}
+
+let activeTracker: TrajectoryTracker | null = null;
+
 
 const log = (level: LogEntry['level'], message: string) => {
   const verbosityMap = {
@@ -81,8 +115,11 @@ const notifyConstitutions = () => constitutionSubscribers.forEach(cb => cb(JSON.
 const notifyEvolution = () => evolutionSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(evolutionState))));
 const notifyArchives = () => archiveSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(archivedTracesState))));
 const notifyDreamProcess = (update: DreamProcessUpdate) => dreamProcessSubscribers.forEach(cb => cb(update));
-// FIX: Added a notifier function for World Model updates.
-const notifyWorldModel = () => worldModelSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(worldModelState!))));
+const notifyWorldModel = () => {
+    if (worldModelState) {
+        worldModelSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(worldModelState!))));
+    }
+};
 
 const findReplica = (id: string, node: Replica): {parent: Replica | null, node: Replica, index: number} | null => {
     if (node.id === id) return {parent: null, node, index: -1};
@@ -235,7 +272,6 @@ const initialize = async () => {
     if (!storedReplica) throw new Error("Critical error: Could not load replica root from DB.");
     replicaState = storedReplica.data;
 
-    // FIX: Added world model to initialization logic.
     let storedWorldModel;
     [toolsState, toolchainsState, playbookState, constitutionsState, archivedTracesState, systemDirectivesState, storedWorldModel] = await Promise.all([
         dbService.getAll<MentalTool>('tools'),
@@ -268,7 +304,6 @@ const initialize = async () => {
         initialEvolutionState: JSON.parse(JSON.stringify(evolutionState)),
         initialArchives: JSON.parse(JSON.stringify(archivedTracesState)),
         initialCognitiveProcess: JSON.parse(JSON.stringify(cognitiveProcess)),
-        // FIX: Added initialWorldModel to the returned object.
         initialWorldModel: JSON.parse(JSON.stringify(worldModelState)),
         initialLogs: [
             { id: 'init-1', timestamp: Date.now() - 2000, level: 'SYSTEM', message: 'NexusAI Cognitive Core Initializing...' },
@@ -299,7 +334,7 @@ const initialize = async () => {
 };
 
 
-const planSchema = { type: Type.OBJECT, properties: { plan: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { step: { type: Type.INTEGER }, description: { type: Type.STRING }, tool: { type: Type.STRING, enum: ['google_search', 'synthesize_answer', 'code_interpreter', 'code_sandbox', 'recall_memory', 'generate_image', 'analyze_image_input', 'forge_tool', 'spawn_replica', 'induce_emotion', 'replan', 'summarize_text', 'translate_text', 'analyze_sentiment', 'execute_toolchain', 'apply_behavior', 'delegate_task_to_replica', 'spawn_cognitive_clone', 'peek_context', 'search_context'] }, query: { type: Type.STRING }, code: { type: Type.STRING }, concept: { type: Type.STRING }, inputRef: { type: Type.INTEGER }, replicaId: { type: Type.STRING }, task: { type: Type.STRING } }, required: ['step', 'description', 'tool'] } } }, required: ['plan'] };
+const planSchema = { type: Type.OBJECT, properties: { plan: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { step: { type: Type.INTEGER }, description: { type: Type.STRING }, tool: { type: Type.STRING, enum: ['google_search', 'synthesize_answer', 'code_interpreter', 'code_sandbox', 'recall_memory', 'generate_image', 'analyze_image_input', 'forge_tool', 'spawn_replica', 'induce_emotion', 'replan', 'summarize_text', 'translate_text', 'analyze_sentiment', 'execute_toolchain', 'apply_behavior', 'delegate_task_to_replica', 'spawn_cognitive_clone', 'peek_context', 'search_context', 'world_model'] }, query: { type: Type.STRING }, code: { type: Type.STRING }, concept: { type: Type.STRING }, inputRef: { type: Type.INTEGER }, replicaId: { type: Type.STRING }, task: { type: Type.STRING } }, required: ['step', 'description', 'tool'] } } }, required: ['plan'] };
 
 const languageMap: Record<Language, string> = {
     'en': 'English',
@@ -415,6 +450,7 @@ const getSystemInstruction = () => {
     - \`analyze_sentiment\`: To analyze the emotional tone of a text.
     - \`execute_toolchain\`: To run a pre-defined sequence of tools.
     - \`apply_behavior\`: To apply a pre-existing learned strategy.
+    - \`world_model\`: Interact with your internal knowledge base. Use 'query' to ask questions about entities, relationships, and principles.
     - \`synthesize_answer\`: This must be the final step. It compiles the final answer based on results from your Sub-Agents and other tools.`;
 }
 
@@ -529,7 +565,6 @@ const _executeRecursiveCognitiveCycle = async (parentStep: PlanStep, subProblemQ
             step.result = result;
         } else if (step.tool === 'code_interpreter' || step.tool === 'code_sandbox') {
              try {
-                // FIX: code_sandbox for clones should operate on the 'contextData' passed to it, not its own history.
                 const execution_context_data = step.tool === 'code_sandbox' ? contextData : undefined;
                 const codeToRun = `"use strict"; return ((context_data) => { ${step.code} })(context_data);`;
                 const result = new Function('context_data', codeToRun)(execution_context_data);
@@ -564,6 +599,41 @@ const _executeRecursiveCognitiveCycle = async (parentStep: PlanStep, subProblemQ
                 step.status = 'error';
                 step.result = "Error: No search term provided for search_context tool.";
                 log('ERROR', `Clone's search_context tool failed: No search term provided.`);
+            }
+        } else if (step.tool === 'world_model') {
+            if (!step.query) {
+                step.status = 'error';
+                step.result = 'Error: The world_model tool requires a query.';
+                log('ERROR', `Clone's world_model tool failed: ${step.result}`);
+            } else if (!worldModelState) {
+                step.status = 'error';
+                step.result = 'Error: World model is not initialized.';
+                log('ERROR', `Clone's world_model tool failed: ${step.result}`);
+            } else {
+                const worldModelContext = `
+                    Entities: ${JSON.stringify(worldModelState.entities, null, 2)}
+                    Relationships: ${JSON.stringify(worldModelState.relationships, null, 2)}
+                    Principles: ${JSON.stringify(worldModelState.principles, null, 2)}
+                `;
+                const prompt = `You are a sub-routine that answers questions based *only* on the provided World Model context.
+                
+                World Model Context:
+                ---
+                ${worldModelContext}
+                ---
+
+                Question: "${step.query}"
+
+                Based strictly on the context, provide a concise answer. If the information is not in the context, state that clearly.`;
+                try {
+                    const response = await ai.models.generateContent({ model: appSettings.model, contents: prompt });
+                    step.result = response.text;
+                    log('REPLICA', `Clone queried World Model with: "${step.query}".`);
+                } catch(e) {
+                    step.status = 'error';
+                    step.result = `Error querying World Model: ${e instanceof Error ? e.message : 'Unknown AI error'}`;
+                    log('ERROR', `Clone's world_model tool failed: ${step.result}`);
+                }
             }
         } else {
              // Simulate other tools for clones for simplicity and to avoid excessive API calls in nested loops.
@@ -1233,6 +1303,7 @@ const service = {
             isCancelled = true;
             currentController?.abort();
             cognitiveProcess.state = 'Cancelled';
+            activeTracker = null;
             const lastMessage = cognitiveProcess.history[cognitiveProcess.history.length - 1];
             if(lastMessage?.role === 'model') {
                 lastMessage.state = 'error';
@@ -1250,6 +1321,7 @@ const service = {
             cognitiveProcess.state = 'Idle';
             cognitiveProcess.activeAffectiveState = null;
             traceDetailsCache.clear();
+            activeTracker = null;
             log('SYSTEM', 'New chat session started. Affective state and trace cache reset.');
             notifyCognitiveProcess();
         }
@@ -1295,7 +1367,7 @@ const service = {
 
     executePlan: async (messageId: string) => {
         const modelMessage = cognitiveProcess.history.find(m => m.id === messageId);
-        if (!modelMessage || !modelMessage.plan || modelMessage.isPlanFinalized) return;
+        if (!modelMessage || !modelMessage.plan || modelMessage.isPlanFinalized || !activeTracker) return;
 
         modelMessage.isPlanFinalized = true;
         cognitiveProcess.state = 'Executing';
@@ -1316,6 +1388,10 @@ const service = {
                 log('AI', `Executing step ${i+1}: ${step.description}`);
                 notifyCognitiveProcess();
                 await new Promise(res => setTimeout(res, appSettings.cognitiveStepDelay / 2));
+
+                const cumulativeContextForStep = `${cognitiveProcess.history.map(m=>m.text).join('\n')}\n${executionContext.join('\n')}`;
+                activeTracker.addStep(`Executing: ${step.tool} - ${step.description}`, cumulativeContextForStep);
+
 
                 if (step.tool === 'google_search') {
                     const searchResponse = await ai.models.generateContent({ model: appSettings.model, contents: step.query || query, config: { tools: [{ googleSearch: {} }] } });
@@ -1536,6 +1612,45 @@ const service = {
                         step.result = e instanceof Error ? e.message : 'Unknown replica spawning error.';
                         log('ERROR', `Replica spawning failed at step ${i+1}: ${step.result}`);
                     }
+                } else if (step.tool === 'world_model') {
+                    if (!step.query) {
+                        step.status = 'error';
+                        step.result = 'Error: The world_model tool requires a query.';
+                        log('ERROR', step.result);
+                    } else if (!worldModelState) {
+                        step.status = 'error';
+                        step.result = 'Error: World model is not initialized.';
+                        log('ERROR', step.result);
+    
+                    } else {
+                        const worldModelContext = `
+                            Entities: ${JSON.stringify(worldModelState.entities, null, 2)}
+                            Relationships: ${JSON.stringify(worldModelState.relationships, null, 2)}
+                            Principles: ${JSON.stringify(worldModelState.principles, null, 2)}
+                        `;
+    
+                        const prompt = `You are a sub-routine that answers questions based *only* on the provided World Model context.
+                        
+                        World Model Context:
+                        ---
+                        ${worldModelContext}
+                        ---
+        
+                        Question: "${step.query}"
+        
+                        Based strictly on the context, provide a concise answer. If the information is not in the context, state that clearly.`;
+    
+                        try {
+                            const response = await ai.models.generateContent({ model: appSettings.model, contents: prompt });
+                            step.result = response.text;
+                            log('AI', `World Model queried with: "${step.query}". Result obtained.`);
+                        } catch(e) {
+                            step.status = 'error';
+                            step.result = `Error querying World Model: ${e instanceof Error ? e.message : 'Unknown AI error'}`;
+                            log('ERROR', step.result);
+                        }
+                    }
+                    executionContext.push(`Step ${i+1} (${step.description}) Result: ${step.result}`);
                 } else if (step.tool === 'apply_behavior') {
                     const item = playbookState.find(b => b.description === step.query || b.id === step.query);
                     if (item) {
@@ -1586,6 +1701,8 @@ const service = {
                 modelMessage.affectiveStateSnapshot = cognitiveProcess.activeAffectiveState;
             }
 
+            if(activeTracker) activeTracker.addStep('Synthesis Phase', synthesisPrompt);
+
             const stream = await ai.models.generateContentStream({
                 model: appSettings.model,
                 contents: synthesisPrompt,
@@ -1613,6 +1730,10 @@ const service = {
 
             modelMessage.state = 'done';
             modelMessage.groundingMetadata = { groundingChunks: modelMessage.plan.flatMap(p => p.citations || []) };
+            if(activeTracker) {
+                modelMessage.cognitiveTrajectory = activeTracker.finalize();
+                activeTracker = null;
+            }
             cognitiveProcess.state = 'Done';
             
             log('AI', 'Cognitive task complete. Result synthesized.');
@@ -1625,6 +1746,10 @@ const service = {
             log('ERROR', `Failed to get a response: ${errorMessage}`);
             modelMessage.text = `An error occurred during the '${cognitiveProcess.state}' stage: ${errorMessage}`;
             modelMessage.state = 'error';
+            if(activeTracker) {
+                modelMessage.cognitiveTrajectory = activeTracker.finalize();
+                activeTracker = null;
+            }
             cognitiveProcess.state = 'Error';
             notifyCognitiveProcess();
             currentController = null;
@@ -1643,6 +1768,7 @@ const service = {
         
         isCancelled = false;
         currentController = new AbortController();
+        activeTracker = new TrajectoryTracker(`task-${Date.now()}`, query);
 
         if (cognitiveProcess.state === 'Done' || cognitiveProcess.state === 'Idle') {
             cognitiveProcess.activeAffectiveState = null; 
@@ -1677,6 +1803,8 @@ const service = {
                 planningPrompt += `\n\n**IMPORTANT**: The user has provided an image. Your plan MUST include an 'analyze_image_input' step.`
             }
             
+            if (activeTracker) activeTracker.addStep('Planning Phase', planningPrompt);
+
             const planningResponse = await ai.models.generateContent({
                 model: appSettings.model, contents: planningPrompt,
                 config: { systemInstruction: getSystemInstruction(), responseMimeType: 'application/json', responseSchema: planSchema }
@@ -1697,6 +1825,10 @@ const service = {
             log('ERROR', `Failed to generate a plan: ${errorMessage}`);
             modelMessage.text = `An error occurred during the 'Planning' stage. Please check the logs.\n\n*Details: ${errorMessage}*`;
             modelMessage.state = 'error';
+            if(activeTracker) {
+                modelMessage.cognitiveTrajectory = activeTracker.finalize();
+                activeTracker = null;
+            }
             cognitiveProcess.state = 'Error';
             notifyCognitiveProcess();
         }
@@ -2219,6 +2351,32 @@ ${text}
         notifyPlaybook();
     },
 
+    updateWorldModelEntity: async (updatedEntity: WorldModelEntity) => {
+        if (!worldModelState) {
+            log('ERROR', 'Attempted to update entity while world model is not initialized.');
+            return;
+        }
+
+        const entityIndex = worldModelState.entities.findIndex(e => e.id === updatedEntity.id);
+        if (entityIndex === -1) {
+            log('ERROR', `Could not find entity with ID ${updatedEntity.id} to update.`);
+            return;
+        }
+        
+        // Update with new data and timestamp
+        const newEntity = { ...updatedEntity, lastUpdated: Date.now() };
+        worldModelState.entities[entityIndex] = newEntity;
+        worldModelState.lastUpdated = Date.now();
+
+        try {
+            await dbService.put('worldModel', worldModelState);
+            log('SYSTEM', `World Model entity "${newEntity.name}" has been updated.`);
+            notifyWorldModel();
+        } catch (error) {
+            log('ERROR', `Failed to persist world model update: ${error instanceof Error ? error.message : 'Unknown DB error'}`);
+        }
+    },
+
     subscribeToLogs: (callback: (log: LogEntry) => void) => { logSubscribers.push(callback); },
     subscribeToPerformance: (callback: (dataPoint: PerformanceDataPoint) => void) => { performanceSubscribers.push(callback); },
     subscribeToReplicas: (callback: (replicaState: Replica) => void) => { replicaSubscribers.push(callback); },
@@ -2230,7 +2388,6 @@ ${text}
     subscribeToEvolution: (callback: (evolutionState: EvolutionState) => void) => { evolutionSubscribers.push(callback); },
     subscribeToArchives: (callback: (archives: ChatMessage[]) => void) => { archiveSubscribers.push(callback); },
     subscribeToDreamProcess: (callback: (update: DreamProcessUpdate) => void) => { dreamProcessSubscribers.push(callback); },
-    // FIX: Added subscribeToWorldModel to the service.
     subscribeToWorldModel: (callback: (worldModel: WorldModel) => void) => { worldModelSubscribers.push(callback); },
     unsubscribeFromDreamProcess: (callback: (update: DreamProcessUpdate) => void) => {
         dreamProcessSubscribers = dreamProcessSubscribers.filter(cb => cb !== callback);
@@ -2248,7 +2405,6 @@ ${text}
         evolutionSubscribers = [];
         archiveSubscribers = [];
         dreamProcessSubscribers = [];
-        // FIX: Added world model subscribers to the cleanup logic.
         worldModelSubscribers = [];
     }
 };

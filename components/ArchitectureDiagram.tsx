@@ -60,7 +60,6 @@ const StructuralView: React.FC<ArchitectureDiagramProps> = ({ replicaCount, tool
     const currentStep = (lastMessage?.role === 'model' && lastMessage.currentStep !== undefined) ? lastMessage.plan?.[lastMessage.currentStep] : null;
     const activeTool = currentStep?.tool;
 
-    // FIX: Replaced deprecated 'systemPersonality' with 'coreAgentPersonality' and formatted the object into a string.
     const personalityCode = `${settings.coreAgentPersonality.energyFocus[0]}${settings.coreAgentPersonality.informationProcessing[0]}${settings.coreAgentPersonality.decisionMaking[0]}${settings.coreAgentPersonality.worldApproach[0]}`;
 
     return (

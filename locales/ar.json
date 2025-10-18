@@ -48,7 +48,8 @@
     "keywordsPlaceholder": "أضف كلمات مفتاحية لتوجيه الاقتراحات...",
     "generateFromKeywords": "إنشاء اقتراحات من الكلمات المفتاحية",
     "generate": "إنشاء",
-    "randomKeywords": "إنشاء كلمات مفتاحية عشوائية"
+    "randomKeywords": "إنشاء كلمات مفتاحية عشوائية",
+    "generateSuggestionsPrompt": "اختر ملفًا شخصيًا أو أدخل كلمات رئيسية لإنشاء اقتراحات."
   },
   "commandCenter": {
     "query": "استعلام",
@@ -394,6 +395,7 @@
     "title": "مفتش الأثر المعرفي",
     "summary": "ملخص",
     "executionFlow": "تدفق التنفيذ",
+    "geometry": "الهندسة المعرفية",
     "aiReflection": "تأمل الذكاء الاصطناعي",
     "discussTrace": "مناقشة الأثر",
     "userQuery": "استعلام المستخدم",
@@ -414,7 +416,21 @@
     "thinking": "يفكر...",
     "discussPlaceholder": "اسأل عن هذا الأثر...",
     "send": "إرسال",
-    "affectiveStateDormant": "الحالة العاطفية خاملة"
+    "affectiveStateDormant": "الحالة العاطفية خاملة",
+    "noGeometry": "لا توجد بيانات هندسية",
+    "noGeometryDesc": "لم يتم تسجيل بيانات المسار المعرفي لهذا الأثر.",
+    "trajectorySummary": "ملخص المسار",
+    "avgVelocity": "متوسط السرعة",
+    "avgCurvature": "متوسط الانحناء",
+    "maxCurvature": "أقصى انحناء",
+    "pathLength": "طول المسار",
+    "totalDistance": "المسافة الإجمالية",
+    "trajectoryPlot": "مخطط المسار المعرفي",
+    "trajectorySteps": "خطوات المسار",
+    "step": "خطوة",
+    "thought": "الفكرة/الإجراء",
+    "velocity": "السرعة",
+    "curvature": "الانحناء"
   },
   "introspection": {
     "title": "التوجيهات والمخططات الأساسية",
