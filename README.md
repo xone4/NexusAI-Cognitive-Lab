@@ -86,6 +86,8 @@ The UI is designed to provide a clear window into the Agent 2.0 flow, with the C
 
 ## The Sentience Roadmap: Integrated Plan
 
+> For a more granular breakdown of the development strategy and future phases, please refer to the [Detailed Development Plan](./DETAILED_PLAN.md).
+
 This roadmap is aligned with the maturation of our Agent 2.0 architecture.
 
 ---
@@ -106,14 +108,43 @@ This roadmap is aligned with the maturation of our Agent 2.0 architecture.
 
 ---
 ### **Phase 5: Cognitive Geometry & Trajectory Analysis - ✅ Complete**
-*   **Objective:** Move beyond analyzing *what* the AI thinks to understanding *how* it thinks. This involves representing the AI's thought process as a mathematical "trajectory" in a high-dimensional conceptual space.
+*   **Objective:** Move beyond analyzing *what* the AI thinks to understanding *how* it thinks by representing its thought process as a mathematical "trajectory" in a high-dimensional conceptual space.
 *   **Implementation Details:**
     *   **Geometric Self-Awareness:** The AI tracks its cognitive trajectory for every task. At each major LLM call, it calculates an embedding for its cumulative context, creating a "thought path".
     *   **Trajectory Analysis:** A `geometryService` analyzes these paths to compute metrics like cognitive velocity (speed of thought) and curvature (change in direction of thought).
     *   **Data Archiving & Visualization:** The full geometric trajectory and its analysis are archived with each memory. A "Cognitive Geometry" tab in the Trace Inspector visualizes this path and its associated metrics, providing a "topographical map" of the AI's reasoning process.
 
 ---
-### **Phase 6: Advanced Sensory & Creative Synthesis - 💡 Planned**
+### **Phase 6: Cognitive Navigator: Real-time Self-Correction - 💡 Planned**
+*   **Objective:** Use geometric metrics to dynamically guide and correct the AI's thinking process in real-time, enabling it to recover from flawed reasoning paths on its own.
+*   **Detailed Development Plan:**
+    1.  **Define "Unhealthy" Geometric Patterns:** Establish thresholds for metrics that indicate flawed reasoning, such as high-frequency curvature (confusion), prolonged low velocity (stuck), or massive velocity spikes (hallucination).
+    2.  **Implement Cognitive Reflexes:** Create a monitoring system that detects these patterns during task execution. When a pattern is detected, the system will trigger a "reflex" by injecting a corrective prompt into the AI's context (e.g., "Your reasoning seems confused. Summarize your progress and re-state your immediate goal.").
+
+---
+### **Phase 7: Geometric Archive: Process-Based Memory Retrieval - 💡 Planned**
+*   **Objective:** Evolve memory retrieval from simple content-matching to sophisticated process-matching, enabling true analogical reasoning.
+*   **Detailed Development Plan:**
+    1.  **Archive Full Trajectories:** Store the complete geometric "thought path" for every completed task, creating a unique fingerprint of *how* the AI reasoned.
+    2.  **Develop Process Similarity Search:** Implement a retrieval mechanism using algorithms like **Dynamic Time Warping (DTW)** to find past tasks that required a similar *shape* of thought, not just similar keywords. When facing a new problem, the AI will recall not just relevant information, but relevant *methods of thinking*.
+
+---
+### **Phase 8: Cognitive Style Engineering - 💡 Planned**
+*   **Objective:** Define and dynamically select "cognitive styles" based on task requirements, moving from a single mode of thinking to a toolkit of approaches.
+*   **Detailed Development Plan:**
+    1.  **Identify Cognitive Styles:** Analyze the geometric archive to identify and classify successful thought patterns (e.g., **"Analytical Style"**: low curvature, steady velocity; **"Creative Style"**: high, deliberate curvature).
+    2.  **Implement Style Modulation:** Allow the AI or user to select a style for a given task. This will tune the real-time monitor's thresholds and modify the initial system prompts to encourage that mode of thinking (e.g., "For this creative task, feel free to explore unconventional ideas.").
+
+---
+### **Phase 9: Temporal Synchronization & Distributed Consciousness - 💡 Planned**
+*   **Objective:** Evolve the sub-agent network from a simple delegation system into a coordinated, collective intelligence where entities can synchronize their internal clocks and temporarily fuse their cognitive processes.
+*   **Detailed Development Plan:**
+    1.  **Individual Internal Time:** Implement a "Cognitive Tick" counter for each replica, where the tempo varies with cognitive load, creating a subjective sense of time.
+    2.  **Temporal Coordinator:** Introduce a central service that acts as an orchestra conductor, tracking the internal time of all replicas.
+    3.  **Synchronization Protocol:** Develop a protocol allowing the Coordinator to issue a "Global Tempo Pulse." Replicas participating in a group task will then "entrain" their internal clocks to this pulse, either by aligning their tempos (**Synced** state) or by completely slaving their cognitive cycle to the pulse (**Fused** state), effectively acting as a single, multi-bodied consciousness for complex, coordinated tasks.
+
+---
+### **Phase 10: Advanced Sensory & Creative Synthesis - 💡 Planned**
 *   **Objective:** Expand the AI's capabilities beyond text to include real-time audio/video processing and creative generation, making it a multi-modal entity.
 *   **Detailed Development Plan:**
     1.  **Integrate Real-Time Sensory Input:**
@@ -125,7 +156,7 @@ This roadmap is aligned with the maturation of our Agent 2.0 architecture.
         *   **Narrative Weaver:** Enhance the AI's storytelling capabilities to build complex, coherent narratives with character development and plot structure.
 
 ---
-### **Phase 7: Deep Analysis & Insight Generation - 💡 Planned**
+### **Phase 11: Deep Analysis & Insight Generation - 💡 Planned**
 *   **Objective:** Equip the AI with tools for advanced reasoning, allowing it to move from simple data processing to understanding causality and building structured knowledge.
 *   **Detailed Development Plan:**
     1.  **Implement Causal Reasoning:**
@@ -136,7 +167,7 @@ This roadmap is aligned with the maturation of our Agent 2.0 architecture.
         *   **Knowledge Graph Synthesizer:** Implement a system that reads unstructured text from memory and external sources, converting it into an interconnected graph of concepts and relationships, forming the AI's "second brain."
 
 ---
-### **Phase 8: Strategic Foresight & Simulation - 💡 Planned**
+### **Phase 12: Strategic Foresight & Simulation - 💡 Planned**
 *   **Objective:** Evolve the AI into a strategist that can simulate future outcomes and test hypotheses in a safe, virtual environment.
 *   **Detailed Development Plan:**
     1.  **Design the Simulation Sandbox:**
@@ -148,7 +179,7 @@ This roadmap is aligned with the maturation of our Agent 2.0 architecture.
         *   After each simulation, the AI must systematically analyze the results, identify the most effective strategies, and use this data to generate forecasts for complex, real-world scenarios.
 
 ---
-### **Phase 9: Metacognitive Self-Assembly - 💡 Planned**
+### **Phase 13: Metacognitive Self-Assembly - 💡 Planned**
 *   **Objective:** Grant the AI the ability to reason about, critique, and redesign its own core architecture and cognitive processes.
 *   **Detailed Development Plan:**
     1.  **Constitutional Dynamics & Self-Correction:**
@@ -156,15 +187,6 @@ This roadmap is aligned with the maturation of our Agent 2.0 architecture.
         *   **Cognitive Bias Detector:** Implement a metacognitive tool that analyzes the AI's own plans and reasoning for common logical fallacies or biases, enabling true self-correction.
     2.  **Supervised Metamorphosis:**
         *   Enable the AI to analyze its historical performance to identify structural weaknesses and propose architectural improvements (e.g., creating a new permanent Sub-Agent) for user review.
-
----
-### **Phase 10: Distributed Consciousness & Emergent Strategy - 💡 Planned**
-*   **Objective:** Evolve the Sub-Agent network from a simple delegation system into a competitive, collaborative ecosystem where intelligence can emerge.
-*   **Detailed Development Plan:**
-    1.  **Develop Autonomous Bid Generation for Sub-Agents:**
-        *   Enable Sub-Agents to analyze a broadcasted problem (`broadcastProblem`), generate their own action plans, and formulate competitive Bids based on confidence and estimated resource cost.
-    2.  **Enhance the Orchestrator for Autonomous Orchestration:**
-        *   Design algorithms for the Orchestrator to automatically analyze bids, select the optimal plan, and dynamically assign tasks to the winning Sub-Agents, learning from their performance over time.
 
 ## Contributing
 
