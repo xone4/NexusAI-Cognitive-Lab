@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Replica, MentalTool, CognitiveProcess, AppSettings, ActiveView } from '../types';
 import DashboardCard from './DashboardCard';
+import ArchitectureDetailModal, { DetailItem } from './ArchitectureDetailModal';
 import { 
     ArchIcon, BrainCircuitIcon, CodeBracketIcon, CubeTransparentIcon, GlobeAltIcon, 
     UserGroupIcon, CircleStackIcon, ArrowsRightLeftIcon, FireIcon, LightBulbIcon
@@ -52,7 +53,7 @@ const Connector: React.FC<{ type?: 'x' | 'y'; isAnimated?: boolean }> = ({ type 
 
 //======= VIEW MODES =======//
 
-const StructuralView: React.FC<ArchitectureDiagramProps> = ({ replicaCount, tools, settings, cognitiveProcess, setActiveView }) => {
+const StructuralView: React.FC<ArchitectureDiagramProps & { onSelectDetail: (item: DetailItem) => void }> = ({ replicaCount, tools, settings, cognitiveProcess, onSelectDetail }) => {
     const { t } = useTranslation();
     const isThinking = cognitiveProcess.state !== 'Idle' && cognitiveProcess.state !== 'Done' && cognitiveProcess.state !== 'Cancelled';
     
@@ -64,30 +65,30 @@ const StructuralView: React.FC<ArchitectureDiagramProps> = ({ replicaCount, tool
 
     return (
         <div className="h-full w-full flex flex-col items-center justify-center p-4 space-y-2 font-sans">
-            <ArchBox title={t('architecture.userInterfaceLayer')} items={[t('architecture.animation', {level: settings.animationLevel}), t('architecture.verbosity', {level: settings.logVerbosity})]} icon={<UserGroupIcon />} className="w-full md:w-1/2" isInteractive onClick={() => setActiveView('settings')} />
+            <ArchBox title={t('architecture.userInterfaceLayer')} items={[t('architecture.animation', {level: settings.animationLevel}), t('architecture.verbosity', {level: settings.logVerbosity})]} icon={<UserGroupIcon />} className="w-full md:w-1/2" isInteractive onClick={() => onSelectDetail({ type: 'ui', data: { settings } })} />
             <Connector />
-            <ArchBox title={t('architecture.nexusCoreEngine')} items={[t('architecture.personality', {personality: personalityCode}), t('architecture.status', {status: cognitiveProcess.state})]} icon={<BrainCircuitIcon />} className="w-full md:w-2/3" isGlowing={isThinking && !activeTool}/>
+            <ArchBox title={t('architecture.nexusCoreEngine')} items={[t('architecture.personality', {personality: personalityCode}), t('architecture.status', {status: cognitiveProcess.state})]} icon={<BrainCircuitIcon />} className="w-full md:w-2/3" isGlowing={isThinking && !activeTool} isInteractive onClick={() => onSelectDetail({ type: 'core', data: { cognitiveProcess, settings } })}/>
             <div className="w-full flex justify-center items-center">
                 <Connector />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full md:w-5/6">
-                 <ArchBox title={t('architecture.affectiveCore')} items={[t('architecture.state', {state: cognitiveProcess.activeAffectiveState ? cognitiveProcess.activeAffectiveState.mood : t('architecture.dormant')})]} icon={<LightBulbIcon />} className="w-full" isGlowing={activeTool === 'induce_emotion'} />
-                 <ArchBox title={t('architecture.longTermMemory')} items={[t('architecture.archiveOfTraces')]} icon={<CircleStackIcon />} className="w-full" isInteractive onClick={() => setActiveView('memory')} isGlowing={activeTool === 'recall_memory'} />
+                 <ArchBox title={t('architecture.affectiveCore')} items={[t('architecture.state', {state: cognitiveProcess.activeAffectiveState ? cognitiveProcess.activeAffectiveState.mood : t('architecture.dormant')})]} icon={<LightBulbIcon />} className="w-full" isGlowing={activeTool === 'induce_emotion'} isInteractive onClick={() => onSelectDetail({ type: 'affective_core', data: { cognitiveProcess } })}/>
+                 <ArchBox title={t('architecture.longTermMemory')} items={[t('architecture.archiveOfTraces')]} icon={<CircleStackIcon />} className="w-full" isInteractive onClick={() => onSelectDetail({ type: 'memory', data: {} })} isGlowing={activeTool === 'recall_memory'} />
             </div>
              <div className="w-full flex justify-center items-center">
                 <Connector />
              </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full md:w-5/6">
-                <ArchBox title={t('architecture.replicas')} items={[t('architecture.replicaInstances', { count: replicaCount })]} icon={<CubeTransparentIcon />} isInteractive onClick={() => setActiveView('replicas')} isGlowing={activeTool === 'spawn_replica'} />
-                <ArchBox title={t('architecture.mentalTools')} items={[t('architecture.toolsAvailable', { count: tools.length })]} icon={<CodeBracketIcon />} isInteractive onClick={() => setActiveView('tools')} isGlowing={!!activeTool && !['induce_emotion', 'recall_memory', 'spawn_replica', 'synthesize_answer'].includes(activeTool)} />
+                <ArchBox title={t('architecture.replicas')} items={[t('architecture.replicaInstances', { count: replicaCount })]} icon={<CubeTransparentIcon />} isInteractive onClick={() => onSelectDetail({ type: 'replicas_summary', data: { replicaCount } })} isGlowing={activeTool === 'spawn_replica'} />
+                <ArchBox title={t('architecture.mentalTools')} items={[t('architecture.toolsAvailable', { count: tools.length })]} icon={<CodeBracketIcon />} isInteractive onClick={() => onSelectDetail({ type: 'tools_summary', data: { tools } })} isGlowing={!!activeTool && !['induce_emotion', 'recall_memory', 'spawn_replica', 'synthesize_answer'].includes(activeTool)} />
             </div>
             <Connector />
-            <ArchBox title={t('architecture.externalIntegrations')} items={[t('architecture.model', {model: settings.model}), 'Google Search', 'Federated Learning']} icon={<GlobeAltIcon />} className="w-full md:w-2/3" isInteractive onClick={() => setActiveView('settings')} />
+            <ArchBox title={t('architecture.externalIntegrations')} items={[t('architecture.model', {model: settings.model}), 'Google Search', 'Federated Learning']} icon={<GlobeAltIcon />} className="w-full md:w-2/3" isInteractive onClick={() => onSelectDetail({ type: 'integrations', data: { settings } })} />
       </div>
     );
 };
 
-const DataFlowView: React.FC<ArchitectureDiagramProps> = ({ cognitiveProcess }) => {
+const DataFlowView: React.FC<ArchitectureDiagramProps & { onSelectDetail: (item: DetailItem) => void }> = ({ cognitiveProcess, settings, replicaCount, tools, onSelectDetail }) => {
     const { t } = useTranslation();
     const isThinking = cognitiveProcess.state !== 'Idle' && cognitiveProcess.state !== 'Done' && cognitiveProcess.state !== 'Cancelled';
     
@@ -97,9 +98,9 @@ const DataFlowView: React.FC<ArchitectureDiagramProps> = ({ cognitiveProcess }) 
 
     return (
         <div className="h-full w-full flex flex-col items-center justify-around p-4 font-sans text-center">
-            <ArchBox title={t('architecture.ui_ux')} icon={<UserGroupIcon />} className="w-48"/>
+            <ArchBox title={t('architecture.ui_ux')} icon={<UserGroupIcon />} className="w-48" isInteractive onClick={() => onSelectDetail({ type: 'ui', data: { settings } })}/>
             <Connector isAnimated={isThinking} />
-            <ArchBox title={t('architecture.nexusCore')} icon={<BrainCircuitIcon />} className="w-48" isGlowing={isThinking} >
+            <ArchBox title={t('architecture.nexusCore')} icon={<BrainCircuitIcon />} className="w-48" isGlowing={isThinking} isInteractive onClick={() => onSelectDetail({ type: 'core', data: { cognitiveProcess, settings } })}>
                 {cognitiveProcess.activeAffectiveState && <LightBulbIcon className="absolute w-5 h-5 top-2 right-2 text-yellow-300 animate-pulse" />}
             </ArchBox>
             <div className="w-full flex justify-around items-center my-2">
@@ -107,15 +108,15 @@ const DataFlowView: React.FC<ArchitectureDiagramProps> = ({ cognitiveProcess }) 
                 <Connector type="x" isAnimated={isThinking} />
             </div>
             <div className="w-full flex justify-around">
-                <ArchBox title={t('architecture.replicas')} icon={<CubeTransparentIcon />} className="w-48" isGlowing={activeTool === 'spawn_replica'}/>
-                <ArchBox title={t('architecture.tools')} icon={<CodeBracketIcon />} className="w-48" isGlowing={!!activeTool && !['induce_emotion', 'recall_memory', 'spawn_replica', 'synthesize_answer'].includes(activeTool)}/>
-                <ArchBox title={t('architecture.memory')} icon={<CircleStackIcon />} className="w-48" isGlowing={activeTool === 'recall_memory'}/>
+                <ArchBox title={t('architecture.replicas')} icon={<CubeTransparentIcon />} className="w-48" isGlowing={activeTool === 'spawn_replica'} isInteractive onClick={() => onSelectDetail({ type: 'replicas_summary', data: { replicaCount } })}/>
+                <ArchBox title={t('architecture.tools')} icon={<CodeBracketIcon />} className="w-48" isGlowing={!!activeTool && !['induce_emotion', 'recall_memory', 'spawn_replica', 'synthesize_answer'].includes(activeTool)} isInteractive onClick={() => onSelectDetail({ type: 'tools_summary', data: { tools } })}/>
+                <ArchBox title={t('architecture.memory')} icon={<CircleStackIcon />} className="w-48" isGlowing={activeTool === 'recall_memory'} isInteractive onClick={() => onSelectDetail({ type: 'memory', data: {} })}/>
             </div>
         </div>
     );
 };
 
-const CognitiveLoadView: React.FC<ArchitectureDiagramProps> = ({ replicas, tools, cognitiveProcess }) => {
+const CognitiveLoadView: React.FC<ArchitectureDiagramProps & { onSelectDetail: (item: DetailItem) => void }> = ({ replicas, tools, cognitiveProcess, settings, onSelectDetail }) => {
     const { t } = useTranslation();
     const isThinking = cognitiveProcess.state !== 'Idle' && cognitiveProcess.state !== 'Done' && cognitiveProcess.state !== 'Cancelled';
     const lastMessage = cognitiveProcess.history[cognitiveProcess.history.length - 1];
@@ -136,14 +137,17 @@ const CognitiveLoadView: React.FC<ArchitectureDiagramProps> = ({ replicas, tools
             <div className="relative w-96 h-96 border-2 border-nexus-primary/20 rounded-full flex items-center justify-center">
                 {/* Core */}
                 <div 
-                    className="absolute w-24 h-24 bg-nexus-surface rounded-full flex flex-col items-center justify-center text-center transition-all duration-500"
+                    onClick={() => onSelectDetail({ type: 'core', data: { cognitiveProcess, settings } })}
+                    className="absolute w-24 h-24 bg-nexus-surface rounded-full flex flex-col items-center justify-center text-center transition-all duration-500 cursor-pointer hover:scale-110"
                     style={{ transform: `scale(${1 + coreLoad * 0.3})`, boxShadow: `0 0 ${coreLoad * 25}px ${coreLoad * 10}px rgba(0, 170, 255, ${coreLoad * 0.5})` }}
                 >
                     <BrainCircuitIcon className="w-8 h-8 text-nexus-primary" />
                     <span className="text-xs font-bold mt-1">{t('architecture.core')}</span>
                 </div>
                 {/* Affective Core */}
-                <div className="absolute transition-all duration-500"
+                <div 
+                     onClick={() => onSelectDetail({ type: 'affective_core', data: { cognitiveProcess } })}
+                     className="absolute transition-all duration-500 cursor-pointer hover:scale-125"
                      style={{
                         top: 'calc(50% - 16px)', left: 'calc(50% - 80px)',
                         animation: activeTool === 'induce_emotion' ? 'glow-pulse 2s infinite' : 'none',
@@ -153,7 +157,9 @@ const CognitiveLoadView: React.FC<ArchitectureDiagramProps> = ({ replicas, tools
                     <LightBulbIcon className="w-8 h-8 text-yellow-400" />
                 </div>
                 {/* Memory */}
-                 <div className="absolute transition-all duration-500"
+                 <div 
+                    onClick={() => onSelectDetail({ type: 'memory', data: {} })}
+                    className="absolute transition-all duration-500 cursor-pointer hover:scale-125"
                      style={{
                         top: 'calc(50% - 16px)', left: 'calc(50% + 48px)',
                         animation: activeTool === 'recall_memory' ? 'glow-pulse 2s infinite' : 'none',
@@ -171,7 +177,10 @@ const CognitiveLoadView: React.FC<ArchitectureDiagramProps> = ({ replicas, tools
                     const loadScale = 0.5 + (replica.load / 100) * 0.5;
                     const isGlowing = activeTool === 'spawn_replica';
                     return (
-                        <div key={replica.id} className="absolute w-12 h-12 bg-nexus-surface/80 rounded-full flex items-center justify-center transition-all duration-500"
+                        <div 
+                            key={replica.id} 
+                            onClick={() => onSelectDetail({ type: 'replica', data: replica })}
+                            className="absolute w-12 h-12 bg-nexus-surface/80 rounded-full flex items-center justify-center transition-all duration-500 cursor-pointer hover:!scale-125 hover:z-10"
                             style={{ 
                                 top: `calc(50% - 24px + ${y}px)`, 
                                 left: `calc(50% - 24px + ${x}px)`, 
@@ -195,7 +204,10 @@ const CognitiveLoadView: React.FC<ArchitectureDiagramProps> = ({ replicas, tools
                     const isActive = tool.status === 'Active' || tool.status === 'Optimizing';
                     const isCurrentTool = !!activeTool && !['induce_emotion', 'recall_memory', 'spawn_replica', 'synthesize_answer'].includes(activeTool);
                     return (
-                        <div key={tool.id} className="absolute w-8 h-8 bg-nexus-dark rounded-full flex items-center justify-center transition-all duration-500"
+                        <div 
+                            key={tool.id} 
+                            onClick={() => onSelectDetail({ type: 'tool', data: tool })}
+                            className="absolute w-8 h-8 bg-nexus-dark rounded-full flex items-center justify-center transition-all duration-500 cursor-pointer hover:!scale-125 hover:z-10"
                             style={{ 
                                 top: `calc(50% - 16px + ${y}px)`, 
                                 left: `calc(50% - 16px + ${x}px)`, 
@@ -215,8 +227,15 @@ const CognitiveLoadView: React.FC<ArchitectureDiagramProps> = ({ replicas, tools
 
 
 const ArchitectureDiagram: React.FC<ArchitectureDiagramProps> = (props) => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const isRtl = i18n.dir() === 'rtl';
     const [viewMode, setViewMode] = useState<ViewMode>('structural');
+    const [detailItem, setDetailItem] = useState<DetailItem | null>(null);
+
+    const handleNavigate = (view: ActiveView) => {
+        setDetailItem(null);
+        props.setActiveView(view);
+    };
 
     const viewModes: { id: ViewMode, label: string, icon: React.ReactNode }[] = [
         { id: 'structural', label: t('architecture.structural'), icon: <ArchIcon /> },
@@ -225,40 +244,44 @@ const ArchitectureDiagram: React.FC<ArchitectureDiagramProps> = (props) => {
     ];
     
     const renderView = () => {
+        const viewProps = { ...props, onSelectDetail: setDetailItem };
         switch(viewMode) {
-            case 'structural': return <StructuralView {...props} />;
-            case 'data_flow': return <DataFlowView {...props} />;
-            case 'cognitive_load': return <CognitiveLoadView {...props} />;
-            default: return <StructuralView {...props} />;
+            case 'structural': return <StructuralView {...viewProps} />;
+            case 'data_flow': return <DataFlowView {...viewProps} />;
+            case 'cognitive_load': return <CognitiveLoadView {...viewProps} />;
+            default: return <StructuralView {...viewProps} />;
         }
     }
 
     return (
-        <DashboardCard title={t('architecture.title')} icon={<ArchIcon />} fullHeight className="flex flex-col">
-            <div className="flex justify-center p-2 bg-nexus-dark/50 rounded-t-xl">
-                <div className="inline-flex rounded-full shadow-sm" role="group">
-                    {viewModes.map(mode => (
-                        <button
-                            key={mode.id}
-                            type="button"
-                            onClick={() => setViewMode(mode.id)}
-                            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border transition-colors duration-200
-                                ${viewMode === mode.id 
-                                    ? 'bg-nexus-primary text-nexus-dark border-nexus-primary z-10' 
-                                    : 'bg-nexus-surface text-nexus-text-muted border-nexus-surface/50 hover:bg-nexus-surface/80 hover:text-nexus-text'
-                                }
-                                first:rounded-s-full last:rounded-e-full`}
-                        >
-                            <div className="w-5 h-5">{mode.icon}</div>
-                            {mode.label}
-                        </button>
-                    ))}
+        <>
+            <DashboardCard title={t('architecture.title')} icon={<ArchIcon />} fullHeight className="flex flex-col">
+                <div className="flex justify-center p-2 bg-nexus-dark/50 rounded-t-xl">
+                    <div className="inline-flex rounded-full shadow-sm" role="group">
+                        {viewModes.map(mode => (
+                            <button
+                                key={mode.id}
+                                type="button"
+                                onClick={() => setViewMode(mode.id)}
+                                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border transition-colors duration-200
+                                    ${viewMode === mode.id 
+                                        ? 'bg-nexus-primary text-nexus-dark border-nexus-primary z-10' 
+                                        : 'bg-nexus-surface text-nexus-text-muted border-nexus-surface/50 hover:bg-nexus-surface/80 hover:text-nexus-text'
+                                    }
+                                    ${isRtl ? 'first:rounded-e-full last:rounded-s-full' : 'first:rounded-s-full last:rounded-e-full'}`}
+                            >
+                                <div className="w-5 h-5">{mode.icon}</div>
+                                {mode.label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
-            </div>
-            <div className="flex-grow bg-nexus-bg rounded-b-xl">
-                {renderView()}
-            </div>
-        </DashboardCard>
+                <div className="flex-grow bg-nexus-bg rounded-b-xl">
+                    {renderView()}
+                </div>
+            </DashboardCard>
+            <ArchitectureDetailModal item={detailItem} onClose={() => setDetailItem(null)} onNavigate={handleNavigate} />
+        </>
     );
 };
 
