@@ -257,6 +257,11 @@ const App: React.FC = () => {
     nexusAIService.executePlan(messageId);
   }, []);
 
+  const expandPlan = useCallback((messageId: string) => nexusAIService.expandPlan(messageId), []);
+  const optimizePlan = useCallback((messageId: string) => nexusAIService.optimizePlan(messageId), []);
+  const revisePlan = useCallback((messageId: string) => nexusAIService.revisePlan(messageId), []);
+  const discardPlan = useCallback((messageId: string) => nexusAIService.discardPlan(messageId), []);
+
   const updatePlanStep = useCallback((messageId: string, stepIndex: number, newStep: PlanStep) => {
     nexusAIService.updatePlanStep(messageId, stepIndex, newStep);
   }, []);
@@ -367,6 +372,10 @@ const App: React.FC = () => {
               onExtractBehavior={handleExtractBehavior}
               onRerunTrace={handleRerunTrace}
               onTranslate={(messageId, text, lang) => nexusAIService.translateResponse(messageId, text, lang)}
+              onExpandPlan={expandPlan}
+              onOptimizePlan={optimizePlan}
+              onRevisePlan={revisePlan}
+              onDiscardPlan={discardPlan}
               language={settings.language}
             />}
             <SuggestionTray

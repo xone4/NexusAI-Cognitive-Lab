@@ -672,6 +672,56 @@ const _executeRecursiveCognitiveCycle = async (parentStep: PlanStep, subProblemQ
     return finalResponse.text;
 }
 
+const _regeneratePlan = async (messageId: string, modificationType: 'expand' | 'optimize' | 'revise') => {
+    const modelMessage = cognitiveProcess.history.find(m => m.id === messageId);
+    if (!modelMessage || !modelMessage.plan || !API_KEY) return;
+
+    const userMessage = cognitiveProcess.history.find(m => m.id === modelMessage.userQuery);
+    const query = userMessage?.text || '';
+    const planAsText = planToText(modelMessage.plan);
+
+    let modificationInstruction = '';
+    switch (modificationType) {
+        case 'expand':
+            modificationInstruction = 'The user wants to EXPAND the following plan. Add more detail, break down complex steps into smaller sub-steps, and be more explicit about what each tool will do.';
+            break;
+        case 'optimize':
+            modificationInstruction = 'The user wants to OPTIMIZE the following plan. Make it more efficient by combining steps where possible, using more powerful tools, or finding a more direct path to the solution.';
+            break;
+        case 'revise':
+            modificationInstruction = 'The user wants to REVISE the following plan with a different approach. Propose an alternative strategy to solve the problem. The user was not satisfied with the current plan, so think of a different way.';
+            break;
+    }
+
+    const regenerationPrompt = `${modificationInstruction}\n\nOriginal user query: "${query}"\n\nCurrent plan to modify:\n---\n${planAsText}\n---\n\nGenerate a new, improved plan based on the user's request. Return ONLY the new JSON plan object.`;
+
+    cognitiveProcess.state = 'Planning';
+    modelMessage.state = 'planning';
+    log('AI', `User requested to ${modificationType} the plan. Regenerating...`);
+    notifyCognitiveProcess();
+
+    try {
+        const response = await ai.models.generateContent({
+            model: appSettings.model,
+            contents: regenerationPrompt,
+            config: { systemInstruction: getSystemInstruction(), responseMimeType: 'application/json', responseSchema: planSchema }
+        });
+
+        const newPlanData = JSON.parse(response.text);
+        modelMessage.plan = newPlanData.plan.map((p: any) => ({ ...p, status: 'pending' }));
+        modelMessage.state = 'awaiting_execution';
+        cognitiveProcess.state = 'AwaitingExecution';
+        log('AI', `Plan successfully ${modificationType}ed. Awaiting user review.`);
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown AI error';
+        log('ERROR', `Failed to ${modificationType} plan: ${errorMessage}`);
+        modelMessage.state = 'awaiting_execution';
+        cognitiveProcess.state = 'AwaitingExecution';
+    } finally {
+        notifyCognitiveProcess();
+    }
+};
+
 
 const service = {
     log,
@@ -1328,6 +1378,18 @@ const service = {
     },
     
     // --- PLAN MODIFICATION ---
+    expandPlan: (messageId: string) => _regeneratePlan(messageId, 'expand'),
+    optimizePlan: (messageId: string) => _regeneratePlan(messageId, 'optimize'),
+    revisePlan: (messageId: string) => _regeneratePlan(messageId, 'revise'),
+    discardPlan: (messageId: string) => {
+        const modelMessage = cognitiveProcess.history.find(m => m.id === messageId);
+        if (modelMessage) {
+            const userMessage = cognitiveProcess.history.find(m => m.id === modelMessage.userQuery);
+            log('AI', `User discarded the plan for query: "${userMessage?.text || 'Unknown'}".`);
+            service.cancelQuery();
+        }
+    },
+
     updatePlanStep: (messageId: string, stepIndex: number, newStep: PlanStep) => {
         const message = cognitiveProcess.history.find(m => m.id === messageId);
         if (message && message.plan && message.plan[stepIndex]) {

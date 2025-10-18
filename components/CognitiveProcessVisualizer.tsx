@@ -1,7 +1,7 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
 import type { CognitiveProcess, ChatMessage, PlanStep, CognitiveConstitution, GeneratedImage, Language } from '../types';
 import { useTranslation } from 'react-i18next';
-import { BrainCircuitIcon, UserIcon, BookOpenIcon, CogIcon, CheckCircleIcon, CubeTransparentIcon, PlayIcon, PencilIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, PlusCircleIcon, CodeBracketIcon, LightBulbIcon, LinkIcon, ArrowRightIcon, PhotographIcon, SparklesIcon, ArchiveBoxArrowDownIcon, RefreshIcon, GlobeAltIcon, DocumentTextIcon, ShareIcon, ReplicaIcon, DicesIcon } from './Icons';
+import { BrainCircuitIcon, UserIcon, BookOpenIcon, CogIcon, CheckCircleIcon, CubeTransparentIcon, PlayIcon, PencilIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, PlusCircleIcon, CodeBracketIcon, LightBulbIcon, LinkIcon, ArrowRightIcon, PhotographIcon, SparklesIcon, ArchiveBoxArrowDownIcon, RefreshIcon, GlobeAltIcon, DocumentTextIcon, ShareIcon, ReplicaIcon, DicesIcon, ArrowsRightLeftIcon, XCircleIcon } from './Icons';
 import TextActionOverlay from './TextActionOverlay';
 
 interface CognitiveProcessVisualizerProps {
@@ -17,6 +17,10 @@ interface CognitiveProcessVisualizerProps {
   onExtractBehavior: (messageId: string) => void;
   onRerunTrace: (trace: ChatMessage) => void;
   onTranslate: (messageId: string, text: string, language: Language) => Promise<string>;
+  onExpandPlan: (messageId: string) => void;
+  onOptimizePlan: (messageId: string) => void;
+  onRevisePlan: (messageId: string) => void;
+  onDiscardPlan: (messageId: string) => void;
   language: string;
 }
 
@@ -271,8 +275,11 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
 };
 
 const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMessage }> = memo((props) => {
-    const { message, onExecutePlan, onUpdatePlanStep, onReorderPlan, onAddPlanStep, onDeletePlanStep, onSavePlanAsToolchain, onArchiveTrace, onExtractBehavior, onRerunTrace, onTranslate, constitutions, process } = props;
+    const { message, process, constitutions, onExecutePlan, onUpdatePlanStep, onReorderPlan, onAddPlanStep, onDeletePlanStep, onSavePlanAsToolchain, onArchiveTrace, onExtractBehavior, onRerunTrace, onTranslate, onExpandPlan, onOptimizePlan, onRevisePlan, onDiscardPlan } = props;
+    const { t } = useTranslation();
     const isPlanEditable = message.state === 'awaiting_execution' && !message.isPlanFinalized;
+    const isPlanModifying = process.state === 'Planning' && process.history[process.history.length-1].id === message.id;
+
     const [isPlanOpen, setIsPlanOpen] = useState(true);
     const [isResponseCollapsed, setIsResponseCollapsed] = useState(true);
     const [translatedText, setTranslatedText] = useState<string | null>(null);
@@ -324,7 +331,7 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
 
 
     const renderContent = () => {
-        if (message.state === 'planning') {
+        if (message.state === 'planning' && !isPlanModifying) {
             return (
                 <div className="flex items-center text-nexus-text-muted italic">
                     <div className="w-5 h-5 me-2 relative"><div className="nexus-loader"></div></div>
@@ -367,7 +374,7 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
                                       key={`${message.id}-step-${step.step}`}
                                       step={step}
                                       isCurrent={message.currentStep === index}
-                                      isEditable={isPlanEditable}
+                                      isEditable={isPlanEditable && !isPlanModifying}
                                       onUpdate={(newStep) => onUpdatePlanStep(message.id, index, newStep)}
                                       onDelete={() => onDeletePlanStep(message.id, index)}
                                       onMove={(dir) => onReorderPlan(message.id, index, dir === 'up' ? index - 1 : index + 1)}
@@ -376,7 +383,7 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
                                     />
                                 ))}
                             </ul>
-                             {isPlanEditable && (
+                             {isPlanEditable && !isPlanModifying && (
                                 <button onClick={() => onAddPlanStep(message.id)} className="text-xs flex items-center gap-1 text-nexus-secondary hover:text-nexus-primary mt-2 p-1">
                                     <PlusCircleIcon className="w-4 h-4" /> Add Step
                                 </button>
@@ -384,16 +391,28 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
                         </div>
                     )}
 
+                    {isPlanModifying && (
+                         <div className="flex items-center justify-center text-nexus-text-muted italic py-4">
+                            <div className="w-5 h-5 me-2 relative"><div className="nexus-loader"></div></div>
+                            AI is refining the plan...
+                        </div>
+                    )}
 
-                    {isPlanEditable && (
-                         <div className="pt-4 border-t border-nexus-surface/50 flex justify-center">
-                             <button
+                    {isPlanEditable && !isPlanModifying && (
+                        <div className="pt-4 border-t border-nexus-surface/50 flex flex-col items-center gap-3">
+                            <button
                                 onClick={() => onExecutePlan(message.id)}
-                                className="w-1/2 flex items-center justify-center gap-2 bg-nexus-primary/90 text-nexus-dark font-bold py-3 px-4 rounded-full border border-nexus-primary/80 hover:bg-nexus-secondary transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-nexus-secondary animate-load-pulse"
+                                className="w-2/3 flex items-center justify-center gap-2 bg-nexus-primary/90 text-nexus-dark font-bold py-2 px-4 rounded-full border border-nexus-primary/80 hover:bg-nexus-secondary transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-nexus-secondary animate-load-pulse"
                             >
-                                <PlayIcon className="w-6 h-6"/> Execute Plan
-                             </button>
-                         </div>
+                                <PlayIcon className="w-5 h-5"/> {t('cognitiveProcess.execute')}
+                            </button>
+                            <div className="flex justify-center gap-2">
+                                <button onClick={() => onExpandPlan(message.id)} className="action-btn-secondary bg-blue-500/10 text-blue-400 border-blue-500/50 hover:bg-blue-500/20"><ArrowsRightLeftIcon className="w-4 h-4"/>{t('cognitiveProcess.expand')}</button>
+                                <button onClick={() => onOptimizePlan(message.id)} className="action-btn-secondary bg-purple-500/10 text-purple-400 border-purple-500/50 hover:bg-purple-500/20"><SparklesIcon className="w-4 h-4"/>{t('cognitiveProcess.optimize')}</button>
+                                <button onClick={() => onRevisePlan(message.id)} className="action-btn-secondary bg-green-500/10 text-green-400 border-green-500/50 hover:bg-green-500/20"><RefreshIcon className="w-4 h-4"/>{t('cognitiveProcess.revise')}</button>
+                                <button onClick={() => onDiscardPlan(message.id)} className="action-btn-secondary bg-red-500/10 text-red-400 border-red-500/50 hover:bg-red-500/20"><XCircleIcon className="w-4 h-4"/>{t('cognitiveProcess.discard')}</button>
+                            </div>
+                        </div>
                     )}
                     
                     {message.isPlanFinalized && message.state === 'executing' && (
@@ -542,7 +561,18 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
                     transition: all 0.3s;
                     color: white;
                 }
-                .action-btn:disabled {
+                .action-btn-secondary {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    font-weight: 600;
+                    padding: 0.5rem 1rem;
+                    border-radius: 9999px;
+                    border-width: 1px;
+                    transition: all 0.3s;
+                    font-size: 0.875rem; /* text-sm */
+                }
+                .action-btn:disabled, .action-btn-secondary:disabled {
                     cursor: not-allowed;
                     opacity: 0.6;
                 }
