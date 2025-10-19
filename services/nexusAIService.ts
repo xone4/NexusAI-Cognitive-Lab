@@ -1,6 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails, UserKeyword, Personality, PlaybookItem, RawInsight, PlaybookItemCategory, WorldModel, WorldModelEntity, CognitiveTrajectory } from '../types';
-// FIX: Import STORES from dbService to be used in factoryReset.
 import { dbService, STORES } from './dbService';
 import * as geometryService from './geometryService';
 import { calculateTrajectorySimilarity } from './geometryService';
@@ -51,6 +50,8 @@ let evolutionSubscribers: ((evolutionState: EvolutionState) => void)[] = [];
 let archiveSubscribers: ((archives: ChatMessage[]) => void)[] = [];
 let dreamProcessSubscribers: ((update: DreamProcessUpdate) => void)[] = [];
 let worldModelSubscribers: ((worldModel: WorldModel) => void)[] = [];
+// FIX: Add cognitiveNetworkSubscribers array
+let cognitiveNetworkSubscribers: ((state: CognitiveNetworkState) => void)[] = [];
 
 // --- Phase 9: Temporal Synchronization State ---
 let isGlobalSyncActive = false;
@@ -125,6 +126,8 @@ const notifyConstitutions = () => constitutionSubscribers.forEach(cb => cb(JSON.
 const notifyEvolution = () => evolutionSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(evolutionState))));
 const notifyArchives = () => archiveSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(archivedTracesState))));
 const notifyDreamProcess = (update: DreamProcessUpdate) => dreamProcessSubscribers.forEach(cb => cb(update));
+// FIX: Add notifyCognitiveNetwork function
+const notifyCognitiveNetwork = () => cognitiveNetworkSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(cognitiveNetworkState))));
 const notifyWorldModel = () => {
     if (worldModelState) {
         worldModelSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(worldModelState!))));
@@ -333,6 +336,8 @@ const initialize = async () => {
         initialArchives: JSON.parse(JSON.stringify(archivedTracesState)),
         initialCognitiveProcess: JSON.parse(JSON.stringify(cognitiveProcess)),
         initialWorldModel: JSON.parse(JSON.stringify(worldModelState)),
+        // FIX: Add initialCognitiveNetworkState to return object
+        initialCognitiveNetworkState: JSON.parse(JSON.stringify(cognitiveNetworkState)),
         initialLogs: [
             { id: 'init-1', timestamp: Date.now() - 2000, level: 'SYSTEM', message: 'NexusAI Cognitive Core Initializing...' },
             { id: 'init-2', timestamp: Date.now() - 1000, level: 'SYSTEM', message: 'Persistent memory layer synced.' },
@@ -598,16 +603,25 @@ const _executeRecursiveCognitiveCycle = async (parentStep: PlanStep, subProblemQ
             notifyCognitiveProcess();
             const result = await _executeRecursiveCognitiveCycle(step, step.query || '', step.code || '');
             step.result = result;
-        } else if (step.tool === 'code_interpreter' || step.tool === 'code_sandbox') {
-             try {
-                const execution_context_data = step.tool === 'code_sandbox' ? contextData : undefined;
-                const codeToRun = `"use strict"; return ((context_data) => { ${step.code} })(context_data);`;
-                const result = new Function('context_data', codeToRun)(execution_context_data);
+        } else if (step.tool === 'code_interpreter') {
+            try {
+                const codeToRun = `"use strict"; return (() => { ${step.code} })();`;
+                const result = new Function(codeToRun)();
                 step.result = JSON.stringify(result, null, 2);
             } catch (e) {
                 step.status = 'error';
                 step.result = e instanceof Error ? e.message : 'Unknown execution error.';
-                log('ERROR', `Clone's Code tool failed: ${step.result}`);
+                log('ERROR', `Clone's Code Interpreter failed: ${step.result}`);
+            }
+        } else if (step.tool === 'code_sandbox') {
+             try {
+                const codeToRun = `"use strict"; return ((context_data) => { ${step.code} })(context_data);`;
+                const result = new Function('context_data', codeToRun)(contextData);
+                step.result = JSON.stringify(result, null, 2);
+            } catch (e) {
+                step.status = 'error';
+                step.result = e instanceof Error ? e.message : 'Unknown execution error.';
+                log('ERROR', `Clone's Code Sandbox failed: ${step.result}`);
             }
         } else if (step.tool === 'peek_context') {
             const charCount = parseInt(step.query || '300', 10);
@@ -1075,10 +1089,15 @@ const service = {
                 id: `prob-${Date.now()}`,
                 description: problem,
                 broadcastById: replicaId,
+                // FIX: Add missing properties broadcastByName and bids
+                broadcastByName: result.node.name,
+                bids: [],
                 isOpen: true,
             };
             cognitiveNetworkState.activeProblems.push(newProblem);
             log('NETWORK', `Replica ${result.node.name} is broadcasting problem: "${problem}"`);
+            // FIX: Notify subscribers of network state change
+            notifyCognitiveNetwork();
 
             // --- Simulate network response ---
             const allReplicas: Replica[] = [];
@@ -1102,6 +1121,8 @@ const service = {
                             if (currentBidderNode && currentBidderNode.node.status === 'Bidding') {
                                 const mockBid: CognitiveBid = {
                                     bidderId: bidder.id,
+                                    // FIX: Add missing property bidderName
+                                    bidderName: bidder.name,
                                     problemId: newProblem.id,
                                     proposedPlan: [
                                         { step: 1, description: `AI-generated plan from ${bidder.name}`, tool: 'google_search', status: 'pending' },
@@ -1134,8 +1155,12 @@ const service = {
                         log('WARN', `Problem "${problemToResolve.description.substring(0,30)}..." expired with no bids.`);
                     }
                     problemToResolve.isOpen = false;
+                    // FIX: Notify subscribers of network state change
+                    notifyCognitiveNetwork();
                     setTimeout(() => {
                         cognitiveNetworkState.activeProblems = cognitiveNetworkState.activeProblems.filter(p => p.id !== newProblem.id);
+                        // FIX: Notify subscribers of network state change
+                        notifyCognitiveNetwork();
                     }, 10000);
                 }
             }, 8000);
@@ -2338,7 +2363,6 @@ ${text}
 
             const finalHistory = [...newHistory, { role: 'model' as const, text: response.text }];
             details.discussion = finalHistory;
-            // FIX: The value for the cache should be the entire `details` object, not just the `finalHistory` array.
             traceDetailsCache.set(trace.id, details);
 
             return finalHistory;
@@ -2666,6 +2690,8 @@ ${text}
     subscribeToArchives: (callback: (archives: ChatMessage[]) => void) => { archiveSubscribers.push(callback); },
     subscribeToDreamProcess: (callback: (update: DreamProcessUpdate) => void) => { dreamProcessSubscribers.push(callback); },
     subscribeToWorldModel: (callback: (worldModel: WorldModel) => void) => { worldModelSubscribers.push(callback); },
+    // FIX: Add subscribeToCognitiveNetwork function
+    subscribeToCognitiveNetwork: (callback: (state: CognitiveNetworkState) => void) => { cognitiveNetworkSubscribers.push(callback); },
     unsubscribeFromDreamProcess: (callback: (update: DreamProcessUpdate) => void) => {
         dreamProcessSubscribers = dreamProcessSubscribers.filter(cb => cb !== callback);
     },
@@ -2683,6 +2709,8 @@ ${text}
         archiveSubscribers = [];
         dreamProcessSubscribers = [];
         worldModelSubscribers = [];
+        // FIX: Clear cognitiveNetworkSubscribers
+        cognitiveNetworkSubscribers = [];
     }
 };
 

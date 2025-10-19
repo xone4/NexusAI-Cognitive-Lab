@@ -2,7 +2,6 @@ import React, { Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Transition } from '@headlessui/react';
 import type { ActiveView, Replica, MentalTool, CognitiveProcess, AppSettings } from '../types';
-// FIX: Add BookOpenIcon to the import list from ./Icons.
 import { ReplicaIcon, ToolIcon, BrainCircuitIcon, LightBulbIcon, CircleStackIcon, UserGroupIcon, GlobeAltIcon, ArrowRightIcon, XCircleIcon, CpuChipIcon, BookOpenIcon } from './Icons';
 
 export type DetailItemType = 'replica' | 'tool' | 'replicas_summary' | 'tools_summary' | 'core' | 'memory' | 'affective_core' | 'ui' | 'integrations';

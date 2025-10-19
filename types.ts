@@ -34,6 +34,7 @@ export interface Replica {
   activeConstitutionId: string;
   internalTick: number;
   tempo: number;
+  biddingForProblemId?: string;
 }
 
 export interface MentalTool {
@@ -334,6 +335,7 @@ export interface ProactiveExplorationState {
 // --- Cognitive Packet for inter-replica communication ---
 export interface CognitiveBid {
     bidderId: string; // Replica ID making the bid
+    bidderName: string;
     problemId: string; // ID of the problem being bid on
     proposedPlan: PlanStep[]; // The plan the replica thinks will solve the problem
     confidenceScore: number; // 0-1, how confident the replica is
@@ -343,7 +345,9 @@ export interface CognitiveProblem {
     id: string;
     description: string;
     broadcastById: string; // Who is asking
+    broadcastByName: string;
     winningBid?: CognitiveBid;
+    bids: CognitiveBid[];
     isOpen: boolean;
 }
 

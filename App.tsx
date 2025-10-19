@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-// FIX: Removed unused import 'WorldModel' to clean up dependencies.
-import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, ActiveView, CognitiveProcess, AppSettings, Toolchain, ChatMessage, PlanStep, CognitiveConstitution, EvolutionState, PlaybookItem, Language, Personality, WorldModelEntity } from './types';
+import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, ActiveView, CognitiveProcess, AppSettings, Toolchain, ChatMessage, PlanStep, CognitiveConstitution, EvolutionState, PlaybookItem, Language, Personality, WorldModelEntity, CognitiveNetworkState } from './types';
 import { nexusAIService } from './services/nexusAIService';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -34,6 +33,7 @@ const App: React.FC = () => {
   const [constitutions, setConstitutions] = useState<CognitiveConstitution[]>([]);
   const [evolutionState, setEvolutionState] = useState<EvolutionState | null>(null);
   const [worldModel, setWorldModel] = useState<any | null>(null);
+  const [cognitiveNetwork, setCognitiveNetwork] = useState<CognitiveNetworkState>({ activeProblems: [] });
   const [archivedTraces, setArchivedTraces] = useState<ChatMessage[]>([]);
   const [performanceData, setPerformanceData] = useState<PerformanceDataPoint[]>([]);
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -150,6 +150,10 @@ const App: React.FC = () => {
     setWorldModel(newWorldModelState);
   }, []);
 
+  const handleCognitiveNetworkUpdate = useCallback((newNetworkState: CognitiveNetworkState) => {
+    setCognitiveNetwork(newNetworkState);
+  }, []);
+
   const handleCognitiveProcessUpdate = useCallback((process: CognitiveProcess) => {
     setCognitiveProcess(process);
   }, []);
@@ -168,7 +172,7 @@ const App: React.FC = () => {
     const initializeApp = async () => {
       nexusAIService.updateSettings(settings);
   
-      const { initialReplicas, initialTools, initialToolchains, initialPlaybook, initialConstitutions, initialEvolutionState, initialLogs, initialPerfData, initialCognitiveProcess, initialArchives, initialWorldModel } = await nexusAIService.initialize();
+      const { initialReplicas, initialTools, initialToolchains, initialPlaybook, initialConstitutions, initialEvolutionState, initialLogs, initialPerfData, initialCognitiveProcess, initialArchives, initialWorldModel, initialCognitiveNetworkState } = await nexusAIService.initialize();
       setReplicas(initialReplicas);
       setTools(initialTools);
       setToolchains(initialToolchains);
@@ -177,6 +181,7 @@ const App: React.FC = () => {
       setEvolutionState(initialEvolutionState);
       setArchivedTraces(initialArchives);
       setWorldModel(initialWorldModel);
+      setCognitiveNetwork(initialCognitiveNetworkState);
       setLogs(initialLogs);
       setPerformanceData(initialPerfData);
       setCognitiveProcess(initialCognitiveProcess);
@@ -192,6 +197,7 @@ const App: React.FC = () => {
       nexusAIService.subscribeToConstitutions(handleConstitutionsUpdate);
       nexusAIService.subscribeToEvolution(handleEvolutionUpdate);
       nexusAIService.subscribeToWorldModel(handleWorldModelUpdate);
+      nexusAIService.subscribeToCognitiveNetwork(handleCognitiveNetworkUpdate);
       nexusAIService.subscribeToCognitiveProcess(handleCognitiveProcessUpdate);
       nexusAIService.subscribeToArchives(handleArchivesUpdate);
   
@@ -232,7 +238,6 @@ const App: React.FC = () => {
     nexusAIService.setReplicaConstitution(replicaId, constitutionId);
   }, []);
   
-  // FIX: This function was calling a non-existent method on nexusAIService. The method is now added to the service.
   const setReplicaPersonality = useCallback((replicaId: string, personality: Personality) => {
     nexusAIService.setReplicaPersonality(replicaId, personality);
   }, []);
@@ -416,6 +421,7 @@ const App: React.FC = () => {
         return replicas && <ReplicasView 
             rootReplica={replicas} 
             isInteractionDisabled={!cognitivePermissions.canUseManualControls}
+            cognitiveNetwork={cognitiveNetwork}
             onSpawnReplica={spawnReplica}
             onPruneReplica={pruneReplica}
             onRecalibrate={recalibrateReplica}

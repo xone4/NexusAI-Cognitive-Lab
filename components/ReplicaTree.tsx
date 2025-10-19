@@ -1,7 +1,8 @@
 import React, { memo, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Replica, CognitiveConstitution, Personality } from '../types';
-import { ReplicaIcon, CogIcon, TrashIcon, PencilIcon, BrainCircuitIcon, ShareIcon, UserIcon, ClockIcon } from './Icons';
+import type { Replica, CognitiveConstitution, Personality, CognitiveNetworkState, CognitiveProblem } from '../types';
+// FIX: Import ArchIcon instead of the unexported Network icon.
+import { ReplicaIcon, CogIcon, TrashIcon, PencilIcon, BrainCircuitIcon, ShareIcon, UserIcon, ClockIcon, ArchIcon } from './Icons';
 import DashboardCard from './DashboardCard';
 import ReplicaNetwork from './ReplicaNetwork';
 import PersonalityEditor from './PersonalityEditor';
@@ -9,6 +10,7 @@ import PersonalityEditor from './PersonalityEditor';
 interface ReplicasViewProps {
     rootReplica: Replica;
     isInteractionDisabled: boolean;
+    cognitiveNetwork: CognitiveNetworkState;
     onSpawnReplica: (parentId: string) => void;
     onPruneReplica: (replicaId: string) => void;
     onRecalibrate: (replicaId: string) => void;
@@ -124,14 +126,14 @@ const getPersonalityCode = (p: Personality): string => {
 }
 
 
-const ReplicaCard: React.FC<Omit<ReplicasViewProps, 'rootReplica' | 'onTriggerGlobalSync'> & { replica: Replica; path: string; }> = memo(({ replica, path, isInteractionDisabled, onSpawnReplica, onPruneReplica, onRecalibrate, onAssignPurpose, constitutions, onSetConstitution, onBroadcastProblem, onSetPersonality }) => {
+const ReplicaCard: React.FC<Omit<ReplicasViewProps, 'rootReplica' | 'onTriggerGlobalSync' | 'cognitiveNetwork'> & { replica: Replica; path: string; }> = memo(({ replica, path, isInteractionDisabled, onSpawnReplica, onPruneReplica, onRecalibrate, onAssignPurpose, constitutions, onSetConstitution, onBroadcastProblem, onSetPersonality }) => {
     const { t } = useTranslation();
     const [isPurposeModalOpen, setPurposeModalOpen] = useState(false);
     const [isBroadcastModalOpen, setBroadcastModalOpen] = useState(false);
     const [isPersonalityModalOpen, setPersonalityModalOpen] = useState(false);
     
     const color = statusColors[replica.status] || statusColors.Dormant;
-    const animationClass = replica.status === 'Pruning' ? 'animate-fade-out' : replica.status === 'Spawning' ? 'animate-spawn-in' : replica.status === 'Executing Task' ? 'animate-pulse' : replica.status === 'Recalibrating' ? 'animate-pulse' : '';
+    const animationClass = replica.status === 'Pruning' ? 'animate-fade-out' : replica.status === 'Spawning' ? 'animate-spawn-in' : ['Executing Task', 'Recalibrating', 'Bidding'].includes(replica.status) ? 'animate-pulse' : '';
 
     const handleSavePurpose = (newPurpose: string) => {
         onAssignPurpose(replica.id, newPurpose);
@@ -246,7 +248,7 @@ const TemporalCoordinatorView: React.FC<{ allReplicas: {replica: Replica, path: 
                         <div key={replica.id} className="text-xs">
                             <div className="flex justify-between items-baseline mb-1">
                                 <span className={`font-semibold ${color.text}`}>{replica.name}</span>
-                                <span className="font-mono text-nexus-text-muted">Tempo: {replica.tempo.toFixed(2)} T/s</span>
+                                <span className="font-mono text-nexus-text-muted">{t('replicas.tempo')}: {replica.tempo.toFixed(2)} T/s</span>
                             </div>
                             <div className="w-full bg-nexus-dark/50 rounded-full h-2 overflow-hidden">
                                 <div 
@@ -262,9 +264,54 @@ const TemporalCoordinatorView: React.FC<{ allReplicas: {replica: Replica, path: 
     );
 };
 
+const CognitiveNetworkMonitor: React.FC<{ problems: CognitiveProblem[] }> = ({ problems }) => {
+    const { t } = useTranslation();
+
+    return (
+        // FIX: Use ArchIcon for the icon
+        <DashboardCard title={t('replicas.networkMonitorTitle')} icon={<ArchIcon />}>
+            <div className="space-y-4 max-h-96 overflow-y-auto">
+                {problems.length === 0 ? (
+                    <p className="text-sm text-nexus-text-muted text-center py-4">{t('replicas.noActiveProblems')}</p>
+                ) : (
+                    problems.map(problem => (
+                        <div key={problem.id} className="bg-nexus-dark/30 p-3 rounded-xl animate-spawn-in">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <p className="text-sm font-semibold text-nexus-text">"{problem.description}"</p>
+                                    <p className="text-xs text-nexus-text-muted">{t('replicas.broadcastBy')}: {problem.broadcastByName}</p>
+                                </div>
+                                <span className={`text-xs font-bold px-2 py-1 rounded-full ${problem.isOpen ? 'bg-orange-500/20 text-orange-400 animate-pulse' : 'bg-green-500/20 text-green-400'}`}>
+                                    {problem.isOpen ? t('replicas.openForBids') : t('replicas.closed')}
+                                </span>
+                            </div>
+                            <div className="mt-2 pt-2 border-t border-nexus-surface/30">
+                                <h5 className="text-xs font-semibold text-nexus-primary mb-2">{t('replicas.bidsReceived')}</h5>
+                                {problem.bids.length === 0 && problem.isOpen && <p className="text-xs text-nexus-text-muted italic animate-pulse">{t('replicas.awaitingBids')}</p>}
+                                <div className="space-y-1">
+                                    {problem.bids.sort((a,b) => b.confidenceScore - a.confidenceScore).map(bid => {
+                                        const isWinner = problem.winningBid?.bidderId === bid.bidderId;
+                                        return (
+                                            <div key={bid.bidderId} className={`flex justify-between items-center text-xs p-1 rounded ${isWinner ? 'bg-green-500/20' : ''}`}>
+                                                <span className={`${isWinner ? 'font-bold text-green-300' : 'text-nexus-text-muted'}`}>{bid.bidderName}</span>
+                                                <span className={`font-mono font-bold ${isWinner ? 'text-green-300' : 'text-orange-400'}`}>
+                                                    {t('replicas.confidence')}: {(bid.confidenceScore * 100).toFixed(1)}% {isWinner ? `(${t('replicas.winner')})` : ''}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    ))
+                )}
+            </div>
+        </DashboardCard>
+    );
+};
 
 const ReplicasView: React.FC<ReplicasViewProps> = (props) => {
-    const { rootReplica, onTriggerGlobalSync, isInteractionDisabled } = props;
+    const { rootReplica, onTriggerGlobalSync, isInteractionDisabled, cognitiveNetwork } = props;
     const { t } = useTranslation();
 
     const allReplicas = useMemo(() => {
@@ -299,6 +346,8 @@ const ReplicasView: React.FC<ReplicasViewProps> = (props) => {
                 <ReplicaCard {...props} replica={coreReplica.replica} path={coreReplica.path} />
             </div>
         )}
+        
+        <CognitiveNetworkMonitor problems={cognitiveNetwork.activeProblems} />
 
         <DashboardCard title={t('replicas.interReplicaDynamics')} icon={<BrainCircuitIcon />}>
             <div className="h-96 w-full">
