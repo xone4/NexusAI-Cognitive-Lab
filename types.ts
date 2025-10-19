@@ -32,6 +32,8 @@ export interface Replica {
   interactions: Interaction[];
   personality: Personality;
   activeConstitutionId: string;
+  internalTick: number;
+  tempo: number;
 }
 
 export interface MentalTool {
@@ -100,6 +102,7 @@ export interface PerformanceDataPoint {
   memory: number;
   rsiCycles: number;
   networkLatency: number;
+
   renderTime: number;
   memoryBreakdown: {
     replicas: number;
@@ -123,6 +126,7 @@ export type AnimationLevel = 'FULL' | 'MINIMAL' | 'NONE';
 export type SuggestionProfile = 'short' | 'medium' | 'long';
 export type Language = 'en' | 'ar' | 'es' | 'fr' | 'de' | 'zh';
 export type ModelProfile = 'lite' | 'flash' | 'pro';
+export type CognitiveStyle = 'balanced' | 'analytical' | 'creative';
 
 export interface AppSettings {
   model: string;
@@ -132,6 +136,7 @@ export interface AppSettings {
   logVerbosity: LogVerbosity;
   animationLevel: AnimationLevel;
   language: Language;
+  cognitiveStyle: CognitiveStyle;
 }
 
 // Types for Autonomous Cognitive Processing
@@ -224,6 +229,7 @@ export interface ChatMessage {
     // For semantic search
     embedding?: number[];
     similarity?: number;
+    trajectorySimilarity?: number;
 
     // For Cognitive Geometry
     cognitiveTrajectory?: CognitiveTrajectory;
@@ -411,7 +417,6 @@ export interface WorldModelPrinciple {
 }
 
 export interface WorldModel {
-  // FIX: Add id property to WorldModel to satisfy dbService requirements.
   id: string;
   entities: WorldModelEntity[];
   relationships: WorldModelRelationship[];

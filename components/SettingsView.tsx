@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { AppSettings, AnimationLevel, Language, ModelProfile } from '../types';
+import type { AppSettings, AnimationLevel, Language, ModelProfile, CognitiveStyle } from '../types';
 import DashboardCard from './DashboardCard';
 import { CogIcon, TrashIcon, BrainCircuitIcon, EyeIcon } from './Icons';
 import { nexusAIService } from '../services/nexusAIService';
@@ -95,6 +95,12 @@ const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSettingsChange 
     { value: 'pro', label: t('settings.pro') },
   ];
 
+  const cognitiveStyleOptions: { value: CognitiveStyle; label: string; }[] = [
+    { value: 'balanced', label: t('settings.balanced') },
+    { value: 'analytical', label: t('settings.analytical') },
+    { value: 'creative', label: t('settings.creative') },
+  ];
+
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -114,6 +120,13 @@ const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSettingsChange 
                 options={modelProfileOptions}
                 selected={localSettings.modelProfile}
                 onChange={handleModelProfileChange}
+            />
+            <SettingsRadioGroup
+                label={t('settings.cognitiveStyle')}
+                description={t('settings.cognitiveStyleDesc')}
+                options={cognitiveStyleOptions}
+                selected={localSettings.cognitiveStyle}
+                onChange={(v) => setLocalSettings(p => ({ ...p, cognitiveStyle: v }))}
             />
           <div>
             <label htmlFor="delay-slider" className={`block text-sm font-medium text-nexus-text-muted mb-2 ${isRtl ? 'font-tahoma' : ''}`}>

@@ -1,7 +1,7 @@
 import React, { memo, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Replica, CognitiveConstitution, Personality } from '../types';
-import { ReplicaIcon, CogIcon, TrashIcon, PencilIcon, BrainCircuitIcon, ShareIcon, UserIcon } from './Icons';
+import { ReplicaIcon, CogIcon, TrashIcon, PencilIcon, BrainCircuitIcon, ShareIcon, UserIcon, ClockIcon } from './Icons';
 import DashboardCard from './DashboardCard';
 import ReplicaNetwork from './ReplicaNetwork';
 import PersonalityEditor from './PersonalityEditor';
@@ -17,6 +17,7 @@ interface ReplicasViewProps {
     onSetConstitution: (replicaId: string, constitutionId: string) => void;
     onBroadcastProblem: (replicaId: string, problem: string) => void;
     onSetPersonality: (replicaId: string, personality: Personality) => void;
+    onTriggerGlobalSync: () => void;
 }
 
 const statusColors: Record<Replica['status'], { text: string; border: string; bg: string }> = {
@@ -30,15 +31,13 @@ const statusColors: Record<Replica['status'], { text: string; border: string; bg
   Bidding: { text: 'text-orange-400', border: 'border-orange-400', bg: 'bg-orange-400' },
 };
 
-const StatBar: React.FC<{ label: string; value: number; color: string; max?: number }> = ({ label, value, color, max = 100 }) => {
-    const { t } = useTranslation();
+const StatBar: React.FC<{ label: string; value: number; color: string; max?: number, unit?: string }> = ({ label, value, color, max = 100, unit = '' }) => {
     const percentage = (value / max) * 100;
-    const isLearningRate = label === t('replicas.learningRate');
     return (
         <div>
             <div className="flex justify-between items-baseline mb-1">
                 <span className="text-xs font-semibold text-nexus-text-muted">{label}</span>
-                <span className="text-sm font-bold text-nexus-text">{value.toFixed(0)}{isLearningRate ? '%' : ''}</span>
+                <span className="text-sm font-bold text-nexus-text">{value.toFixed(unit ? 2 : 0)}{unit}</span>
             </div>
             <div className="w-full bg-nexus-dark/50 rounded-full h-2 overflow-hidden">
                 <div 
@@ -125,14 +124,14 @@ const getPersonalityCode = (p: Personality): string => {
 }
 
 
-const ReplicaCard: React.FC<Omit<ReplicasViewProps, 'rootReplica'> & { replica: Replica; path: string; }> = memo(({ replica, path, isInteractionDisabled, onSpawnReplica, onPruneReplica, onRecalibrate, onAssignPurpose, constitutions, onSetConstitution, onBroadcastProblem, onSetPersonality }) => {
+const ReplicaCard: React.FC<Omit<ReplicasViewProps, 'rootReplica' | 'onTriggerGlobalSync'> & { replica: Replica; path: string; }> = memo(({ replica, path, isInteractionDisabled, onSpawnReplica, onPruneReplica, onRecalibrate, onAssignPurpose, constitutions, onSetConstitution, onBroadcastProblem, onSetPersonality }) => {
     const { t } = useTranslation();
     const [isPurposeModalOpen, setPurposeModalOpen] = useState(false);
     const [isBroadcastModalOpen, setBroadcastModalOpen] = useState(false);
     const [isPersonalityModalOpen, setPersonalityModalOpen] = useState(false);
     
     const color = statusColors[replica.status] || statusColors.Dormant;
-    const animationClass = replica.status === 'Pruning' ? 'animate-fade-out' : replica.status === 'Spawning' ? 'animate-spawn-in' : replica.status === 'Executing Task' ? 'animate-pulse' : '';
+    const animationClass = replica.status === 'Pruning' ? 'animate-fade-out' : replica.status === 'Spawning' ? 'animate-spawn-in' : replica.status === 'Executing Task' ? 'animate-pulse' : replica.status === 'Recalibrating' ? 'animate-pulse' : '';
 
     const handleSavePurpose = (newPurpose: string) => {
         onAssignPurpose(replica.id, newPurpose);
@@ -192,9 +191,16 @@ const ReplicaCard: React.FC<Omit<ReplicasViewProps, 'rootReplica'> & { replica: 
 
                     <div className="space-y-3">
                         <StatBar label={t('replicas.cognitiveLoad')} value={replica.load} color="bg-nexus-primary" />
-                        <StatBar label={t('replicas.learningRate')} value={replica.efficiency} color="bg-green-500" />
+                        <StatBar label={t('replicas.learningRate')} value={replica.efficiency} color="bg-green-500" unit="%" />
                         <StatBar label={t('replicas.contextUtilization')} value={replica.memoryUsage} color={color.bg} />
                         <StatBar label={t('replicas.processingCycles')} value={replica.cpuUsage} color={color.bg} />
+                        <div className="pt-2 border-t border-nexus-surface/30 space-y-3">
+                            <StatBar label={t('replicas.tempo')} value={replica.tempo} color="bg-orange-500" max={5.5} unit=" T/s"/>
+                            <div className="flex justify-between items-baseline">
+                                <span className="text-xs font-semibold text-nexus-text-muted">{t('replicas.internalTime')}</span>
+                                <span className="text-sm font-bold text-nexus-text font-mono">{replica.internalTick.toLocaleString(undefined, { maximumFractionDigits: 0 })} T</span>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 pt-2 border-t border-nexus-surface/30">
@@ -224,9 +230,41 @@ const ReplicaCard: React.FC<Omit<ReplicasViewProps, 'rootReplica'> & { replica: 
 });
 ReplicaCard.displayName = 'ReplicaCard';
 
+const TemporalCoordinatorView: React.FC<{ allReplicas: {replica: Replica, path: string}[] }> = ({ allReplicas }) => {
+    const { t } = useTranslation();
+    return (
+        <div className="mt-4 pt-4 border-t border-nexus-surface/50">
+            <h4 className="text-sm font-semibold text-nexus-primary mb-2 flex items-center gap-2">
+                <ClockIcon className="w-5 h-5" />
+                {t('replicas.temporalCoordinatorLog')}
+            </h4>
+            <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
+                {allReplicas.map(({ replica }) => {
+                    const tickPercentage = (replica.internalTick % 1000) / 10;
+                    const color = statusColors[replica.status] || statusColors.Dormant;
+                    return (
+                        <div key={replica.id} className="text-xs">
+                            <div className="flex justify-between items-baseline mb-1">
+                                <span className={`font-semibold ${color.text}`}>{replica.name}</span>
+                                <span className="font-mono text-nexus-text-muted">Tempo: {replica.tempo.toFixed(2)} T/s</span>
+                            </div>
+                            <div className="w-full bg-nexus-dark/50 rounded-full h-2 overflow-hidden">
+                                <div 
+                                    className={`${color.bg} h-2 rounded-full transition-all duration-1000 ease-linear`}
+                                    style={{ width: `${tickPercentage}%` }}
+                                ></div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+
 
 const ReplicasView: React.FC<ReplicasViewProps> = (props) => {
-    const { rootReplica } = props;
+    const { rootReplica, onTriggerGlobalSync, isInteractionDisabled } = props;
     const { t } = useTranslation();
 
     const allReplicas = useMemo(() => {
@@ -240,6 +278,10 @@ const ReplicasView: React.FC<ReplicasViewProps> = (props) => {
         return flattened;
     }, [rootReplica]);
     
+    const isSyncing = useMemo(() => {
+        return allReplicas.some(r => r.replica.status === 'Recalibrating');
+    }, [allReplicas]);
+
     if (!rootReplica) {
         return <div className="text-nexus-text-muted">{t('replicas.loading')}</div>;
     }
@@ -262,6 +304,17 @@ const ReplicasView: React.FC<ReplicasViewProps> = (props) => {
             <div className="h-96 w-full">
                  <ReplicaNetwork rootReplica={rootReplica} />
             </div>
+            <div className="flex justify-center mt-4">
+                <button
+                    onClick={onTriggerGlobalSync}
+                    disabled={isInteractionDisabled || isSyncing}
+                    className="flex items-center gap-2 bg-blue-500/10 text-blue-400 border border-blue-500/50 hover:bg-blue-500/20 font-semibold px-4 py-2 rounded-full transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <ClockIcon className={`w-5 h-5 ${isSyncing ? 'animate-spin' : ''}`} />
+                    {isSyncing ? t('replicas.synchronizing') : t('replicas.issueGlobalTempoPulse')}
+                </button>
+            </div>
+            <TemporalCoordinatorView allReplicas={allReplicas} />
         </DashboardCard>
         
         {childReplicas.length > 0 && (

@@ -3,6 +3,7 @@ import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProc
 // FIX: Import STORES from dbService to be used in factoryReset.
 import { dbService, STORES } from './dbService';
 import * as geometryService from './geometryService';
+import { calculateTrajectorySimilarity } from './geometryService';
 
 // IMPORTANT: This would be populated by a secure mechanism in a real app
 const API_KEY = process.env.API_KEY;
@@ -32,6 +33,7 @@ let appSettings: AppSettings = {
     logVerbosity: 'STANDARD',
     animationLevel: 'FULL',
     language: 'en',
+    cognitiveStyle: 'balanced',
 };
 
 let currentController: AbortController | null = null;
@@ -50,6 +52,10 @@ let archiveSubscribers: ((archives: ChatMessage[]) => void)[] = [];
 let dreamProcessSubscribers: ((update: DreamProcessUpdate) => void)[] = [];
 let worldModelSubscribers: ((worldModel: WorldModel) => void)[] = [];
 
+// --- Phase 9: Temporal Synchronization State ---
+let isGlobalSyncActive = false;
+let globalSyncTempo = 1.0;
+// ---------------------------------------------
 
 let traceDetailsCache = new Map<string, TraceDetails>();
 
@@ -59,7 +65,7 @@ class TrajectoryTracker {
 
     constructor(taskId: string, initialPrompt: string) {
         this.taskId = taskId;
-        log('SYSTEM', `[Geometry] Trajectory tracker initialized for task ${taskId}.`);
+        log('SYSTEM', `[Geometry] Trajectory tracker initialized for task ${this.taskId}.`);
         // The initial state before any thought is the prompt itself.
         this.addStep('Initial State (User Query)', initialPrompt);
     }
@@ -72,6 +78,10 @@ class TrajectoryTracker {
         } catch (e) {
             log('ERROR', `[Geometry] Failed to generate embedding for step "${thought}": ${e instanceof Error ? e.message : 'Unknown error'}`);
         }
+    }
+
+    public getSteps(): { thought: string; position: number[] }[] {
+        return this.steps;
     }
 
     finalize(): CognitiveTrajectory | undefined {
@@ -178,6 +188,21 @@ const updateReplicaState = (node: Replica, root: Replica) => {
     if (node.status === 'Dormant') {
         node.efficiency = Math.max(0, node.efficiency - 0.05);
     }
+    
+    // --- PHASE 9: Temporal Synchronization ---
+    if (isGlobalSyncActive && node.status === 'Recalibrating') {
+        node.tempo = globalSyncTempo; // Override with global tempo
+    } else {
+        const baseTempo = 0.5;
+        const maxTempo = 5.0;
+        node.tempo = baseTempo + (node.load / 100) * (maxTempo - baseTempo);
+        if (node.status === 'Dormant') {
+            node.tempo = 0.1;
+        }
+    }
+    const intervalSeconds = 2; // Corresponds to the setInterval in start()
+    node.internalTick = (node.internalTick || 0) + (node.tempo * intervalSeconds);
+    // --- END PHASE 9 ---
 
     // Simulate interactions for active nodes
     if (node.status === 'Active' || node.status === 'Executing Task') {
@@ -200,7 +225,10 @@ const updateReplicaState = (node: Replica, root: Replica) => {
             }
         }
     } else {
-        node.interactions = [];
+        // Clear interactions if not active, unless it's currently syncing
+        if (node.status !== 'Recalibrating') {
+            node.interactions = [];
+        }
     }
 
     node.children.forEach(child => updateReplicaState(child, root));
@@ -225,10 +253,10 @@ const _seedInitialData = async () => {
     const defaultPersonality: Personality = { energyFocus: 'EXTROVERSION', informationProcessing: 'INTUITION', decisionMaking: 'THINKING', worldApproach: 'PERCEIVING' };
 
     const initialReplica: Replica = {
-        id: 'nexus-core', name: 'Nexus-Core-α', depth: 0, status: 'Active', load: 65, purpose: 'Orchestrating cognitive resources, managing executive functions, and directing overall problem-solving strategy.', efficiency: 92, memoryUsage: 75, cpuUsage: 60, interactions: [], activeConstitutionId: initialConstitutions[0].id, personality: defaultPersonality,
+        id: 'nexus-core', name: 'Nexus-Core-α', depth: 0, status: 'Active', load: 65, purpose: 'Orchestrating cognitive resources, managing executive functions, and directing overall problem-solving strategy.', efficiency: 92, memoryUsage: 75, cpuUsage: 60, interactions: [], activeConstitutionId: initialConstitutions[0].id, personality: defaultPersonality, internalTick: 0, tempo: 1,
         children: [
-            { id: 'replica-1', name: 'Sub-Cognition-β1', depth: 1, status: 'Active', load: 45, purpose: 'Analyzing visual inputs from images and data streams to extract patterns, objects, and contextual meaning.', efficiency: 88, memoryUsage: 50, cpuUsage: 40, children: [], interactions: [], activeConstitutionId: initialConstitutions[0].id, personality: defaultPersonality },
-            { id: 'replica-2', name: 'Sub-Cognition-β2', depth: 1, status: 'Dormant', load: 10, purpose: 'Running sandboxed simulations on archived cognitive traces to identify and model novel behavioral strategies.', efficiency: 75, memoryUsage: 15, cpuUsage: 5, children: [], interactions: [], activeConstitutionId: initialConstitutions[0].id, personality: { energyFocus: 'INTROVERSION', informationProcessing: 'SENSING', decisionMaking: 'THINKING', worldApproach: 'JUDGING' } }
+            { id: 'replica-1', name: 'Sub-Cognition-β1', depth: 1, status: 'Active', load: 45, purpose: 'Analyzing visual inputs from images and data streams to extract patterns, objects, and contextual meaning.', efficiency: 88, memoryUsage: 50, cpuUsage: 40, children: [], interactions: [], activeConstitutionId: initialConstitutions[0].id, personality: defaultPersonality, internalTick: 0, tempo: 1 },
+            { id: 'replica-2', name: 'Sub-Cognition-β2', depth: 1, status: 'Dormant', load: 10, purpose: 'Running sandboxed simulations on archived cognitive traces to identify and model novel behavioral strategies.', efficiency: 75, memoryUsage: 15, cpuUsage: 5, children: [], interactions: [], activeConstitutionId: initialConstitutions[0].id, personality: { energyFocus: 'INTROVERSION', informationProcessing: 'SENSING', decisionMaking: 'THINKING', worldApproach: 'JUDGING' }, internalTick: 0, tempo: 1 }
         ]
     };
     await dbService.put('appState', { id: 'replicaRoot', data: initialReplica });
@@ -363,6 +391,12 @@ const getSystemInstruction = () => {
         BALANCED: `You are NexusAI, an advanced, balanced AI. You provide clear, insightful, and well-reasoned responses.`
     }[getPersonalityTypeString(appSettings.coreAgentPersonality)];
     
+    const styleInstruction = {
+        balanced: `You are to maintain a balanced approach, weighing logic and creativity equally.`,
+        analytical: `You must adopt a strictly analytical, logical, and linear cognitive style. Prioritize direct paths to the solution, breaking down problems methodically. Avoid creative leaps or speculative reasoning unless absolutely necessary. Your reasoning should be transparent and easy to follow.`,
+        creative: `You must adopt a highly creative and exploratory cognitive style. Prioritize novel connections, non-linear thinking, and imaginative solutions. Do not be afraid of high-risk, high-reward reasoning paths. Embrace ambiguity and generate diverse hypotheses.`
+    }[appSettings.cognitiveStyle] || '';
+
     const languageName = languageMap[appSettings.language] || 'English';
 
     const replicaSummary: string[] = [];
@@ -404,6 +438,7 @@ const getSystemInstruction = () => {
         : '';
 
     return `${personalityInstruction}
+    ${styleInstruction}
     You are an Agent 2.0 Orchestrator. Your function is to solve problems by creating explicit plans, delegating tasks to specialized Sub-Agents, and managing persistent memory.
     ${playbookText}
     ${directiveText}
@@ -722,6 +757,35 @@ const _regeneratePlan = async (messageId: string, modificationType: 'expand' | '
     }
 };
 
+const _generateStrategicGuidance = (trajectories: CognitiveTrajectory[]): string => {
+    if (trajectories.length === 0) return '';
+
+    const avgPathLength = trajectories.reduce((sum, t) => sum + t.summary.pathLength, 0) / trajectories.length;
+    const avgCurvature = trajectories.reduce((sum, t) => sum + t.summary.avgCurvature, 0) / trajectories.length;
+
+    let pathStyle = '';
+    if (avgCurvature > 1.0) {
+        pathStyle = "an exploratory and non-linear reasoning path (high curvature)";
+    } else if (avgCurvature < 0.5) {
+        pathStyle = "a direct and linear reasoning path (low curvature)";
+    } else {
+        pathStyle = "a moderately complex reasoning path";
+    }
+
+    let planLength = '';
+    if (avgPathLength < 5) {
+        planLength = "a concise plan (short path length)";
+    } else if (avgPathLength > 8) {
+        planLength = "a detailed, multi-step plan (long path length)";
+    } else {
+        planLength = "a plan of average length";
+    }
+
+    const guidance = `Guidance from similar past tasks suggests a successful approach involves ${planLength} and ${pathStyle}. Consider this 'thought shape' when creating your plan.`;
+    log('AI', `[Cognitive Navigator] Generated strategic guidance: ${guidance}`);
+    return guidance;
+};
+
 
 const service = {
     log,
@@ -729,7 +793,7 @@ const service = {
         const languageChanged = appSettings.language !== newSettings.language;
         appSettings = newSettings;
         localStorage.setItem('nexusai-settings', JSON.stringify(appSettings));
-        log('SYSTEM', `Settings updated. Language: ${appSettings.language}`);
+        log('SYSTEM', `Settings updated. Language: ${appSettings.language}, Style: ${appSettings.cognitiveStyle}`);
         if (cognitiveProcess && cognitiveProcess.history.length > 0 && languageChanged) {
             log('SYSTEM', 'System language changed. Starting a new chat session for changes to take effect.');
             service.startNewChat(false);
@@ -852,6 +916,8 @@ const service = {
                 interactions: [],
                 activeConstitutionId: parent.activeConstitutionId,
                 personality: parent.personality,
+                internalTick: 0,
+                tempo: 1,
             };
             parent.children.push(newReplica);
             log('REPLICA', `Spawning new replica ${newReplica.name} under ${parent.name}.`);
@@ -948,6 +1014,60 @@ const service = {
         }
     },
     
+    triggerGlobalSync: () => {
+        if (isGlobalSyncActive) {
+            log('WARN', 'Global sync is already in progress.');
+            return;
+        }
+
+        const activeReplicas: Replica[] = [];
+        const originalStatuses: Map<string, Replica['status']> = new Map();
+
+        const findActive = (node: Replica) => {
+            if (node.status === 'Active') {
+                activeReplicas.push(node);
+                originalStatuses.set(node.id, node.status);
+            }
+            node.children.forEach(findActive);
+        };
+
+        findActive(replicaState);
+
+        if (activeReplicas.length < 2) {
+            log('INFO', 'Global sync requires at least two active replicas.');
+            return;
+        }
+
+        isGlobalSyncActive = true;
+        const totalTempo = activeReplicas.reduce((sum, r) => sum + r.tempo, 0);
+        globalSyncTempo = totalTempo / activeReplicas.length;
+
+        log('SYSTEM', `Global Sync initiated. Average tempo set to ${globalSyncTempo.toFixed(2)} T/s for 10 seconds.`);
+
+        activeReplicas.forEach(r => {
+            const result = findReplica(r.id, replicaState);
+            if (result) {
+                result.node.status = 'Recalibrating';
+            }
+        });
+        notifyReplicas();
+
+        setTimeout(async () => {
+            isGlobalSyncActive = false;
+            log('SYSTEM', 'Global Sync complete. Replicas returning to individual tempos.');
+
+            originalStatuses.forEach((originalStatus, replicaId) => {
+                const result = findReplica(replicaId, replicaState);
+                if (result) {
+                    result.node.status = originalStatus;
+                }
+            });
+
+            await dbService.put('appState', { id: 'replicaRoot', data: replicaState });
+            notifyReplicas();
+        }, 10000); // Sync duration: 10 seconds
+    },
+
     broadcastProblem: (replicaId: string, problem: string) => {
         const result = findReplica(replicaId, replicaState);
         if(result) {
@@ -1440,6 +1560,13 @@ const service = {
         const query = userMessage?.text || '';
         const userImage = userMessage?.image;
 
+        const navigatorThresholds = {
+            balanced: { HIGH_CURVATURE_THRESHOLD: 1.5, LOW_VELOCITY_THRESHOLD: 0.05, STAGNATION_WINDOW: 3 },
+            analytical: { HIGH_CURVATURE_THRESHOLD: 0.8, LOW_VELOCITY_THRESHOLD: 0.03, STAGNATION_WINDOW: 4 },
+            creative: { HIGH_CURVATURE_THRESHOLD: 2.5, LOW_VELOCITY_THRESHOLD: 0.05, STAGNATION_WINDOW: 3 },
+        };
+        const activeThresholds = navigatorThresholds[appSettings.cognitiveStyle] || navigatorThresholds.balanced;
+
         try {
             const executionContext: any[] = [];
             for (let i = 0; i < modelMessage.plan.length; i++) {
@@ -1453,6 +1580,42 @@ const service = {
 
                 const cumulativeContextForStep = `${cognitiveProcess.history.map(m=>m.text).join('\n')}\n${executionContext.join('\n')}`;
                 activeTracker.addStep(`Executing: ${step.tool} - ${step.description}`, cumulativeContextForStep);
+
+                // --- Cognitive Navigator Logic ---
+                const currentTrajectorySteps = activeTracker.getSteps();
+                let cognitiveAlert: 'confusion' | 'stagnation' | null = null;
+
+                if (currentTrajectorySteps.length > 2) {
+                    const trajectoryAnalysis = geometryService.analyzeTrajectory(currentTrajectorySteps);
+                    const latestMetricStep = trajectoryAnalysis.steps[trajectoryAnalysis.steps.length - 1];
+
+                    // Check for high curvature (confusion)
+                    if (latestMetricStep.curvature > activeThresholds.HIGH_CURVATURE_THRESHOLD) {
+                        cognitiveAlert = 'confusion';
+                    }
+                    // Check for stagnation (low velocity)
+                    else if (currentTrajectorySteps.length > activeThresholds.STAGNATION_WINDOW) {
+                        const recentSteps = trajectoryAnalysis.steps.slice(-activeThresholds.STAGNATION_WINDOW);
+                        const isStagnated = recentSteps.every(s => s.velocity < activeThresholds.LOW_VELOCITY_THRESHOLD);
+                        if (isStagnated) {
+                            cognitiveAlert = 'stagnation';
+                        }
+                    }
+                }
+
+                if (cognitiveAlert) {
+                    const reason = cognitiveAlert === 'confusion' ? 'high cognitive curvature (confused reasoning)' : 'cognitive stagnation (stuck in a loop)';
+                    log('WARN', `[Cognitive Navigator] Detected ${reason}. Triggering automated replan.`);
+                    step.status = 'error';
+                    step.result = `Cognitive Navigator aborted step due to ${reason}.`;
+                    notifyCognitiveProcess();
+                    
+                    await new Promise(res => setTimeout(res, 500)); // Allow UI to update
+                    
+                    await _regeneratePlan(modelMessage.id, 'revise');
+                    return; // Exit current execution; a new plan is being generated.
+                }
+                // --- End Cognitive Navigator ---
 
 
                 if (step.tool === 'google_search') {
@@ -1854,12 +2017,32 @@ const service = {
         notifyCognitiveProcess();
 
         try {
+            // --- NEW: Strategic Guidance Generation ---
+            let strategicGuidance = '';
+            const similarTraces = await service.semanticSearchInMemory(query);
+            const relevantTrajectories = similarTraces
+                .filter(t => t.cognitiveTrajectory)
+                .slice(0, 2) // Take top 2
+                .map(t => t.cognitiveTrajectory!);
+            
+            if (relevantTrajectories.length > 0) {
+                strategicGuidance = _generateStrategicGuidance(relevantTrajectories);
+            }
+            // --- END: New Logic ---
+
             const historyString = cognitiveProcess.history.slice(0, -1).map(m => `${m.role === 'user' ? 'User' : 'Model'}: ${m.text}`).join('\n');
             let planningPrompt = `--- CONVERSATION HISTORY ---\n${historyString}\n--- END HISTORY ---\n\n`;
             
             if (cognitiveProcess.activeAffectiveState) {
                 planningPrompt += `--- CURRENT STATE ---\nAffective State: ${JSON.stringify(cognitiveProcess.activeAffectiveState)}\n--- END STATE ---\n\n`;
             }
+
+            // --- NEW: Inject Guidance into Prompt ---
+            if (strategicGuidance) {
+                planningPrompt += `--- STRATEGIC GUIDANCE FROM PAST EXPERIENCE ---\n${strategicGuidance}\n--- END GUIDANCE ---\n\n`;
+            }
+            // --- END: New Logic ---
+            
             planningPrompt += `Given the user's latest query, create a step-by-step plan. User query: "${query}"`;
             if (image) {
                 planningPrompt += `\n\n**IMPORTANT**: The user has provided an image. Your plan MUST include an 'analyze_image_input' step.`
@@ -1986,6 +2169,36 @@ const service = {
         service.submitQuery(userMessage?.text || '', userMessage?.image);
     },
 
+    findSimilarProcesses: async (referenceTraceId: string): Promise<ChatMessage[]> => {
+        log('AI', `Searching for processes with similar cognitive geometry to trace: ${referenceTraceId}`);
+        const referenceTrace = archivedTracesState.find(t => t.id === referenceTraceId);
+        if (!referenceTrace || !referenceTrace.cognitiveTrajectory) {
+            log('WARN', 'Reference trace for process search not found or has no trajectory data.');
+            return [];
+        }
+
+        // Use the reference trace's query for initial semantic filtering
+        const semanticallySimilar = await service.semanticSearchInMemory(referenceTrace.userQuery || '');
+        
+        const geometricallyScored = semanticallySimilar.map(trace => {
+            if (trace.cognitiveTrajectory) {
+                const trajectorySimilarity = calculateTrajectorySimilarity(referenceTrace.cognitiveTrajectory!, trace.cognitiveTrajectory);
+                return { ...trace, trajectorySimilarity };
+            }
+            return { ...trace, trajectorySimilarity: 0 };
+        });
+
+        // Sort by a combined score: 40% semantic, 60% geometric
+        const sortedResults = geometricallyScored.sort((a, b) => {
+            const scoreA = (a.similarity || 0) * 0.4 + (a.trajectorySimilarity || 0) * 0.6;
+            const scoreB = (b.similarity || 0) * 0.4 + (b.trajectorySimilarity || 0) * 0.6;
+            return scoreB - scoreA;
+        });
+        
+        log('AI', `Found and re-ranked ${sortedResults.length} memories based on process similarity.`);
+        return sortedResults;
+    },
+
     semanticSearchInMemory: async (query: string): Promise<ChatMessage[]> => {
         log('AI', `Performing semantic search for: "${query}"`);
         if (archivedTracesState.length === 0) return [];
@@ -1995,10 +2208,11 @@ const service = {
         const queryVector = getEmbedding(query);
 
         const scoredTraces = archivedTracesState.map(trace => {
+            const { similarity, trajectorySimilarity, ...restOfTrace } = trace; // clear old scores
             const traceText = `${trace.userQuery || ''} ${trace.text || ''}`;
             const traceVector = getEmbedding(traceText);
-            const similarity = cosineSimilarity(queryVector, traceVector);
-            return { ...trace, similarity };
+            const newSimilarity = cosineSimilarity(queryVector, traceVector);
+            return { ...restOfTrace, similarity: newSimilarity };
         });
 
         const relevantTraces = scoredTraces
@@ -2089,7 +2303,7 @@ ${text}
         
         const languageName = languageMap[appSettings.language] || 'English';
         
-        const details = traceDetailsCache.get(trace.id) || {};
+        const details: Partial<TraceDetails> = traceDetailsCache.get(trace.id) || {};
         const newHistory = [...(details.discussion || []), { role: 'user' as const, text: userQuery }];
 
         const planSummary = trace.plan?.map(p => `- Step ${p.step} (${p.tool}): ${p.description}`).join('\n') || 'N/A';
@@ -2124,6 +2338,7 @@ ${text}
 
             const finalHistory = [...newHistory, { role: 'model' as const, text: response.text }];
             details.discussion = finalHistory;
+            // FIX: The value for the cache should be the entire `details` object, not just the `finalHistory` array.
             traceDetailsCache.set(trace.id, details);
 
             return finalHistory;

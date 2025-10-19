@@ -55,6 +55,7 @@ const App: React.FC = () => {
       logVerbosity: 'STANDARD',
       animationLevel: 'FULL',
       language: 'en',
+      cognitiveStyle: 'balanced',
     };
 
     try {
@@ -240,6 +241,10 @@ const App: React.FC = () => {
       nexusAIService.broadcastProblem(replicaId, problem);
   }, []);
 
+  const handleTriggerGlobalSync = useCallback(() => {
+    nexusAIService.triggerGlobalSync();
+  }, []);
+
   const submitQuery = useCallback((query: string, image?: { mimeType: string, data: string }) => {
     setActiveView('dashboard');
     nexusAIService.submitQuery(query, image);
@@ -419,6 +424,7 @@ const App: React.FC = () => {
             onSetConstitution={setReplicaConstitution}
             onBroadcastProblem={broadcastProblem}
             onSetPersonality={setReplicaPersonality}
+            onTriggerGlobalSync={handleTriggerGlobalSync}
         />;
       case 'tools':
         return <MentalToolsLab 
@@ -476,6 +482,7 @@ const App: React.FC = () => {
                   archivedTraces={archivedTraces}
                   onViewTrace={setActiveTrace}
                   onDeleteTrace={nexusAIService.deleteTrace}
+                  onFindSimilarProcesses={nexusAIService.findSimilarProcesses}
                 />;
       case 'dreaming':
         return <DreamingView onSubmitQuery={submitQuery} setActiveView={setActiveView} />;

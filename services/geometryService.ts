@@ -46,7 +46,7 @@ const subtract = (v1: number[], v2: number[]): number[] => v1.map((val, i) => va
 const norm = (v: number[]): number => Math.sqrt(v.reduce((sum, val) => sum + val * val, 0));
 
 export const calculateVelocity = (p1: number[], p2: number[]): number[] => subtract(p2, p1);
-export const calculateDistance = (p1: number[], p2: number[]): number => norm(subtract(p2, p1));
+export const calculateDistance = (p1: number[], p2: number[]): number => norm(subtract(p1, p2));
 
 export const calculateMengerCurvature = (p1: number[], p2: number[], p3: number[]): number => {
     const a = norm(subtract(p2, p3));
@@ -111,3 +111,53 @@ export const analyzeTrajectory = (steps: { thought: string, position: number[] }
     
     return { steps: metricSteps, summary };
 };
+
+// --- Trajectory Similarity ---
+
+/**
+ * Calculates the Dynamic Time Warping distance between two series.
+ * @param series1 First series of numbers.
+ * @param series2 Second series of numbers.
+ * @returns The DTW distance.
+ */
+function dtwDistance(series1: number[], series2: number[]): number {
+    const n = series1.length;
+    const m = series2.length;
+    if (n === 0 || m === 0) return Infinity;
+    
+    const dtw = Array(n + 1).fill(null).map(() => Array(m + 1).fill(Infinity));
+    dtw[0][0] = 0;
+
+    for (let i = 1; i <= n; i++) {
+        for (let j = 1; j <= m; j++) {
+            const cost = Math.abs(series1[i - 1] - series2[j - 1]);
+            const lastMin = Math.min(dtw[i - 1][j], dtw[i][j - 1], dtw[i - 1][j - 1]);
+            dtw[i][j] = cost + lastMin;
+        }
+    }
+    return dtw[n][m];
+}
+
+/**
+ * Calculates a similarity score (0-1) between two cognitive trajectories based on their velocity sequences.
+ * @param traj1 The first trajectory.
+ * @param traj2 The second trajectory.
+ * @returns A similarity score from 0 (dissimilar) to 1 (very similar).
+ */
+export function calculateTrajectorySimilarity(traj1: CognitiveTrajectory, traj2: CognitiveTrajectory): number {
+    if (!traj1.steps || traj1.steps.length < 2 || !traj2.steps || traj2.steps.length < 2) {
+        return 0;
+    }
+
+    // Extract velocity sequences, skipping the first step (velocity is 0)
+    const velocity1 = traj1.steps.slice(1).map(s => s.velocity);
+    const velocity2 = traj2.steps.slice(1).map(s => s.velocity);
+
+    const distance = dtwDistance(velocity1, velocity2);
+
+    // Normalize distance into a similarity score. This is a common method.
+    // The result depends heavily on the scale of the distance, so this might need tuning.
+    const similarity = 1 / (1 + distance);
+    
+    return similarity;
+}
