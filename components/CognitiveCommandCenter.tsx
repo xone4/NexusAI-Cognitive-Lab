@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Tab } from '@headlessui/react';
 import type { CognitiveProcess, AppSettings } from '../types';
 import { nexusAIService } from '../services/nexusAIService';
-import { BrainCircuitIcon, PlusCircleIcon, XCircleIcon, RefreshIcon, PhotographIcon, DocumentMagnifyingGlassIcon, LightBulbIcon, SparklesIcon } from './Icons';
+import { BrainCircuitIcon, PlusCircleIcon, XCircleIcon, RefreshIcon, PhotographIcon, DocumentMagnifyingGlassIcon, LightBulbIcon, SparklesIcon, SpeakerLoudIcon, SpeakerOffIcon } from './Icons';
 import AffectiveDashboard from './AffectiveDashboard';
 
 interface CognitiveCommandCenterProps {
@@ -17,6 +17,8 @@ interface CognitiveCommandCenterProps {
     };
     process: CognitiveProcess | null;
     settings: AppSettings;
+    isTtsEnabled: boolean;
+    onTtsToggle: (enabled: boolean) => void;
     onSubmitQuery: (query: string, image?: { mimeType: string; data: string; }) => void;
     onCancelQuery: () => void;
     onNewChat: () => void;
@@ -26,8 +28,8 @@ interface CognitiveCommandCenterProps {
     onGoToDreaming: () => void;
 }
 
-const QueryTab: React.FC<Pick<CognitiveCommandCenterProps, 'permissions' | 'process' | 'onSubmitQuery' | 'onCancelQuery' | 'onNewChat'>> = 
-({ permissions, process, onSubmitQuery, onCancelQuery, onNewChat }) => {
+const QueryTab: React.FC<Pick<CognitiveCommandCenterProps, 'permissions' | 'process' | 'onSubmitQuery' | 'onCancelQuery' | 'onNewChat' | 'isTtsEnabled' | 'onTtsToggle'>> = 
+({ permissions, process, onSubmitQuery, onCancelQuery, onNewChat, isTtsEnabled, onTtsToggle }) => {
     const { t, i18n } = useTranslation();
     const isRtl = i18n.dir() === 'rtl';
     const [query, setQuery] = useState('');
@@ -110,6 +112,12 @@ const QueryTab: React.FC<Pick<CognitiveCommandCenterProps, 'permissions' | 'proc
                     {getButtonText()}
                 </button>
                 
+                {permissions.canSubmitQuery && (
+                     <button type="button" onClick={() => onTtsToggle(!isTtsEnabled)} className={`p-2 rounded-full bg-nexus-surface transition-colors ${isTtsEnabled ? 'text-nexus-primary' : 'text-nexus-text-muted hover:text-nexus-primary'}`} title={isTtsEnabled ? t('commandCenter.disableTTS') : t('commandCenter.enableTTS')}>
+                        {isTtsEnabled ? <SpeakerLoudIcon className="w-5 h-5" /> : <SpeakerOffIcon className="w-5 h-5" />}
+                    </button>
+                )}
+
                 {permissions.canSubmitQuery && hasHistory && (
                     <button type="button" onClick={onNewChat} className="p-2 rounded-full bg-nexus-surface hover:bg-blue-500/20 text-nexus-text-muted hover:text-blue-400 transition-colors" title={t('commandCenter.startNewChat')}>
                         <PlusCircleIcon className="w-5 h-5" />

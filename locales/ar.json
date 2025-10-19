@@ -76,7 +76,9 @@
     "currentMood": "المزاج الحالي",
     "neutral": "محايد",
     "stateDormant": "الحالة خاملة.",
-    "induceEmotion": "تحفيز {{emotion}}"
+    "induceEmotion": "تحفيز {{emotion}}",
+    "enableTTS": "تفعيل تحويل النص إلى كلام",
+    "disableTTS": "تعطيل تحويل النص إلى كلام"
   },
   "cognitiveProcess": {
     "sources": "المصادر",

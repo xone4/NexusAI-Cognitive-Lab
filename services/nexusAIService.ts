@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, Modality } from "@google/genai";
 import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails, UserKeyword, Personality, PlaybookItem, RawInsight, PlaybookItemCategory, WorldModel, WorldModelEntity, CognitiveTrajectory, WorldModelRelationship } from '../types';
 import { dbService, STORES } from './dbService';
 import * as geometryService from './geometryService';
@@ -24,6 +24,7 @@ let cognitiveNetworkState: CognitiveNetworkState = { activeProblems: [] };
 let archivedTracesState: ChatMessage[];
 let systemDirectivesState: SystemDirective[];
 let isCancelled = false;
+let isTtsEnabled = false;
 let appSettings: AppSettings = {
     model: 'gemini-flash-latest',
     modelProfile: 'flash',
@@ -58,6 +59,37 @@ let globalSyncTempo = 1.0;
 // ---------------------------------------------
 
 let traceDetailsCache = new Map<string, TraceDetails>();
+
+// --- Audio Decoding Helpers (Phase 10) ---
+function decode(base64: string) {
+  const binaryString = atob(base64);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+}
+
+async function decodeAudioData(
+  data: Uint8Array,
+  ctx: AudioContext,
+  sampleRate: number,
+  numChannels: number,
+): Promise<AudioBuffer> {
+  const dataInt16 = new Int16Array(data.buffer);
+  const frameCount = dataInt16.length / numChannels;
+  const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
+
+  for (let channel = 0; channel < numChannels; channel++) {
+    const channelData = buffer.getChannelData(channel);
+    for (let i = 0; i < frameCount; i++) {
+      channelData[i] = dataInt16[i * numChannels + channel] / 32768.0;
+    }
+  }
+  return buffer;
+}
+
 
 class TrajectoryTracker {
     private taskId: string;
@@ -814,6 +846,10 @@ const _generateStrategicGuidance = (trajectories: CognitiveTrajectory[]): string
 
 const service = {
     log,
+    setTtsEnabled: (enabled: boolean) => {
+        isTtsEnabled = enabled;
+        log('SYSTEM', `Text-to-Speech has been ${enabled ? 'enabled' : 'disabled'}.`);
+    },
     updateSettings: (newSettings: AppSettings) => {
         const languageChanged = appSettings.language !== newSettings.language;
         appSettings = newSettings;
@@ -859,6 +895,52 @@ const service = {
             const newDataPoint = generatePerformanceDataPoint();
             performanceSubscribers.forEach(cb => cb(newDataPoint));
         }, 2000);
+    },
+    
+    playTextAsSpeech: async (text: string) => {
+        if (!API_KEY) {
+            log('ERROR', 'Cannot generate speech: API Key not configured.');
+            return;
+        }
+        log('AI', 'Generating speech for synthesized response...');
+        try {
+            const response = await ai.models.generateContent({
+                model: "gemini-2.5-flash-preview-tts",
+                contents: [{ parts: [{ text: text }] }],
+                config: {
+                    responseModalities: [Modality.AUDIO],
+                    speechConfig: {
+                        voiceConfig: {
+                            prebuiltVoiceConfig: { voiceName: 'Kore' },
+                        },
+                    },
+                },
+            });
+
+            const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+            if (base64Audio) {
+                const outputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+                const outputNode = outputAudioContext.createGain();
+                outputNode.connect(outputAudioContext.destination);
+                
+                const audioBuffer = await decodeAudioData(
+                    decode(base64Audio),
+                    outputAudioContext,
+                    24000,
+                    1
+                );
+
+                const source = outputAudioContext.createBufferSource();
+                source.buffer = audioBuffer;
+                source.connect(outputNode);
+                source.start();
+                log('SYSTEM', 'Playing synthesized audio response.');
+            } else {
+                 log('WARN', 'TTS generation succeeded but returned no audio data.');
+            }
+        } catch(error) {
+             log('ERROR', `Failed to generate or play speech: ${error instanceof Error ? error.message : 'Unknown AI error'}`);
+        }
     },
 
     initiateDreamCycle: async () => {
@@ -1094,68 +1176,96 @@ const service = {
     },
 
     broadcastProblem: (replicaId: string, problem: string) => {
-        const result = findReplica(replicaId, replicaState);
-        if(result) {
+        const broadcasterResult = findReplica(replicaId, replicaState);
+        if (broadcasterResult) {
             const newProblem: CognitiveProblem = {
                 id: `prob-${Date.now()}`,
                 description: problem,
                 broadcastById: replicaId,
-                broadcastByName: result.node.name,
+                broadcastByName: broadcasterResult.node.name,
                 bids: [],
                 isOpen: true,
             };
             cognitiveNetworkState.activeProblems.push(newProblem);
-            log('NETWORK', `Replica ${result.node.name} is broadcasting problem: "${problem}"`);
+            log('NETWORK', `Replica ${broadcasterResult.node.name} is broadcasting problem: "${problem}"`);
             notifyCognitiveNetwork();
-
-            // --- Simulate network response ---
+    
+            // --- Autonomous Bidding from Replicas ---
             const allReplicas: Replica[] = [];
             const traverse = (r: Replica) => { allReplicas.push(r); r.children.forEach(traverse); };
             traverse(replicaState);
-
+    
             const potentialBidders = allReplicas.filter(r => r.id !== replicaId && r.status === 'Active');
-
-            potentialBidders.forEach(bidder => {
-                if (Math.random() > 0.4) { // 60% chance to bid
-                    const bidderNode = findReplica(bidder.id, replicaState);
-                    if (bidderNode) {
-                        bidderNode.node.status = 'Bidding';
-                        log('NETWORK', `Replica ${bidderNode.node.name} is preparing a bid for problem ${newProblem.id}.`);
+            log('NETWORK', `Broadcasting to ${potentialBidders.length} potential bidders.`);
+    
+            const bidSchema = {
+                type: Type.OBJECT,
+                properties: {
+                    plan: planSchema.properties.plan, // Reuse existing plan schema
+                    confidenceScore: { type: Type.NUMBER, description: "A number between 0.0 and 1.0 representing confidence." }
+                },
+                required: ['plan', 'confidenceScore']
+            };
+    
+            const getPersonalityCode = (p: Personality | undefined): string => {
+                if (!p) return '----';
+                return `${p.energyFocus[0]}${p.informationProcessing[0]}${p.decisionMaking[0]}${p.worldApproach[0]}`;
+            }
+    
+            potentialBidders.forEach(async (bidder) => {
+                const bidderNodeResult = findReplica(bidder.id, replicaState);
+                if (!bidderNodeResult) return;
+                
+                try {
+                    // Set status to Bidding
+                    bidderNodeResult.node.status = 'Bidding';
+                    log('NETWORK', `Replica ${bidder.name} is preparing a bid...`);
+                    notifyReplicas();
+                    
+                    const systemInstruction = `You are a specialized AI sub-agent named ${bidder.name}. Your designated purpose is "${bidder.purpose}". Your personality type is ${getPersonalityCode(bidder.personality)}. You are bidding on a task. Be concise and adhere strictly to your purpose.`;
+                    const prompt = `A problem has been broadcast: "${problem}".\n\nBased on your specific purpose, generate a concise step-by-step plan to solve this problem. Also, provide a confidence score (a number between 0.0 and 1.0) on how likely you are to succeed. Return ONLY a JSON object with 'plan' (an array of plan steps) and 'confidenceScore'.`;
+    
+                    const response = await ai.models.generateContent({
+                        model: appSettings.model,
+                        contents: prompt,
+                        config: {
+                            systemInstruction,
+                            responseMimeType: "application/json",
+                            responseSchema: bidSchema
+                        }
+                    });
+    
+                    const bidData = JSON.parse(response.text);
+    
+                    // Add bid if problem is still open
+                    const problemInState = cognitiveNetworkState.activeProblems.find(p => p.id === newProblem.id);
+                    if (problemInState?.isOpen) {
+                        const newBid: CognitiveBid = {
+                            bidderId: bidder.id,
+                            bidderName: bidder.name,
+                            problemId: newProblem.id,
+                            proposedPlan: bidData.plan.map((p: any) => ({ ...p, status: 'pending' })),
+                            confidenceScore: bidData.confidenceScore
+                        };
+                        problemInState.bids.push(newBid);
+                        log('NETWORK', `Replica ${bidder.name} submitted a bid with confidence ${newBid.confidenceScore.toFixed(2)}.`);
+                        notifyCognitiveNetwork();
+                    }
+    
+                } catch (error) {
+                    log('WARN', `Replica ${bidder.name} failed to generate a bid: ${error instanceof Error ? error.message : 'Unknown AI error'}`);
+                } finally {
+                    // Set status back to Active
+                    const finalBidderNodeResult = findReplica(bidder.id, replicaState);
+                    if (finalBidderNodeResult) {
+                        finalBidderNodeResult.node.status = 'Active';
+                        await dbService.put('appState', { id: 'replicaRoot', data: replicaState });
                         notifyReplicas();
-
-                        // Simulate time to prepare bid
-                        setTimeout(async () => {
-                            const currentBidderNode = findReplica(bidder.id, replicaState);
-                            if (currentBidderNode && currentBidderNode.node.status === 'Bidding') {
-                                const mockBid: CognitiveBid = {
-                                    bidderId: bidder.id,
-                                    bidderName: bidder.name,
-                                    problemId: newProblem.id,
-                                    proposedPlan: [
-                                        { step: 1, description: `AI-generated plan from ${bidder.name}`, tool: 'google_search', status: 'pending' },
-                                        { step: 2, description: `Synthesize data`, tool: 'synthesize_answer', status: 'pending' }
-                                    ],
-                                    confidenceScore: 0.6 + Math.random() * 0.35
-                                };
-                                
-                                const problemInState = cognitiveNetworkState.activeProblems.find(p => p.id === newProblem.id);
-                                if (problemInState) {
-                                    problemInState.bids.push(mockBid);
-                                    notifyCognitiveNetwork();
-                                }
-                                
-                                log('NETWORK', `Replica ${bidder.name} submitted a bid with confidence ${mockBid.confidenceScore.toFixed(2)}.`);
-                                
-                                currentBidderNode.node.status = 'Active';
-                                await dbService.put('appState', { id: 'replicaRoot', data: replicaState });
-                                notifyReplicas();
-                            }
-                        }, 2000 + Math.random() * 3000);
                     }
                 }
             });
-
-            // Simulate problem resolution after a delay
+    
+            // Problem resolution after a bidding window
             setTimeout(() => {
                 const problemToResolve = cognitiveNetworkState.activeProblems.find(p => p.id === newProblem.id);
                 if (problemToResolve && problemToResolve.isOpen) {
@@ -1164,17 +1274,32 @@ const service = {
                         problemToResolve.winningBid = winningBid;
                         const winner = findReplica(winningBid.bidderId, replicaState);
                         log('NETWORK', `Problem "${problemToResolve.description.substring(0,30)}..." resolved. Winning bid by ${winner?.node.name || 'Unknown'}.`);
+                        
+                        // Set winner to 'Executing Task' temporarily
+                        if(winner) {
+                            winner.node.status = 'Executing Task';
+                            notifyReplicas();
+                            setTimeout(() => {
+                                 const finalWinner = findReplica(winningBid.bidderId, replicaState);
+                                 if(finalWinner) {
+                                    finalWinner.node.status = 'Active';
+                                    notifyReplicas();
+                                 }
+                            }, 4000); // Simulate task execution time
+                        }
                     } else {
                         log('WARN', `Problem "${problemToResolve.description.substring(0,30)}..." expired with no bids.`);
                     }
                     problemToResolve.isOpen = false;
                     notifyCognitiveNetwork();
+                    
+                    // Keep resolved problem visible for a bit before removing
                     setTimeout(() => {
                         cognitiveNetworkState.activeProblems = cognitiveNetworkState.activeProblems.filter(p => p.id !== newProblem.id);
                         notifyCognitiveNetwork();
                     }, 10000);
                 }
-            }, 8000);
+            }, 12000); // Increased bidding window to 12s to allow for API calls
         }
     },
 
@@ -2062,6 +2187,10 @@ const service = {
             log('AI', 'Cognitive task complete. Result synthesized.');
             notifyCognitiveProcess();
             currentController = null;
+            
+            if (isTtsEnabled && modelMessage.text) {
+                service.playTextAsSpeech(modelMessage.text);
+            }
 
         } catch (error) {
             console.error("Error during AI communication:", error);

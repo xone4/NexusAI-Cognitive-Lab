@@ -43,6 +43,7 @@ const App: React.FC = () => {
   const [activeTrace, setActiveTrace] = useState<ChatMessage | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [isVitalsPanelOpen, setIsVitalsPanelOpen] = useState(false);
+  const [isTtsEnabled, setIsTtsEnabled] = useState(false);
   const isRtl = i18n.dir() === 'rtl';
 
 
@@ -166,6 +167,11 @@ const App: React.FC = () => {
     setSettings(newSettings);
     localStorage.setItem('nexusai-settings', JSON.stringify(newSettings));
     nexusAIService.updateSettings(newSettings);
+  }, []);
+  
+  const handleTtsToggle = useCallback((enabled: boolean) => {
+    setIsTtsEnabled(enabled);
+    nexusAIService.setTtsEnabled(enabled);
   }, []);
 
   useEffect(() => {
@@ -400,6 +406,8 @@ const App: React.FC = () => {
               permissions={cognitivePermissions}
               process={cognitiveProcess}
               settings={settings}
+              isTtsEnabled={isTtsEnabled}
+              onTtsToggle={handleTtsToggle}
               onSubmitQuery={submitQuery}
               onCancelQuery={cancelQuery}
               onNewChat={startNewChat}

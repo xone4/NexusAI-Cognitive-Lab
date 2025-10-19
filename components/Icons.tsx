@@ -54,6 +54,8 @@ import {
   Download,
   Spline,
   Save,
+  Volume2,
+  VolumeX,
   type LucideProps,
 } from 'lucide-react';
 
@@ -117,3 +119,5 @@ export const CopyIcon: React.FC<IconProps> = (props) => <Copy {...props} strokeW
 export const DownloadIcon: React.FC<IconProps> = (props) => <Download {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;
 export const TrajectoryIcon: React.FC<IconProps> = (props) => <Spline {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;
 export const SaveIcon: React.FC<IconProps> = (props) => <Save {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;
+export const SpeakerLoudIcon: React.FC<IconProps> = (props) => <Volume2 {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;
+export const SpeakerOffIcon: React.FC<IconProps> = (props) => <VolumeX {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;

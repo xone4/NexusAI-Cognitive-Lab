@@ -76,7 +76,9 @@
     "currentMood": "Current Mood",
     "neutral": "Neutral",
     "stateDormant": "State is dormant.",
-    "induceEmotion": "Induce {{emotion}}"
+    "induceEmotion": "Induce {{emotion}}",
+    "enableTTS": "Enable Text-to-Speech",
+    "disableTTS": "Disable Text-to-Speech"
   },
   "cognitiveProcess": {
     "sources": "Sources",
