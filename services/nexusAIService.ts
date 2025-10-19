@@ -721,7 +721,7 @@ const _executeRecursiveCognitiveCycle = async (parentStep: PlanStep, subProblemQ
     return finalResponse.text;
 }
 
-const _regeneratePlan = async (messageId: string, modificationType: 'expand' | 'optimize' | 'revise') => {
+const _regeneratePlan = async (messageId: string, modificationType: 'expand' | 'optimize' | 'revise', isAutomatic: boolean = false) => {
     const modelMessage = cognitiveProcess.history.find(m => m.id === messageId);
     if (!modelMessage || !modelMessage.plan || !API_KEY) return;
 
@@ -746,7 +746,7 @@ const _regeneratePlan = async (messageId: string, modificationType: 'expand' | '
 
     cognitiveProcess.state = 'Planning';
     modelMessage.state = 'planning';
-    log('AI', `User requested to ${modificationType} the plan. Regenerating...`);
+    log('AI', isAutomatic ? `Cognitive Navigator triggered automatic plan revision...` : `User requested to ${modificationType} the plan. Regenerating...`);
     notifyCognitiveProcess();
 
     try {
@@ -758,14 +758,27 @@ const _regeneratePlan = async (messageId: string, modificationType: 'expand' | '
 
         const newPlanData = JSON.parse(response.text);
         modelMessage.plan = newPlanData.plan.map((p: any) => ({ ...p, status: 'pending' }));
-        modelMessage.state = 'awaiting_execution';
-        cognitiveProcess.state = 'AwaitingExecution';
-        log('AI', `Plan successfully ${modificationType}ed. Awaiting user review.`);
+        
+        if (isAutomatic) {
+            cognitiveProcess.state = 'Executing';
+            modelMessage.state = 'executing';
+            log('AI', 'Automatic plan revision complete.');
+        } else {
+            modelMessage.state = 'awaiting_execution';
+            cognitiveProcess.state = 'AwaitingExecution';
+            log('AI', `Plan successfully ${modificationType}ed. Awaiting user review.`);
+        }
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown AI error';
         log('ERROR', `Failed to ${modificationType} plan: ${errorMessage}`);
-        modelMessage.state = 'awaiting_execution';
-        cognitiveProcess.state = 'AwaitingExecution';
+        if (isAutomatic) {
+            cognitiveProcess.state = 'Error';
+            modelMessage.state = 'error';
+            modelMessage.text = `Automatic replan failed: ${errorMessage}`;
+        } else {
+            modelMessage.state = 'awaiting_execution';
+            cognitiveProcess.state = 'AwaitingExecution';
+        }
     } finally {
         notifyCognitiveProcess();
     }
@@ -1594,12 +1607,15 @@ const service = {
 
         try {
             const executionContext: any[] = [];
-            for (let i = 0; i < modelMessage.plan.length; i++) {
+            let currentPlan = modelMessage.plan;
+            let stepIndex = 0;
+
+            while (stepIndex < currentPlan.length) {
                 if (isCancelled) return;
-                const step = modelMessage.plan[i];
-                modelMessage.currentStep = i;
+                const step = currentPlan[stepIndex];
+                modelMessage.currentStep = stepIndex;
                 step.status = 'executing';
-                log('AI', `Executing step ${i+1}: ${step.description}`);
+                log('AI', `Executing step ${stepIndex + 1}: ${step.description}`);
                 notifyCognitiveProcess();
                 await new Promise(res => setTimeout(res, appSettings.cognitiveStepDelay / 2));
 
@@ -1637,8 +1653,14 @@ const service = {
                     
                     await new Promise(res => setTimeout(res, 500)); // Allow UI to update
                     
-                    await _regeneratePlan(modelMessage.id, 'revise');
-                    return; // Exit current execution; a new plan is being generated.
+                    await _regeneratePlan(modelMessage.id, 'revise', true);
+
+                    // After replan, modelMessage.plan is updated. We need to sync our local loop variables.
+                    currentPlan = modelMessage.plan;
+                    stepIndex = 0; // Restart from the first step of the new plan
+                    log('AI', '[Cognitive Navigator] New plan received. Restarting execution autonomously.');
+                    notifyCognitiveProcess();
+                    continue; // Go to the start of the while loop.
                 }
                 // --- End Cognitive Navigator ---
 
@@ -1648,7 +1670,7 @@ const service = {
                     if (isCancelled) return;
                     step.result = searchResponse.text;
                     step.citations = searchResponse.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
-                    executionContext.push(`Step ${i+1} (${step.description}) Result: ${step.result}`);
+                    executionContext.push(`Step ${stepIndex + 1} (${step.description}) Result: ${step.result}`);
                 } else if (step.tool === 'code_interpreter') {
                     try {
                         const codeToRun = `"use strict"; return (() => { ${step.code} })();`;
@@ -1657,9 +1679,9 @@ const service = {
                     } catch (e) {
                         step.status = 'error';
                         step.result = e instanceof Error ? e.message : 'Unknown execution error.';
-                        log('ERROR', `Code interpreter failed at step ${i+1}: ${step.result}`);
+                        log('ERROR', `Code interpreter failed at step ${stepIndex + 1}: ${step.result}`);
                     }
-                     executionContext.push(`Step ${i+1} (${step.description}) Code Output: ${step.result}`);
+                     executionContext.push(`Step ${stepIndex + 1} (${step.description}) Code Output: ${step.result}`);
                 } else if (step.tool === 'code_sandbox') {
                     try {
                         const context_data = JSON.stringify(cognitiveProcess.history, null, 2);
@@ -1669,19 +1691,19 @@ const service = {
                     } catch (e) {
                         step.status = 'error';
                         step.result = e instanceof Error ? e.message : 'Unknown execution error.';
-                        log('ERROR', `Code sandbox failed at step ${i+1}: ${step.result}`);
+                        log('ERROR', `Code sandbox failed at step ${stepIndex + 1}: ${step.result}`);
                     }
-                    executionContext.push(`Step ${i+1} (${step.description}) Code Sandbox Output: ${step.result}`);
+                    executionContext.push(`Step ${stepIndex + 1} (${step.description}) Code Sandbox Output: ${step.result}`);
                 } else if (step.tool === 'peek_context') {
                     const context_data = JSON.stringify(cognitiveProcess.history, null, 2);
                     const charCount = parseInt(step.query || '500', 10);
                     if (isNaN(charCount) || charCount <= 0) {
                         step.status = 'error';
                         step.result = `Error: Invalid character count provided for 'peek_context'. Must be a positive integer.`;
-                        log('ERROR', `Peek context failed at step ${i+1}: ${step.result}`);
+                        log('ERROR', `Peek context failed at step ${stepIndex + 1}: ${step.result}`);
                     } else {
                         step.result = `First ${charCount} chars of context_data:\n${context_data.substring(0, charCount)}...`;
-                        executionContext.push(`Step ${i+1} (${step.description}) Result: Peeked at context.`);
+                        executionContext.push(`Step ${stepIndex + 1} (${step.description}) Result: Peeked at context.`);
                     }
                 } else if (step.tool === 'search_context') {
                     const context_data = JSON.stringify(cognitiveProcess.history, null, 2);
@@ -1699,9 +1721,9 @@ const service = {
                     } else {
                         step.status = 'error';
                         step.result = "Error: No search term provided for search_context tool.";
-                        log('ERROR', `Search context failed at step ${i+1}: No search term provided.`);
+                        log('ERROR', `Search context failed at step ${stepIndex + 1}: No search term provided.`);
                     }
-                    executionContext.push(`Step ${i+1} (${step.description}) Result: Searched context for "${searchTerm}". Found ${matches.length} result(s).`);
+                    executionContext.push(`Step ${stepIndex + 1} (${step.description}) Result: Searched context for "${searchTerm}". Found ${matches.length} result(s).`);
                 } else if (step.tool === 'spawn_cognitive_clone') {
                     const task = step.query || 'No task provided.';
                     const subContext = step.code || 'No context provided.';
@@ -1719,7 +1741,7 @@ const service = {
                             step.childProcess.state = 'Error';
                         }
                     }
-                    executionContext.push(`Step ${i+1} (${step.description}) Result from clone: ${step.result}`);
+                    executionContext.push(`Step ${stepIndex + 1} (${step.description}) Result from clone: ${step.result}`);
                 } else if (step.tool === 'delegate_task_to_replica') {
                     const replicaId = step.replicaId;
                     const taskDescription = step.task || "No task specified";
@@ -1741,7 +1763,7 @@ const service = {
                             if (freshReplicaResult) {
                                 freshReplicaResult.node.status = originalStatus; // Return to original status
                                 step.result = `Sub-Agent ${freshReplicaResult.node.name} completed task: "${taskDescription}". Awaiting synthesis.`;
-                                executionContext.push(`Step ${i+1} (${step.description}) Result: ${step.result}`);
+                                executionContext.push(`Step ${stepIndex + 1} (${step.description}) Result: ${step.result}`);
                                 log('REPLICA', `${freshReplicaResult.node.name} has completed its delegated task.`);
                                 await dbService.put('appState', { id: 'replicaRoot', data: replicaState });
                                 notifyReplicas();
@@ -1772,7 +1794,7 @@ const service = {
                         step.result = `No relevant memories found for query: "${memoryQuery}".`;
                         log('AI', `No memories found for query "${memoryQuery}".`);
                     }
-                    executionContext.push(`Step ${i+1} (Recalled Memory) Result: ${step.result}`);
+                    executionContext.push(`Step ${stepIndex + 1} (Recalled Memory) Result: ${step.result}`);
                 } else if (step.tool === 'induce_emotion') {
                     const languageName = languageMap[appSettings.language] || 'English';
                     const prompt = `Translate the concept "${step.concept}" into an Affective State. The 'mood' property MUST be in ${languageName}. Respond ONLY with the JSON object.`;
@@ -1806,7 +1828,7 @@ const service = {
                                 concept: step.concept,
                                 base64Image: base64ImageBytes
                             } as GeneratedImage;
-                             executionContext.push(`Step ${i+1} (${step.description}) Result: Generated image object for "${step.concept}"`);
+                             executionContext.push(`Step ${stepIndex + 1} (${step.description}) Result: Generated image object for "${step.concept}"`);
                         } else {
                             step.status = 'error';
                             step.result = 'Error: Failed to generate image from API.';
@@ -1828,7 +1850,7 @@ const service = {
                             contents: { parts: [imagePart, textPart] }
                         });
                         step.result = analysisResponse.text;
-                         executionContext.push(`Step ${i+1} (${step.description}) Result: ${step.result}`);
+                         executionContext.push(`Step ${stepIndex + 1} (${step.description}) Result: ${step.result}`);
                     } else {
                         step.status = 'error';
                         step.result = "Error: No valid image found (neither user-provided nor from a previous step).";
@@ -1840,11 +1862,11 @@ const service = {
                         const capabilities = step.code ? JSON.parse(step.code).capabilities : [];
                         const newTool = await service.forgeTool({ purpose, capabilities });
                         step.result = `Successfully forged new tool: "${newTool.name}". It is now available.`;
-                        executionContext.push(`Step ${i+1} (${step.description}) Result: ${step.result}`);
+                        executionContext.push(`Step ${stepIndex + 1} (${step.description}) Result: ${step.result}`);
                     } catch (e) {
                         step.status = 'error';
                         step.result = e instanceof Error ? e.message : 'Unknown tool forging error.';
-                        log('ERROR', `Tool forging failed at step ${i+1}: ${step.result}`);
+                        log('ERROR', `Tool forging failed at step ${stepIndex + 1}: ${step.result}`);
                     }
                 } else if (step.tool === 'spawn_replica') {
                      try {
@@ -1856,11 +1878,11 @@ const service = {
                         } else {
                             throw new Error(`Parent replica with ID "${parentId}" not found.`);
                         }
-                        executionContext.push(`Step ${i+1} (${step.description}) Result: ${step.result}`);
+                        executionContext.push(`Step ${stepIndex + 1} (${step.description}) Result: ${step.result}`);
                     } catch (e) {
                         step.status = 'error';
                         step.result = e instanceof Error ? e.message : 'Unknown replica spawning error.';
-                        log('ERROR', `Replica spawning failed at step ${i+1}: ${step.result}`);
+                        log('ERROR', `Replica spawning failed at step ${stepIndex + 1}: ${step.result}`);
                     }
                 } else if (step.tool === 'world_model') {
                     if (!step.query) {
@@ -1900,7 +1922,7 @@ const service = {
                             log('ERROR', step.result);
                         }
                     }
-                    executionContext.push(`Step ${i+1} (${step.description}) Result: ${step.result}`);
+                    executionContext.push(`Step ${stepIndex + 1} (${step.description}) Result: ${step.result}`);
                 } else if (step.tool === 'apply_behavior') {
                     const item = playbookState.find(b => b.description === step.query || b.id === step.query);
                     if (item) {
@@ -1915,16 +1937,18 @@ const service = {
                         step.result = `Error: Strategy "${step.query}" not found in the playbook.`;
                         log('ERROR', step.result);
                     }
-                    executionContext.push(`Step ${i+1} (${step.description}) Result: ${step.result}`);
+                    executionContext.push(`Step ${stepIndex + 1} (${step.description}) Result: ${step.result}`);
                 } else if (step.tool === 'translate_text' || step.tool === 'summarize_text' || step.tool === 'analyze_sentiment' || step.tool === 'replan' || step.tool === 'execute_toolchain') {
                     await new Promise(res => setTimeout(res, 500));
                     step.result = `(Simulated) Successfully executed ${step.tool}.`;
-                    executionContext.push(`Step ${i+1} (${step.description}) Result: ${step.result}`);
+                    executionContext.push(`Step ${stepIndex + 1} (${step.description}) Result: ${step.result}`);
                 }
                 
                 if (step.status !== 'error') step.status = 'complete';
                 notifyCognitiveProcess();
                 await new Promise(res => setTimeout(res, appSettings.cognitiveStepDelay));
+
+                stepIndex++;
             }
             
             if (isCancelled) return;
