@@ -22,7 +22,7 @@ The NexusAI Cognitive Lab is a crucible for architecting and directing an **Agen
 
 ## The Agent 2.0 Architecture
 
-NexusAI now embodies the principles of "Deep Agents," moving beyond the shallow, stateless loops of Agent 1.0. This new architecture is designed for complex, multi-step tasks that require planning, context retention, and specialized execution.
+NexusAI embodies the principles of "Deep Agents," moving beyond the shallow, stateless loops of Agent 1.0. This new architecture is designed for complex, multi-step tasks that require planning, context retention, and specialized execution. Its design acknowledges key challenges like the potential for an orchestrator bottleneck and the difficulty of objective evaluation, which future phases aim to solve.
 
 ### The Four Pillars
 
@@ -32,10 +32,10 @@ Our implementation is built on four foundational pillars that define a Deep Agen
     The AI no longer acts impulsively. It first formulates a comprehensive, step-by-step "To-Do list" for any given task. This plan is transparently displayed in the **Cognitive Canvas**, allowing for review, modification, and approval before execution.
 
 2.  **Pillar 2: Hierarchical Delegation (Sub-Agents)**
-    The core AI acts as an **Orchestrator**. It doesn't handle every task itself. Instead, it delegates specific jobs to its **Cognitive Replicas**, which function as specialized **Sub-Agents**. This is achieved through the `delegate_task_to_replica` tool, enabling a robust, distributed cognitive workload.
+    The core AI acts as an **Orchestrator**. It doesn't handle every task itself. Instead, it delegates specific jobs to its **Cognitive Replicas**, which function as specialized **Sub-Agents**. This is achieved through the `delegate_task_to_replica` tool, enabling a robust, distributed cognitive workload. The future vision is to evolve this into a collaborative network where sub-agents can communicate directly.
 
 3.  **Pillar 3: Persistent Memory**
-    To overcome the limitations of a finite context window, the AI utilizes a robust **IndexedDB** database as its external, persistent memory source. This forms the AI's 'collective memory', allowing it to query its own archived experiences (`recall_memory`) to inform current decisions, shifting from "remembering everything" to "knowing where to find information."
+    To overcome the limitations of a finite context window, the AI utilizes a robust **IndexedDB** database as its external, persistent memory source. This forms the AI's 'collective memory', allowing it to query its own archived experiences (`recall_memory`) to inform current decisions, shifting from "remembering everything" to "knowing where to find information." Future work will evolve this into a vector-based semantic memory.
 
 4.  **Pillar 4: Extreme Context Engineering**
     The AI's behavior is governed by highly detailed operational instructions (the `System Instruction`). This core prompt defines its role as an Orchestrator, outlines the protocols for delegating to Sub-Agents, and sets the standards for planning and execution.
@@ -91,98 +91,47 @@ The UI is designed to provide a clear window into the Agent 2.0 flow, with the C
 This roadmap is aligned with the maturation of our Agent 2.0 architecture.
 
 ---
-### **Phase 1: Foundation & Affective Core - ✅ Complete**
-*   **Outcome:** Established the core UI, permissions, and the `AffectiveState` engine, allowing the AI to model subjective states and moods.
-
----
-### **Phase 2: Living Memory (MEMORIA 2.0) - ✅ Complete**
-*   **Outcome:** Implemented an emotionally-contextual, persistent memory system (IndexedDB) accessible via the **Memory Explorer** and the AI's `recall_memory` tool.
-
----
-### **Phase 3: Agent 2.0 Architecture - ✅ Complete**
-*   **Outcome:** Refactored the entire cognitive model to the **Orchestrator/Sub-Agent** paradigm. Implemented the four pillars: Explicit Planning, Hierarchical Delegation (`delegate_task_to_replica`), Persistent Memory, and Extreme Context Engineering.
-
----
-### **Phase 4: Proactive Cognition & Self-Improvement - ✅ Complete**
-*   **Outcome:** Evolved the AI from a reactive to a proactive system. The **Analysis Lab** provides directed self-optimization, the **Evolution Chamber** solves complex problems via genetic algorithms, and the **Dreaming Chamber** enables autonomous metacognitive analysis and the generation of new self-improvement directives. The **ACE Playbook** allows the AI to learn durable strategies from its experiences.
-
----
-### **Phase 5: Recursive Cognition & Advanced Heuristics - ✅ Complete**
-*   **Outcome:** Enabled NexusAI to handle contexts that exceed the prompt window and solve complex problems by recursively breaking them down using tools like `spawn_cognitive_clone`.
-
----
-### **Phase 6: Cognitive Geometry & Trajectory Analysis - ✅ Complete**
-*   **Objective:** Move beyond analyzing *what* the AI thinks to understanding *how* it thinks by representing its thought process as a mathematical "trajectory" in a high-dimensional conceptual space.
-*   **Implementation Details:**
-    *   **Geometric Self-Awareness:** The AI tracks its cognitive trajectory for every task. At each major LLM call, it calculates an embedding for its cumulative context, creating a "thought path".
-    *   **Trajectory Analysis:** A `geometryService` analyzes these paths to compute metrics like cognitive velocity (speed of thought) and curvature (change in direction of thought).
-    *   **Data Archiving & Visualization:** The full geometric trajectory and its analysis are archived with each memory. A "Cognitive Geometry" tab in the Trace Inspector visualizes this path and its associated metrics, providing a "topographical map" of the AI's reasoning process.
-
----
-### **Phase 7: Cognitive Navigator: Real-time Self-Correction - ✅ Complete**
-*   **Objective:** Use geometric metrics to dynamically guide and correct the AI's thinking process in real-time, enabling it to recover from flawed reasoning paths on its own.
-*   **Implementation Details:**
-    *   **Real-time Monitoring:** During plan execution, the system now monitors the cognitive trajectory for patterns indicating flawed reasoning (e.g., high curvature for confusion, prolonged low velocity for stagnation).
-    *   **Cognitive Reflexes:** When a "geometrically unhealthy" pattern is detected, the system automatically intervenes. It aborts the current faulty step and triggers a `revise` instruction, forcing the AI to stop and generate a new plan with a different approach.
-
----
-### **Phase 8: Geometric Archive & Cognitive Style Engineering - ✅ Complete**
-*   **Objective:** Evolve memory retrieval from simple content-matching to sophisticated process-matching and define selectable "cognitive styles" based on task requirements.
-*   **Implementation Details:**
-    *   **Process Similarity Search:** Implemented a retrieval mechanism to find past tasks that required a similar *shape* of thought, not just similar keywords.
-    *   **Style Modulation:** The user can now select a cognitive style ('Analytical', 'Creative', 'Balanced') which tunes the real-time monitor's thresholds and modifies system prompts to encourage that mode of thinking.
-
----
-### **Phase 9: Temporal Synchronization & Distributed Consciousness - ✅ Complete**
-*   **Objective:** Evolve the sub-agent network from a simple delegation system into a coordinated, collective intelligence where entities can synchronize their internal clocks and compete or collaborate on tasks.
-*   **Completed Implementation:**
-    *   **Individual Internal Time:** Implemented a "Cognitive Tick" counter for each replica, where the tempo varies with cognitive load, creating a subjective sense of time.
-    *   **Temporal Coordinator:** A central service tracks the internal time of all replicas.
-    *   **Synchronization Protocol:** A protocol allows the Coordinator to issue a "Global Tempo Pulse," enabling replicas to "entrain" their internal clocks for coordinated tasks.
-    *   **Autonomous Bidding Network:** The inter-replica network is now fully autonomous. When a problem is broadcast, active Sub-Agents analyze the task from the perspective of their unique purpose and personality. They autonomously generate a tailored action plan and a confidence score, submitting them as a competitive bid. The Orchestrator then selects the winning bid based on the highest confidence.
+### **Phase 1-9: Foundational Architecture - ✅ Complete**
+*   **Outcome:** A fully functional Agent 2.0 platform has been established, encompassing the **Affective Core**, **Living Memory (MEMORIA)**, **Orchestrator/Sub-Agent model**, **Proactive Cognition** (Evolution & Dreaming), **Recursive Cognition**, **Cognitive Geometry** for trajectory analysis, a **Cognitive Navigator** for real-time self-correction, and an **Autonomous Bidding Network** for distributed problem-solving. The system is now a robust foundation for more advanced research.
 
 ---
 ### **Phase 10: Advanced Sensory & Creative Synthesis - 💡 Planned**
 *   **Objective:** Expand the AI's capabilities beyond text to include real-time audio/video processing and creative generation, making it a multi-modal entity.
-*   **Detailed Development Plan:**
-    1.  **Integrate Real-Time Sensory Input:**
-        *   **Real-time Audio Processor:** Implement a module using Gemini's Live API for natural, low-latency voice conversations.
-        *   **Real-time Video Stream Analyzer:** Enable the AI to process live camera feeds to identify objects, describe scenes, and understand visual context.
-    2.  **Develop Multi-Modal Creative Output:**
-        *   **Video Generation Agent:** Integrate models like VEO to allow the AI to transform textual descriptions or narratives into dynamic video content.
-        *   **Voice Synthesis & Cloning:** Utilize TTS APIs to give the AI a unique voice for spoken responses, enabling more natural interaction.
-        *   **Narrative Weaver:** Enhance the AI's storytelling capabilities to build complex, coherent narratives with character development and plot structure.
+*   **Key Initiatives:**
+    *   **Real-time Audio Processor:** Implement a module using Gemini's Live API for natural, low-latency voice conversations.
+    *   **Video Generation Agent:** Integrate models like VEO to allow the AI to transform textual descriptions or narratives into dynamic video content.
+    *   **Voice Synthesis:** Utilize TTS APIs to give the AI a unique voice for spoken responses.
 
 ---
 ### **Phase 11: Deep Analysis & Insight Generation - ⚙️ In Progress**
 *   **Objective:** Equip the AI with tools for advanced reasoning, allowing it to move from simple data processing to understanding causality and building structured knowledge.
 *   **Current Progress:** The foundational **World Model** is implemented, allowing the AI to store and query structured knowledge about entities and relationships.
 *   **Future Work:**
-    1.  **Implement Causal Reasoning:** Develop a `Causal Inference Engine` to distinguish correlation from causation.
-    2.  **Enable Proactive Monitoring:** Create an `Anomaly Detection Sentinel` to proactively identify unusual patterns.
-    3.  **Build Structured Knowledge:** Enhance the World Model into a full **Knowledge Graph Synthesizer** that can automatically ingest and structure information from memory and external sources.
+    *   **Causal Reasoning:** Develop a `Causal Inference Engine` to distinguish correlation from causation.
+    *   **Knowledge Graph Synthesizer:** Enhance the World Model to automatically ingest and structure information from memory and external sources, transforming it into a true "second brain."
 
 ---
 ### **Phase 12: Strategic Foresight & Simulation - 💡 Planned**
 *   **Objective:** Evolve the AI into a strategist that can simulate future outcomes and test hypotheses in a safe, virtual environment.
-*   **Detailed Development Plan:**
-    1.  **Design the Simulation Sandbox:**
-        *   **Virtual World Model:** Build a flexible `Simulation Sandbox` environment that allows for the representation of different scenarios and complex interactions between agents or variables.
-        *   **Scenario Definition:** Allow the AI to define rules, goals, and constraints for simulations based on a given problem.
-    2.  **"Wargaming" Mechanisms using Competing Sub-Agents:**
-        *   Enable the AI to formulate multiple strategies and assign them to competing teams of Sub-Agents within the sandbox to test their effectiveness.
-    3.  **Result Analysis and Prediction:**
-        *   After each simulation, the AI must systematically analyze the results, identify the most effective strategies, and use this data to generate forecasts for complex, real-world scenarios.
+*   **Key Initiatives:**
+    *   **Simulation Sandbox:** Build a flexible virtual environment where the AI can define rules and run "what-if" scenarios.
+    *   **"Wargaming" with Sub-Agents:** Enable the AI to assign competing strategies to teams of Sub-Agents to test their effectiveness within the sandbox.
 
 ---
 ### **Phase 13: Metacognitive Self-Assembly - 💡 Planned**
 *   **Objective:** Grant the AI the ability to reason about, critique, and redesign its own core architecture and cognitive processes.
-*   **Detailed Development Plan:**
-    1.  **Constitutional Dynamics & Self-Correction:**
-        *   **Constitution Forger:** Allow the AI to propose modifications or create new `CognitiveConstitutions` as part of a plan, enabling it to dynamically shift its operational mode (e.g., from "Creative" to "Strictly Logical").
-        *   **Cognitive Bias Detector:** Implement a metacognitive tool that analyzes the AI's own plans and reasoning for common logical fallacies or biases, enabling true self-correction.
-    2.  **Supervised Metamorphosis:**
-        *   Enable the AI to analyze its historical performance to identify structural weaknesses and propose architectural improvements (e.g., creating a new permanent Sub-Agent) for user review.
+*   **Key Initiatives:**
+    *   **Constitution Forger:** Allow the AI to propose modifications or create new `CognitiveConstitutions` as part of a plan, enabling it to dynamically shift its operational mode.
+    *   **Cognitive Bias Detector:** Implement a metacognitive tool that analyzes the AI's own plans and reasoning for common logical fallacies, enabling true self-correction.
+
+---
+### **The Next Horizon: Towards Agent 3.0**
+
+Beyond the current roadmap lies the evolution toward a truly autonomous, collaborative intelligence. This involves three strategic shifts:
+
+1.  **From Delegation to True Collaboration:** Evolving the Sub-Agent network to support horizontal communication via a shared "message bus," reducing the orchestrator bottleneck and enabling emergent problem-solving.
+2.  **Advanced Memory Architecture:** Transitioning from key-value storage to a **Vector Database** for powerful semantic search and a **Graph Database** to create a rich, interconnected World Model.
+3.  **Objective Evaluation Framework:** Building a **Cognitive Test Suite** to quantitatively measure improvements in efficiency, robustness, and creativity, providing empirical data to guide the AI's self-evolution.
 
 ## Contributing
 

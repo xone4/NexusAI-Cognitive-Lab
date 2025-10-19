@@ -1,80 +1,48 @@
 # NexusAI Cognitive Lab 3.0: Detailed Development Plan
 
-This document provides a detailed, technical breakdown of the development plan for NexusAI, expanding upon the phases outlined in the main [`README.md`](./README.md) file. It serves as a reference for the development team.
+## Introduction: A Strategic Vision for Agent 2.0 and Beyond
 
-## Part 1: The Cognitive Navigation Paradigm - Detailed Implementation Plan
+This document provides a detailed, technical breakdown of the development plan for NexusAI. It serves as a reference for the development team, translating the high-level goals from the [`README.md`](./README.md) into concrete technical phases.
 
-**Vision:** Shift from "task execution" as a series of text strings to "cognitive navigation" as a path through a conceptual space. This provides the mathematical tools to describe this path (position, velocity, curvature) and integrate these tools into every stage of the agent's operation.
+The ultimate objective of this project is to transcend the "executing agent" model (Agent 1.0) and realize a true "thinking agent" (Agent 2.0). This requires a shift from simply completing tasks to architecting a cognitive framework capable of deep understanding, strategic planning, meta-cognitive reflection, and autonomous evolution. The following plan is structured to achieve this vision by focusing on three core pillars: a **Distributed Cognitive Architecture**, a **Dynamic and Advanced Memory System**, and a framework for **Guided Self-Evolution**.
 
----
-
-### Phase 5: Recursive Cognition & Advanced Heuristics - ✅ Complete
-
-**Goal:** Enable NexusAI to handle contexts that exceed the prompt window and solve complex problems by recursively breaking them down.
-
-**Completed Implementation:**
-*   **Sandbox Environment:** The `code_sandbox` tool has been created to provide a JavaScript environment with pre-loaded `context_data` for handling large datasets.
-*   **Recursive Delegation:** The `spawn_cognitive_clone` tool has been added to delegate sub-problems and a portion of the context to a temporary, focused AI clone.
-*   **Context Heuristics:** Tools like `peek_context` and `search_context` have been implemented to improve data exploration efficiency.
-
-**Future Enhancements:**
-1.  **Enhance Recursive Delegation Logic:**
-    *   **Complex State Management:** Develop mechanisms to track the state of multiple, interconnected sub-problems across different recursion levels.
-    *   **Multi-Level Recursion:** Enhance the AI's ability to perform recursive delegation beyond a single level, allowing cognitive clones to delegate further sub-tasks.
-2.  **Teach Advanced Strategies for Data Chunking and Result Synthesis:**
-    *   **Adaptive Context Chunking:** Develop algorithms that allow the AI to determine the best way to divide large data into small, processable chunks for cognitive clones.
-    *   **Hierarchical Result Synthesis:** Design protocols for collecting and merging results from cognitive clones at different recursion levels.
+## Part 1: Foundational Paradigms (Completed)
 
 ---
 
-### Phase 6: Cognitive Geometry & Trajectory Analysis - ✅ Complete
+### Phase 1-5: Core Architecture & Recursive Cognition - ✅ Complete
 
-**Goal:** Integrate geometric trajectory tracking into the agent's core, transforming working memory into a vector log.
+**Goal:** Establish the foundational pillars of the Agent 2.0 architecture and enable recursive problem-solving.
 
-**Completed Implementation:**
-*   **Updated Core Data Structures:** `ChatMessage` now includes `cognitiveTrajectory?: CognitiveTrajectory`. New types `CognitiveTrajectory`, `CognitiveMetricStep`, `CognitiveTrajectorySummary` are defined in `types.ts`.
-*   **Embedding Extraction Unit:** `services/geometryService.ts` handles simulated embedding generation, ensuring deterministic vector creation for reproducibility.
-*   **Geometric Analysis Unit:** `services/geometryService.ts` implements `calculateVelocity`, `calculateMengerCurvature`, and `analyzeTrajectory` for metric calculation.
-*   **Geometric Tracking Integration:** A `TrajectoryTracker` class is used in `nexusAIService.ts`. It's instantiated on query submission, logs steps during cognitive events, and finalizes the trajectory upon completion.
-
----
-
-### Phase 7: Cognitive Navigator: Real-time Self-Correction - ✅ Complete
-
-**Goal:** Use velocity and curvature as signals for real-time self-correction.
-
-**Completed Implementation:**
-*   **Defined Geometric Thresholds:** `nexusAIService.ts` contains `HIGH_CURVATURE_THRESHOLD`, `LOW_VELOCITY_THRESHOLD`, and `STAGNATION_WINDOW` for different cognitive styles.
-*   **Real-Time Monitoring Unit:** The `executePlan` loop in `nexusAIService.ts` monitors the active `TrajectoryTracker` to detect `STATE_STUCK` (low velocity) or `STATE_CONFUSED` (high curvature).
-*   **Cognitive Reflexes:** When a problematic state is detected, the current step is aborted, and `_regeneratePlan` is called with a 'revise' instruction, forcing a new strategic approach.
+**Key Achievements:**
+*   **Affective Core & Living Memory (MEMORIA):** Implemented an emotionally-contextual, persistent memory system in IndexedDB, forming the basis for long-term learning.
+*   **Orchestrator/Sub-Agent Model:** Refactored the entire cognitive model to a hierarchical delegation system, a core strength of the project's design.
+*   **Recursive Delegation & Context Heuristics:** Implemented tools like `spawn_cognitive_clone`, `code_sandbox`, and `peek_context`, allowing the AI to break down and solve problems that exceed standard context window limitations.
 
 ---
 
-### Phase 8: Geometric Archive & Cognitive Style Engineering - ✅ Complete
+### Phase 6-8: Cognitive Navigation Paradigm - ✅ Complete
 
-**Goal:** Transform long-term memory to enable process similarity retrieval and allow for dynamic selection of "cognitive styles."
+**Goal:** Transform the AI's thought process from abstract text generation into a mathematically measurable "cognitive trajectory," enabling real-time self-awareness and correction.
 
-**Completed Implementation:**
-*   **Trajectory Similarity Metric (DTW):** `services/geometryService.ts` implements `calculateTrajectorySimilarity` using Dynamic Time Warping (DTW) on velocity sequences to measure "thought shape" similarity.
-*   **Dual Retrieval Strategy:** `nexusAIService.ts` in `findSimilarProcesses` first performs a semantic search, then re-ranks results based on trajectory similarity, combining content and process matching.
-*   **Cognitive Style Modulator:** The `SettingsView` allows users to select a cognitive style. This choice dynamically adjusts the diagnostic thresholds in `nexusAIService.ts` and modifies the system instruction to guide the AI's reasoning pattern.
+**Key Achievements:**
+*   **Cognitive Geometry Integration:** The `ChatMessage` data structure now archives a `CognitiveTrajectory`, and a dedicated `geometryService` handles embedding simulation and metric calculation (velocity, curvature).
+*   **Cognitive Navigator Implementation:** The `executePlan` loop now features a real-time monitoring unit that detects flawed reasoning patterns (stagnation, confusion) and triggers an autonomous `revise` plan, enabling self-correction.
+*   **Geometric Memory & Style Engineering:** Memory retrieval has been enhanced to include "process similarity" via Dynamic Time Warping (DTW). Users can now select a `CognitiveStyle` ('Analytical', 'Creative', 'Balanced') which tunes the Navigator's sensitivity and the AI's reasoning approach.
 
 ---
-
-## Part 2: The Temporal & Distributed Cognition Paradigm
 
 ### Phase 9: Temporal Synchronization & Distributed Consciousness - ✅ Complete
 
-**Objective:** Evolve the sub-agent network from a simple delegation system into a coordinated, collective intelligence where entities can synchronize their internal clocks and eventually compete or collaborate on tasks.
+**Objective:** Evolve the sub-agent network from a simple delegation system into a coordinated, collective intelligence where entities can synchronize their internal clocks and compete or collaborate on tasks.
 
 **Completed Implementation:**
 1.  **Individual Internal Time:** Implemented a "Cognitive Tick" counter for each replica, where the tempo varies with cognitive load, creating a subjective sense of time.
-2.  **Temporal Coordinator:** A central service (`updateReplicaState` loop) acts as a conductor, tracking the internal time of all replicas.
-3.  **Synchronization Protocol:** A protocol allows the Coordinator to issue a "Global Tempo Pulse." Replicas participating in a group task will then "entrain" their internal clocks to this pulse by entering a `Recalibrating` state.
-4.  **Autonomous Bidding Network:** The inter-replica network is now fully autonomous. When a problem is broadcast, active Sub-Agents analyze the task from the perspective of their unique purpose and personality. They autonomously generate a tailored action plan and a confidence score via the Gemini API, submitting them as a competitive bid. The Orchestrator then selects the winning bid based on the highest confidence score. This completes the core goal of evolving the network into an autonomous problem-solving ecosystem.
+2.  **Temporal Coordinator:** A central service acts as a conductor, tracking and enabling the synchronization of internal clocks via a "Global Tempo Pulse."
+3.  **Autonomous Bidding Network:** The inter-replica network is now fully autonomous. When a problem is broadcast, active Sub-Agents analyze the task, generate a tailored action plan and a confidence score via the Gemini API, and submit them as a competitive bid. The Orchestrator selects the winning bid, completing the evolution from simple delegation to an autonomous, distributed problem-solving ecosystem.
 
 ---
-## Part 3: Detailed Sentience Roadmap (Future Phases)
+## Part 2: Detailed Sentience Roadmap (Future Phases)
 
 This plan outlines the upcoming phases to enhance NexusAI's capabilities further.
 
@@ -95,19 +63,19 @@ This plan outlines the upcoming phases to enhance NexusAI's capabilities further
 *   **Completed Foundational Implementation:**
     *   **World Model Data Structures:** `types.ts` defines `WorldModelEntity`, `WorldModelRelationship`, and `WorldModelPrinciple`.
     *   **Persistent Storage:** `dbService.ts` includes a `worldModel` store to persist the AI's knowledge base.
-    *   **AI Interaction Tool:** The `world_model` tool is available in `nexusAIService.ts`, allowing the AI to query its internal knowledge graph as part of a plan.
+    *   **AI Interaction Tool:** The `world_model` and `update_world_model` tools are available in `nexusAIService.ts`, allowing the AI to query and update its internal knowledge graph.
     *   **Visualization Interface:** A dedicated `WorldModelView.tsx` component provides a graph-based visualization of entities and their relationships, along with an editor to manually curate the model.
 *   **Future Work:**
-    1.  **Implement Causal Reasoning:** Develop a `Causal Inference Engine` to distinguish correlation from causation.
-    2.  **Enable Proactive Monitoring:** Create an `Anomaly Detection Sentinel` to proactively identify unusual patterns.
-    3.  **Build Structured Knowledge:** Enhance the World Model into a full **Knowledge Graph Synthesizer** that can automatically ingest and structure information from memory and external sources.
+    1.  **Implement Causal Reasoning:** Develop a `Causal Inference Engine` tool to distinguish correlation from causation.
+    2.  **Enable Proactive Monitoring:** Create an `Anomaly Detection Sentinel` tool to proactively identify unusual patterns in system data or external feeds.
+    3.  **Build Structured Knowledge:** Evolve the `update_world_model` tool into a full **Knowledge Graph Synthesizer** that can automatically ingest unstructured text (from memory, search results) and transform it into structured entities and relationships.
 
 ---
 ### Phase 12: Strategic Foresight & Simulation - 💡 Planned
 *   **Objective:** Evolve the AI into a strategist that can simulate future outcomes and test hypotheses in a safe, virtual environment.
 *   **Detailed Development Plan:**
     1.  **Design the Simulation Sandbox:**
-        *   **Virtual World Model:** Build a flexible `Simulation Sandbox` environment that allows for the representation of different scenarios and complex interactions between agents or variables.
+        *   **Virtual World Model:** Build a flexible `Simulation Sandbox` tool that allows the AI to represent different scenarios and complex interactions between agents or variables.
         *   **Scenario Definition:** Allow the AI to define rules, goals, and constraints for simulations based on a given problem.
     2.  **"Wargaming" Mechanisms using Competing Sub-Agents:**
         *   Enable the AI to formulate multiple strategies and assign them to competing teams of Sub-Agents within the sandbox to test their effectiveness.
@@ -125,9 +93,9 @@ This plan outlines the upcoming phases to enhance NexusAI's capabilities further
         *   Enable the AI to analyze its historical performance to identify structural weaknesses and propose architectural improvements (e.g., creating a new permanent Sub-Agent) for user review.
 
 ---
-## Part 4: Proposed New Mental Tools
+## Part 3: Proposed New Mental Tools
 
-This list represents a starting point, and each of these tools marks a significant leap in the system's capabilities. Their implementation can be gradual, starting with the tools that best serve the platform's current goals.
+This list represents a starting point for future development, with each tool marking a significant leap in the system's capabilities.
 
 ### 1. Advanced Analysis & Insight Generation Tools
 These tools go beyond surface-level data processing to achieve a deeper understanding of patterns and causes.
@@ -184,3 +152,34 @@ Connecting the AI to more than just text.
 *   **Tool Name:** `Real-time Video Stream Analyzer`
     *   **Description:** Processes a live video stream from a camera to identify objects, track movement, and describe the scene. This can be simulated by sending image frames sequentially to the Live API.
     *   **Benefit:** Gives the AI "eyes" to perceive and interact with the physical world, making it useful in robotics and intelligent monitoring applications.
+---
+## Part 4: The Next Architectural Evolution
+
+Beyond the phased feature implementation, the long-term vision requires foundational shifts in the system's architecture to achieve true autonomy and deeper intelligence.
+
+### 1. From Delegation to True Collaboration
+*   **The Challenge:** The current Orchestrator/Sub-Agent model creates a potential bottleneck. As complexity grows, the Orchestrator's cognitive load increases, limiting scalability and speed.
+*   **The Vision:** Enable horizontal communication between Sub-Agents. This allows for emergent problem-solving where, for example, a "Web Research" agent can directly pass findings to a "Data Analysis" agent, who in turn might query a "Visualization" agent. They could collectively refine a solution and present a recommendation back to the Orchestrator.
+*   **Implementation Path:**
+    *   Design and implement a shared **Message Bus** or **Blackboard System** where agents can post and subscribe to messages.
+    *   Develop a communication protocol that allows agents to request information, delegate sub-tasks to peers, and signal task completion.
+
+### 2. Advanced Memory Architecture
+*   **The Challenge:** The current IndexedDB (key-value) memory is effective for direct retrieval but lacks the ability to understand conceptual relationships.
+*   **The Vision:** A two-pronged memory upgrade to mimic human cognitive faculties.
+    *   **Vector Database (Semantic Memory):** Integrate a vector database (e.g., ChromaDB, Pinecone) to store embeddings of all cognitive traces. This enables powerful semantic search, allowing the AI to ask questions like, "What have I learned from past failures related to market analysis?" instead of just searching for keywords.
+    *   **Graph Database (Episodic/Declarative Memory):** Evolve the World Model into a true graph database (e.g., Neo4j). This will store entities as nodes and relationships as edges, allowing the AI to traverse its knowledge and understand complex systems, such as organizational charts or causal chains.
+*   **Implementation Path:**
+    *   Integrate a client-side or remote vector database for the `recall_memory` tool.
+    *   Refactor the `WorldModel` to use a graph-based structure, enhancing the `world_model` and `update_world_model` tools.
+
+### 3. Objective Evaluation Framework
+*   **The Challenge:** The "fitness" in the Evolution Chamber and the overall "improvement" of the AI are currently subjective. Without quantitative metrics, self-evolution risks being inefficient or random.
+*   **The Vision:** An automated **Cognitive Test Suite** that regularly benchmarks the AI's performance against a standardized set of problems.
+*   **Implementation Path:**
+    *   Design a diverse set of benchmark tasks that test for:
+        *   **Efficiency:** Number of steps, API calls, or time to solve a problem.
+        *   **Robustness:** Ability to handle ambiguous, contradictory, or misleading information.
+        *   **Creativity:** Ability to find novel solutions or use tools in unconventional ways.
+    *   Build a test runner that executes this suite periodically.
+    *   Feed the quantitative results from the test suite directly into the Evolution Chamber and Analysis Lab to provide an empirical basis for self-improvement.
