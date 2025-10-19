@@ -139,7 +139,8 @@ This roadmap is aligned with the maturation of our Agent 2.0 architecture.
     *   **Individual Internal Time:** Implemented a "Cognitive Tick" counter for each replica, where the tempo varies with cognitive load, creating a subjective sense of time.
     *   **Temporal Coordinator:** A central service tracks the internal time of all replicas.
     *   **Synchronization Protocol:** A protocol allows the Coordinator to issue a "Global Tempo Pulse," enabling replicas to "entrain" their internal clocks for coordinated tasks.
-*   **Future Work:** Evolve the network into a competitive and collaborative ecosystem where emergent strategies can arise from Sub-Agent bidding and autonomous plan selection.
+    *   **Problem Broadcasting & Bidding Network:** A foundational system allows replicas to broadcast problems to the network (`broadcastProblem`) and other active replicas to respond with simulated bids, demonstrating a basic competitive problem-solving dynamic.
+*   **Future Work:** Evolve the network into a fully autonomous and collaborative ecosystem where Sub-Agents intelligently generate their own plans for bids, and the Orchestrator autonomously selects the winning strategy.
 
 ---
 ### **Phase 10: Advanced Sensory & Creative Synthesis - 💡 Planned**

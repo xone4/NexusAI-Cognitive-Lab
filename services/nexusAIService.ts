@@ -50,7 +50,6 @@ let evolutionSubscribers: ((evolutionState: EvolutionState) => void)[] = [];
 let archiveSubscribers: ((archives: ChatMessage[]) => void)[] = [];
 let dreamProcessSubscribers: ((update: DreamProcessUpdate) => void)[] = [];
 let worldModelSubscribers: ((worldModel: WorldModel) => void)[] = [];
-// FIX: Add cognitiveNetworkSubscribers array
 let cognitiveNetworkSubscribers: ((state: CognitiveNetworkState) => void)[] = [];
 
 // --- Phase 9: Temporal Synchronization State ---
@@ -126,7 +125,6 @@ const notifyConstitutions = () => constitutionSubscribers.forEach(cb => cb(JSON.
 const notifyEvolution = () => evolutionSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(evolutionState))));
 const notifyArchives = () => archiveSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(archivedTracesState))));
 const notifyDreamProcess = (update: DreamProcessUpdate) => dreamProcessSubscribers.forEach(cb => cb(update));
-// FIX: Add notifyCognitiveNetwork function
 const notifyCognitiveNetwork = () => cognitiveNetworkSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(cognitiveNetworkState))));
 const notifyWorldModel = () => {
     if (worldModelState) {
@@ -336,7 +334,6 @@ const initialize = async () => {
         initialArchives: JSON.parse(JSON.stringify(archivedTracesState)),
         initialCognitiveProcess: JSON.parse(JSON.stringify(cognitiveProcess)),
         initialWorldModel: JSON.parse(JSON.stringify(worldModelState)),
-        // FIX: Add initialCognitiveNetworkState to return object
         initialCognitiveNetworkState: JSON.parse(JSON.stringify(cognitiveNetworkState)),
         initialLogs: [
             { id: 'init-1', timestamp: Date.now() - 2000, level: 'SYSTEM', message: 'NexusAI Cognitive Core Initializing...' },
@@ -1102,14 +1099,12 @@ const service = {
                 id: `prob-${Date.now()}`,
                 description: problem,
                 broadcastById: replicaId,
-                // FIX: Add missing properties broadcastByName and bids
                 broadcastByName: result.node.name,
                 bids: [],
                 isOpen: true,
             };
             cognitiveNetworkState.activeProblems.push(newProblem);
             log('NETWORK', `Replica ${result.node.name} is broadcasting problem: "${problem}"`);
-            // FIX: Notify subscribers of network state change
             notifyCognitiveNetwork();
 
             // --- Simulate network response ---
@@ -1118,7 +1113,6 @@ const service = {
             traverse(replicaState);
 
             const potentialBidders = allReplicas.filter(r => r.id !== replicaId && r.status === 'Active');
-            let bidsReceived: CognitiveBid[] = [];
 
             potentialBidders.forEach(bidder => {
                 if (Math.random() > 0.4) { // 60% chance to bid
@@ -1134,7 +1128,6 @@ const service = {
                             if (currentBidderNode && currentBidderNode.node.status === 'Bidding') {
                                 const mockBid: CognitiveBid = {
                                     bidderId: bidder.id,
-                                    // FIX: Add missing property bidderName
                                     bidderName: bidder.name,
                                     problemId: newProblem.id,
                                     proposedPlan: [
@@ -1143,7 +1136,13 @@ const service = {
                                     ],
                                     confidenceScore: 0.6 + Math.random() * 0.35
                                 };
-                                bidsReceived.push(mockBid);
+                                
+                                const problemInState = cognitiveNetworkState.activeProblems.find(p => p.id === newProblem.id);
+                                if (problemInState) {
+                                    problemInState.bids.push(mockBid);
+                                    notifyCognitiveNetwork();
+                                }
+                                
                                 log('NETWORK', `Replica ${bidder.name} submitted a bid with confidence ${mockBid.confidenceScore.toFixed(2)}.`);
                                 
                                 currentBidderNode.node.status = 'Active';
@@ -1159,8 +1158,8 @@ const service = {
             setTimeout(() => {
                 const problemToResolve = cognitiveNetworkState.activeProblems.find(p => p.id === newProblem.id);
                 if (problemToResolve && problemToResolve.isOpen) {
-                    if (bidsReceived.length > 0) {
-                        const winningBid = bidsReceived.sort((a,b) => b.confidenceScore - a.confidenceScore)[0];
+                    if (problemToResolve.bids.length > 0) {
+                        const winningBid = [...problemToResolve.bids].sort((a,b) => b.confidenceScore - a.confidenceScore)[0];
                         problemToResolve.winningBid = winningBid;
                         const winner = findReplica(winningBid.bidderId, replicaState);
                         log('NETWORK', `Problem "${problemToResolve.description.substring(0,30)}..." resolved. Winning bid by ${winner?.node.name || 'Unknown'}.`);
@@ -1168,11 +1167,9 @@ const service = {
                         log('WARN', `Problem "${problemToResolve.description.substring(0,30)}..." expired with no bids.`);
                     }
                     problemToResolve.isOpen = false;
-                    // FIX: Notify subscribers of network state change
                     notifyCognitiveNetwork();
                     setTimeout(() => {
                         cognitiveNetworkState.activeProblems = cognitiveNetworkState.activeProblems.filter(p => p.id !== newProblem.id);
-                        // FIX: Notify subscribers of network state change
                         notifyCognitiveNetwork();
                     }, 10000);
                 }
@@ -2714,7 +2711,6 @@ ${text}
     subscribeToArchives: (callback: (archives: ChatMessage[]) => void) => { archiveSubscribers.push(callback); },
     subscribeToDreamProcess: (callback: (update: DreamProcessUpdate) => void) => { dreamProcessSubscribers.push(callback); },
     subscribeToWorldModel: (callback: (worldModel: WorldModel) => void) => { worldModelSubscribers.push(callback); },
-    // FIX: Add subscribeToCognitiveNetwork function
     subscribeToCognitiveNetwork: (callback: (state: CognitiveNetworkState) => void) => { cognitiveNetworkSubscribers.push(callback); },
     unsubscribeFromDreamProcess: (callback: (update: DreamProcessUpdate) => void) => {
         dreamProcessSubscribers = dreamProcessSubscribers.filter(cb => cb !== callback);
@@ -2733,7 +2729,6 @@ ${text}
         archiveSubscribers = [];
         dreamProcessSubscribers = [];
         worldModelSubscribers = [];
-        // FIX: Clear cognitiveNetworkSubscribers
         cognitiveNetworkSubscribers = [];
     }
 };

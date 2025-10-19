@@ -71,6 +71,7 @@ This document provides a detailed, technical breakdown of the development plan f
 1.  **Individual Internal Time:** Implemented a "Cognitive Tick" counter for each replica, where the tempo varies with cognitive load, creating a subjective sense of time.
 2.  **Temporal Coordinator:** A central service (`updateReplicaState` loop) acts as a conductor, tracking the internal time of all replicas.
 3.  **Synchronization Protocol:** A protocol allows the Coordinator to issue a "Global Tempo Pulse." Replicas participating in a group task will then "entrain" their internal clocks to this pulse by entering a `Recalibrating` state.
+4.  **Simulated Bidding Network:** A foundational system for inter-replica problem solving is in place. Replicas can `broadcastProblem`, and other active replicas respond with simulated bids based on random confidence scores. A resolution mechanism selects the winning bid after a timeout. This serves as the scaffold for the future autonomous system.
 
 **Future Work (Distributed Consciousness):**
 1.  **Develop Autonomous Bid Generation for Sub-Agents:**
