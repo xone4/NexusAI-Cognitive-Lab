@@ -23,9 +23,6 @@ const embeddingCache = new Map<string, number[]>();
 const EMBEDDING_DIM = 128;
 
 export const getEmbedding = (text: string): number[] => {
-    // FIX: Hash the entire string to create a unique key that reflects the full context.
-    // The previous method of using substring(0, 1000) caused false positives for stagnation
-    // when context grew but the prefix remained the same.
     const fullTextHash = simpleHash(text);
     const cacheKey = String(fullTextHash);
 

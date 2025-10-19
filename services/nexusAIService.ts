@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails, UserKeyword, Personality, PlaybookItem, RawInsight, PlaybookItemCategory, WorldModel, WorldModelEntity, CognitiveTrajectory } from '../types';
+import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails, UserKeyword, Personality, PlaybookItem, RawInsight, PlaybookItemCategory, WorldModel, WorldModelEntity, CognitiveTrajectory, WorldModelRelationship } from '../types';
 import { dbService, STORES } from './dbService';
 import * as geometryService from './geometryService';
 import { calculateTrajectorySimilarity } from './geometryService';
@@ -364,7 +364,7 @@ const initialize = async () => {
 };
 
 
-const planSchema = { type: Type.OBJECT, properties: { plan: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { step: { type: Type.INTEGER }, description: { type: Type.STRING }, tool: { type: Type.STRING, enum: ['google_search', 'synthesize_answer', 'code_interpreter', 'code_sandbox', 'recall_memory', 'generate_image', 'analyze_image_input', 'forge_tool', 'spawn_replica', 'induce_emotion', 'replan', 'summarize_text', 'translate_text', 'analyze_sentiment', 'execute_toolchain', 'apply_behavior', 'delegate_task_to_replica', 'spawn_cognitive_clone', 'peek_context', 'search_context', 'world_model'] }, query: { type: Type.STRING }, code: { type: Type.STRING }, concept: { type: Type.STRING }, inputRef: { type: Type.INTEGER }, replicaId: { type: Type.STRING }, task: { type: Type.STRING } }, required: ['step', 'description', 'tool'] } } }, required: ['plan'] };
+const planSchema = { type: Type.OBJECT, properties: { plan: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { step: { type: Type.INTEGER }, description: { type: Type.STRING }, tool: { type: Type.STRING, enum: ['google_search', 'synthesize_answer', 'code_interpreter', 'code_sandbox', 'recall_memory', 'generate_image', 'analyze_image_input', 'forge_tool', 'spawn_replica', 'induce_emotion', 'replan', 'summarize_text', 'translate_text', 'analyze_sentiment', 'execute_toolchain', 'apply_behavior', 'delegate_task_to_replica', 'spawn_cognitive_clone', 'peek_context', 'search_context', 'world_model', 'update_world_model'] }, query: { type: Type.STRING }, code: { type: Type.STRING }, concept: { type: Type.STRING }, inputRef: { type: Type.INTEGER }, replicaId: { type: Type.STRING }, task: { type: Type.STRING } }, required: ['step', 'description', 'tool'] } } }, required: ['plan'] };
 
 const languageMap: Record<Language, string> = {
     'en': 'English',
@@ -488,6 +488,7 @@ const getSystemInstruction = () => {
     - \`execute_toolchain\`: To run a pre-defined sequence of tools.
     - \`apply_behavior\`: To apply a pre-existing learned strategy.
     - \`world_model\`: Interact with your internal knowledge base. Use 'query' to ask questions about entities, relationships, and principles.
+    - \`update_world_model\`: Persists new factual knowledge to your internal World Model. Use 'code' to provide a JSON object: \`{ "entities": [...], "relationships": [...] }\`. Use this after discovering new information, for example via \`google_search\`.
     - \`synthesize_answer\`: This must be the final step. It compiles the final answer based on results from your Sub-Agents and other tools.`;
 }
 
@@ -1918,6 +1919,57 @@ const service = {
                             step.result = `Error querying World Model: ${e instanceof Error ? e.message : 'Unknown AI error'}`;
                             log('ERROR', step.result);
                         }
+                    }
+                    executionContext.push(`Step ${stepIndex + 1} (${step.description}) Result: ${step.result}`);
+                } else if (step.tool === 'update_world_model') {
+                    try {
+                        if (!step.code) throw new Error("No data provided to update world model.");
+                        if (!worldModelState) throw new Error("World model not initialized.");
+            
+                        const updates = JSON.parse(step.code);
+                        const { entities: updatedEntities, relationships: updatedRelationships } = updates;
+                        
+                        let updateCount = 0;
+            
+                        if (Array.isArray(updatedEntities)) {
+                            updatedEntities.forEach((newEntity: WorldModelEntity) => {
+                                const existingIndex = worldModelState.entities.findIndex(e => e.id === newEntity.id || e.name.toLowerCase() === newEntity.name.toLowerCase());
+                                const entityToSave = { ...newEntity, lastUpdated: Date.now() };
+                                if (existingIndex > -1) {
+                                    // Merge properties instead of overwriting, could be safer
+                                    const existingEntity = worldModelState.entities[existingIndex];
+                                    worldModelState.entities[existingIndex] = { ...existingEntity, ...entityToSave, properties: {...existingEntity.properties, ...entityToSave.properties} };
+                                } else {
+                                    worldModelState.entities.push(entityToSave);
+                                }
+                                updateCount++;
+                            });
+                        }
+                        
+                        if (Array.isArray(updatedRelationships)) {
+                            updatedRelationships.forEach((newRel: WorldModelRelationship) => {
+                                 const existingIndex = worldModelState.relationships.findIndex(r => r.id === newRel.id);
+                                 const relToSave = { ...newRel, lastUpdated: Date.now() };
+                                 if (existingIndex > -1) {
+                                    worldModelState.relationships[existingIndex] = { ...worldModelState.relationships[existingIndex], ...relToSave };
+                                 } else {
+                                    worldModelState.relationships.push(relToSave);
+                                 }
+                                 updateCount++;
+                            });
+                        }
+            
+                        worldModelState.lastUpdated = Date.now();
+                        await dbService.put('worldModel', worldModelState);
+                        notifyWorldModel();
+            
+                        step.result = `Successfully updated world model with ${updateCount} item(s).`;
+                        log('AI', `World Model updated with new knowledge.`);
+                        
+                    } catch (e) {
+                        step.status = 'error';
+                        step.result = e instanceof Error ? e.message : 'Unknown error updating world model.';
+                        log('ERROR', `World Model update failed: ${step.result}`);
                     }
                     executionContext.push(`Step ${stepIndex + 1} (${step.description}) Result: ${step.result}`);
                 } else if (step.tool === 'apply_behavior') {

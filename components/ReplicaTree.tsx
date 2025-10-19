@@ -1,7 +1,6 @@
 import React, { memo, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Replica, CognitiveConstitution, Personality, CognitiveNetworkState, CognitiveProblem } from '../types';
-// FIX: Import ArchIcon instead of the unexported Network icon.
 import { ReplicaIcon, CogIcon, TrashIcon, PencilIcon, BrainCircuitIcon, ShareIcon, UserIcon, ClockIcon, ArchIcon } from './Icons';
 import DashboardCard from './DashboardCard';
 import ReplicaNetwork from './ReplicaNetwork';
@@ -268,7 +267,6 @@ const CognitiveNetworkMonitor: React.FC<{ problems: CognitiveProblem[] }> = ({ p
     const { t } = useTranslation();
 
     return (
-        // FIX: Use ArchIcon for the icon
         <DashboardCard title={t('replicas.networkMonitorTitle')} icon={<ArchIcon />}>
             <div className="space-y-4 max-h-96 overflow-y-auto">
                 {problems.length === 0 ? (
