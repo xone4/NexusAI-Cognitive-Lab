@@ -2411,7 +2411,30 @@ const service = {
                         log('ERROR', step.result);
                     } else {
                         const knowledgeGraphSchema = {
-                            type: Type.OBJECT, properties: { entities: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { id: { type: Type.STRING, description: "A unique, descriptive ID in snake_case (e.g., 'artificial_intelligence')." }, name: { type: Type.STRING }, type: { type: Type.STRING, enum: ['CONCEPT', 'PERSON', 'PLACE', 'OBJECT', 'EVENT', 'ORGANIZATION'] }, properties: { type: Type.OBJECT, description: "A JSON object of key-value pairs for relevant attributes." }, summary: { type: Type.STRING, description: "A concise, one-sentence summary of the entity." } }, required: ['id', 'name', 'type', 'summary'] } }, relationships: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { id: { type: Type.STRING, description: "A unique ID for the relationship (e.g., 'ai_is_a_concept')." }, sourceId: { type: Type.STRING, description: "The ID of the source entity." }, targetId: { type: Type.STRING, description: "The ID of the target entity." }, type: { type: Type.STRING, enum: ['IS_A', 'HAS_A', 'PART_OF', 'CAUSES', 'RELATED_TO', 'LOCATED_IN', 'INTERACTS_WITH'] }, description: { type: Type.STRING, description: "A sentence describing the relationship (e.g., 'Artificial Intelligence is a concept within computer science')." }, strength: { type: Type.NUMBER, description: "Confidence score from 0.0 to 1.0." } }, required: ['id', 'sourceId', 'targetId', 'type', 'description', 'strength'] } } }, required: ['entities', 'relationships']
+                            type: Type.OBJECT, properties: {
+                                entities: {
+                                    type: Type.ARRAY, items: {
+                                        type: Type.OBJECT, properties: {
+                                            id: { type: Type.STRING, description: "A unique, descriptive ID in snake_case (e.g., 'artificial_intelligence')." },
+                                            name: { type: Type.STRING },
+                                            type: { type: Type.STRING, enum: ['CONCEPT', 'PERSON', 'PLACE', 'OBJECT', 'EVENT', 'ORGANIZATION'] },
+                                            properties: { type: Type.STRING, description: "A JSON STRING of key-value pairs for relevant attributes. Example: '{\"color\":\"blue\",\"size\":10}'" },
+                                            summary: { type: Type.STRING, description: "A concise, one-sentence summary of the entity." }
+                                        }, required: ['id', 'name', 'type', 'summary']
+                                    }
+                                }, relationships: {
+                                    type: Type.ARRAY, items: {
+                                        type: Type.OBJECT, properties: {
+                                            id: { type: Type.STRING, description: "A unique ID for the relationship (e.g., 'ai_is_a_concept')." },
+                                            sourceId: { type: Type.STRING, description: "The ID of the source entity." },
+                                            targetId: { type: Type.STRING, description: "The ID of the target entity." },
+                                            type: { type: Type.STRING, enum: ['IS_A', 'HAS_A', 'PART_OF', 'CAUSES', 'RELATED_TO', 'LOCATED_IN', 'INTERACTS_WITH'] },
+                                            description: { type: Type.STRING, description: "A sentence describing the relationship (e.g., 'Artificial Intelligence is a concept within computer science')." },
+                                            strength: { type: Type.NUMBER, description: "Confidence score from 0.0 to 1.0." }
+                                        }, required: ['id', 'sourceId', 'targetId', 'type', 'description', 'strength']
+                                    }
+                                }
+                            }, required: ['entities', 'relationships']
                         };
                         const prompt = `You are a knowledge extraction engine. Analyze the following text and extract all relevant entities and their relationships. Create unique IDs for each entity and relationship. Ensure that the 'sourceId' and 'targetId' in relationships correctly reference the IDs of the entities you've extracted.\n\nText to analyze:\n---\n${textToAnalyze}\n---\n\nReturn ONLY the JSON object matching the schema.`;
                         try {
@@ -2423,12 +2446,25 @@ const service = {
 
                             let updateCount = 0;
                             if (Array.isArray(extractedEntities)) {
-                                extractedEntities.forEach((newEntity: WorldModelEntity) => {
-                                    const existingIndex = worldModelState.entities.findIndex(e => e.id === newEntity.id || e.name.toLowerCase() === newEntity.name.toLowerCase());
-                                    const entityToSave = { ...newEntity, lastUpdated: Date.now() };
+                                extractedEntities.forEach((newEntity: any) => {
+                                    let parsedProperties = {};
+                                    if (typeof newEntity.properties === 'string' && newEntity.properties.trim()) {
+                                        try {
+                                            parsedProperties = JSON.parse(newEntity.properties);
+                                        } catch (e) {
+                                            log('WARN', `Could not parse properties JSON for entity "${newEntity.name}": ${newEntity.properties}`);
+                                        }
+                                    } else if (typeof newEntity.properties === 'object' && newEntity.properties !== null) {
+                                        parsedProperties = newEntity.properties;
+                                    }
+                            
+                                    const entityToProcess: WorldModelEntity = { ...newEntity, properties: parsedProperties };
+                            
+                                    const existingIndex = worldModelState.entities.findIndex(e => e.id === entityToProcess.id || e.name.toLowerCase() === entityToProcess.name.toLowerCase());
+                                    const entityToSave = { ...entityToProcess, lastUpdated: Date.now() };
                                     if (existingIndex > -1) {
                                         const existingEntity = worldModelState.entities[existingIndex];
-                                        worldModelState.entities[existingIndex] = { ...existingEntity, ...entityToSave, properties: {...existingEntity.properties, ...entityToSave.properties} };
+                                        worldModelState.entities[existingIndex] = { ...existingEntity, ...entityToSave, properties: { ...existingEntity.properties, ...entityToSave.properties } };
                                     } else {
                                         worldModelState.entities.push(entityToSave);
                                     }
@@ -2436,7 +2472,7 @@ const service = {
                                 });
                             }
                             if (Array.isArray(extractedRelationships)) {
-                                extractedRelationships.forEach((newRel: WorldModelRelationship) => {
+                                 extractedRelationships.forEach((newRel: WorldModelRelationship) => {
                                      const existingIndex = worldModelState.relationships.findIndex(r => r.id === newRel.id);
                                      const relToSave = { ...newRel, lastUpdated: Date.now() };
                                      if (existingIndex > -1) {
@@ -2838,35 +2874,6 @@ Provide your analysis in well-formatted markdown.`;
         log('AI', `Found ${relevantTraces.length} relevant memories via semantic search.`);
         return relevantTraces;
     },
-    
-    translateResponse: async (messageId: string, text: string, targetLanguageKey: Language): Promise<string> => {
-        if (!API_KEY) return "Error: API Key not configured.";
-        const targetLanguageName = languageMap[targetLanguageKey] || 'English';
-        const prompt = `Translate the following text to ${targetLanguageName}. Respond only with the translated text, without any preamble.
-
-Text:
----
-${text}
----`;
-        try {
-            log('AI', `Translating text to ${targetLanguageName}...`);
-            const response = await ai.models.generateContent({ model: appSettings.model, contents: prompt });
-            log('AI', 'Translation successful.');
-
-            const details = traceDetailsCache.get(messageId) || {};
-            if (!details.translations) {
-                details.translations = {};
-            }
-            details.translations[targetLanguageKey] = response.text;
-            traceDetailsCache.set(messageId, details);
-
-            return response.text;
-        } catch (error) {
-            const msg = `Failed to translate: ${error instanceof Error ? error.message : 'Unknown AI error'}`;
-            log('ERROR', msg);
-            return `[SYSTEM_ERROR: ${msg}]`;
-        }
-    },
 
     getArchivedTraceDetails: (traceId: string): TraceDetails => {
         return traceDetailsCache.get(traceId) || {};
@@ -3266,6 +3273,107 @@ ${text}
             notifyWorldModel();
         } catch (error) {
             log('ERROR', `Failed to persist world model update: ${error instanceof Error ? error.message : 'Unknown DB error'}`);
+        }
+    },
+
+    updateWorldModelFromText: async (text: string) => {
+        if (!API_KEY) {
+            log('ERROR', 'API Key not available. Cannot update world model.');
+            throw new Error('API Key not available.');
+        }
+        if (!text.trim()) {
+            log('WARN', 'Cannot update world model from empty text.');
+            return;
+        }
+        if (!worldModelState) {
+            log('ERROR', 'World model not initialized.');
+            throw new Error('World model not initialized.');
+        }
+
+        log('AI', 'Synthesizing knowledge from text to update World Model...');
+
+        const knowledgeGraphSchema = {
+            type: Type.OBJECT, properties: {
+                entities: {
+                    type: Type.ARRAY, items: {
+                        type: Type.OBJECT, properties: {
+                            id: { type: Type.STRING, description: "A unique, descriptive ID in snake_case (e.g., 'artificial_intelligence')." },
+                            name: { type: Type.STRING },
+                            type: { type: Type.STRING, enum: ['CONCEPT', 'PERSON', 'PLACE', 'OBJECT', 'EVENT', 'ORGANIZATION'] },
+                            properties: { type: Type.STRING, description: "A JSON STRING of key-value pairs for relevant attributes. Example: '{\"color\":\"blue\",\"size\":10}'" },
+                            summary: { type: Type.STRING, description: "A concise, one-sentence summary of the entity." }
+                        }, required: ['id', 'name', 'type', 'summary']
+                    }
+                }, relationships: {
+                    type: Type.ARRAY, items: {
+                        type: Type.OBJECT, properties: {
+                            id: { type: Type.STRING, description: "A unique ID for the relationship (e.g., 'ai_is_a_concept')." },
+                            sourceId: { type: Type.STRING, description: "The ID of the source entity." },
+                            targetId: { type: Type.STRING, description: "The ID of the target entity." },
+                            type: { type: Type.STRING, enum: ['IS_A', 'HAS_A', 'PART_OF', 'CAUSES', 'RELATED_TO', 'LOCATED_IN', 'INTERACTS_WITH'] },
+                            description: { type: Type.STRING, description: "A sentence describing the relationship (e.g., 'Artificial Intelligence is a concept within computer science')." },
+                            strength: { type: Type.NUMBER, description: "Confidence score from 0.0 to 1.0." }
+                        }, required: ['id', 'sourceId', 'targetId', 'type', 'description', 'strength']
+                    }
+                }
+            }, required: ['entities', 'relationships']
+        };
+        const prompt = `You are a knowledge extraction engine. Analyze the following text and extract all relevant entities and their relationships. Create unique IDs for each entity and relationship. Ensure that the 'sourceId' and 'targetId' in relationships correctly reference the IDs of the entities you've extracted.\n\nText to analyze:\n---\n${text}\n---\n\nReturn ONLY the JSON object matching the schema.`;
+        
+        try {
+            const response = await ai.models.generateContent({
+                model: appSettings.model, contents: prompt,
+                config: { responseMimeType: "application/json", responseSchema: knowledgeGraphSchema }
+            });
+            const { entities: extractedEntities, relationships: extractedRelationships } = JSON.parse(response.text);
+
+            let updateCount = 0;
+            if (Array.isArray(extractedEntities)) {
+                extractedEntities.forEach((newEntity: any) => {
+                    let parsedProperties = {};
+                    if (typeof newEntity.properties === 'string' && newEntity.properties.trim()) {
+                        try {
+                            parsedProperties = JSON.parse(newEntity.properties);
+                        } catch (e) {
+                            log('WARN', `Could not parse properties JSON for entity "${newEntity.name}": ${newEntity.properties}`);
+                        }
+                    } else if (typeof newEntity.properties === 'object' && newEntity.properties !== null) {
+                        parsedProperties = newEntity.properties;
+                    }
+            
+                    const entityToProcess: WorldModelEntity = { ...newEntity, properties: parsedProperties };
+            
+                    const existingIndex = worldModelState!.entities.findIndex(e => e.id === entityToProcess.id || e.name.toLowerCase() === entityToProcess.name.toLowerCase());
+                    const entityToSave = { ...entityToProcess, lastUpdated: Date.now() };
+                    if (existingIndex > -1) {
+                        const existingEntity = worldModelState!.entities[existingIndex];
+                        worldModelState!.entities[existingIndex] = { ...existingEntity, ...entityToSave, properties: { ...existingEntity.properties, ...entityToSave.properties } };
+                    } else {
+                        worldModelState!.entities.push(entityToSave);
+                    }
+                    updateCount++;
+                });
+            }
+            if (Array.isArray(extractedRelationships)) {
+                extractedRelationships.forEach((newRel: WorldModelRelationship) => {
+                     const existingIndex = worldModelState!.relationships.findIndex(r => r.id === newRel.id);
+                     const relToSave = { ...newRel, lastUpdated: Date.now() };
+                     if (existingIndex > -1) {
+                        worldModelState!.relationships[existingIndex] = { ...worldModelState!.relationships[existingIndex], ...relToSave };
+                     } else {
+                        worldModelState!.relationships.push(relToSave);
+                     }
+                     updateCount++;
+                });
+            }
+            worldModelState.lastUpdated = Date.now();
+            await dbService.put('worldModel', worldModelState);
+            notifyWorldModel();
+
+            log('SYSTEM', `World Model successfully updated with ${updateCount} items from text.`);
+        } catch (error) {
+            log('ERROR', `Failed to update World Model from text: ${error instanceof Error ? error.message : 'Unknown AI error'}`);
+            throw error;
         }
     },
 

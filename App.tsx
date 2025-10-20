@@ -21,7 +21,7 @@ import SuggestionTray from './components/SuggestionTray';
 import DreamingView from './components/DreamingView';
 import WorldModelView from './components/WorldModelView';
 import LiveTranscriptionDisplay from './components/LiveTranscriptionDisplay';
-import VideoForge from './components/VideoForge';
+import ModalitiesLab from './components/ModalitiesLab';
 import SimulationLab from './components/SimulationLab';
 
 type SystemStatus = 'Online' | 'Degraded' | 'Offline' | 'Initializing';
@@ -382,6 +382,18 @@ const App: React.FC = () => {
     nexusAIService.updateWorldModelEntity(entity);
   }, []);
 
+  const handleUpdateWorldModelFromTrace = useCallback(async (trace: ChatMessage) => {
+      if (!trace.text) {
+        nexusAIService.log('WARN', 'Cannot update world model from an empty text response.');
+        return;
+      }
+      try {
+          await nexusAIService.updateWorldModelFromText(trace.text);
+      } catch (e) {
+          console.error("Failed to update world model from trace", e);
+      }
+  }, []);
+
   const cognitivePermissions = useMemo(() => {
     const state = cognitiveProcess?.state ?? 'Idle';
     const isProcessing = state === 'Receiving' || state === 'Executing' || state === 'Synthesizing' || state === 'Planning';
@@ -423,7 +435,7 @@ const App: React.FC = () => {
               onArchiveTrace={handleArchiveTrace}
               onExtractBehavior={handleExtractBehavior}
               onRerunTrace={handleRerunTrace}
-              onTranslate={(messageId, text, lang) => nexusAIService.translateResponse(messageId, text, lang)}
+              onUpdateWorldModel={handleUpdateWorldModelFromTrace}
               onExpandPlan={expandPlan}
               onOptimizePlan={optimizePlan}
               onRevisePlan={revisePlan}
@@ -527,7 +539,7 @@ const App: React.FC = () => {
                  onArchive={handleArchiveEvolvedAnswer}
                  onExtractBehavior={handleExtractBehaviorFromEvolved}
                  onRerun={handleRerunEvolution}
-                 onTranslate={(messageId, text, lang) => nexusAIService.translateResponse(messageId, text, lang as Language)}
+                 onUpdateWorldModel={handleUpdateWorldModelFromTrace}
                  language={settings.language}
                />;
       case 'memory':
@@ -544,8 +556,8 @@ const App: React.FC = () => {
                   worldModel={worldModel} 
                   onUpdateEntity={handleUpdateWorldModelEntity}
                 />;
-      case 'video_forge':
-        return <VideoForge />;
+      case 'modalities_lab':
+        return <ModalitiesLab />;
       case 'simulation_lab':
         return simulationState && <SimulationLab
                   simulationState={simulationState}

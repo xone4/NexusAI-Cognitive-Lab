@@ -17,7 +17,7 @@
     "settings": "الإعدادات",
     "systemVer": "إصدار النظام 3.0",
     "cognitiveCore": "النواة المعرفية: متزامنة",
-    "videoForge": "صانع الفيديو",
+    "modalitiesLab": "مختبر الوسائط",
     "simulationLab": "مختبر المحاكاة"
   },
   "vitals": {
@@ -128,12 +128,11 @@
     "synthesizedAnswer": "الإجابة النهائية",
     "influencedByAffectiveStateAtTime": "متأثر بالحالة العاطفية وقت الصياغة.",
     "collapse": "طي",
-    "translation": "الترجمة:",
-    "translationFailed": "فشلت الترجمة.",
     "archive": "أرشفة",
     "extractBehavior": "استخراج سلوك",
     "rerun": "إعادة التشغيل",
-    "translate": "ترجمة"
+    "updateWorldModel": "تحديث نموذج العالم",
+    "updating": "جاري التحديث..."
   },
   "replicas": {
     "loading": "جاري تحميل النسخ...",
@@ -564,8 +563,8 @@
     "summary": "ملخص",
     "properties": "الخصائص"
   },
-  "videoForge": {
-    "title": "صانع الفيديو",
+  "modalitiesLab": {
+    "title": "مختبر الوسائط",
     "promptPlaceholder": "صف الفيديو الذي تريد إنشاءه...",
     "aspectRatio": "نسبة العرض إلى الارتفاع",
     "landscape": "16:9 (أفقي)",

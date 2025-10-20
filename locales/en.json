@@ -12,7 +12,7 @@
     "memoryExplorer": "Memory Explorer",
     "evolutionChamber": "Evolution Chamber",
     "dreamingChamber": "Dreaming Chamber",
-    "videoForge": "Video Forge",
+    "modalitiesLab": "Modalities Lab",
     "simulationLab": "Simulation Lab",
     "analysisLab": "Analysis Lab",
     "architecture": "Architecture",
@@ -128,12 +128,11 @@
     "synthesizedAnswer": "Synthesized Answer",
     "influencedByAffectiveStateAtTime": "Influenced by Affective State at time of synthesis.",
     "collapse": "Collapse",
-    "translation": "Translation:",
-    "translationFailed": "Translation failed.",
     "archive": "Archive",
     "extractBehavior": "Extract Behavior",
     "rerun": "Rerun",
-    "translate": "Translate"
+    "updateWorldModel": "Update World Model",
+    "updating": "Updating..."
   },
   "replicas": {
     "loading": "Loading replicas...",
@@ -566,8 +565,8 @@
     "summary": "Summary",
     "properties": "Properties"
   },
-  "videoForge": {
-    "title": "Video Forge",
+  "modalitiesLab": {
+    "title": "Modalities Lab",
     "promptPlaceholder": "Describe the video you want to create...",
     "aspectRatio": "Aspect Ratio",
     "landscape": "16:9 (Landscape)",

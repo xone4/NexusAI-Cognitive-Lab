@@ -16,7 +16,7 @@ interface CognitiveProcessVisualizerProps {
   onArchiveTrace: (messageId: string) => void;
   onExtractBehavior: (messageId: string) => void;
   onRerunTrace: (trace: ChatMessage) => void;
-  onTranslate: (messageId: string, text: string, language: Language) => Promise<string>;
+  onUpdateWorldModel: (trace: ChatMessage) => void;
   onExpandPlan: (messageId: string) => void;
   onOptimizePlan: (messageId: string) => void;
   onRevisePlan: (messageId: string) => void;
@@ -278,32 +278,16 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
 };
 
 const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMessage }> = memo((props) => {
-    const { message, process, constitutions, onExecutePlan, onUpdatePlanStep, onReorderPlan, onAddPlanStep, onDeletePlanStep, onSavePlanAsToolchain, onArchiveTrace, onExtractBehavior, onRerunTrace, onTranslate, onExpandPlan, onOptimizePlan, onRevisePlan, onDiscardPlan } = props;
+    const { message, process, constitutions, onExecutePlan, onUpdatePlanStep, onReorderPlan, onAddPlanStep, onDeletePlanStep, onSavePlanAsToolchain, onArchiveTrace, onExtractBehavior, onRerunTrace, onUpdateWorldModel, onExpandPlan, onOptimizePlan, onRevisePlan, onDiscardPlan } = props;
     const { t } = useTranslation();
     const isPlanEditable = message.state === 'awaiting_execution' && !message.isPlanFinalized;
     const isPlanModifying = process.state === 'Planning' && process.history[process.history.length-1].id === message.id;
 
     const [isPlanOpen, setIsPlanOpen] = useState(true);
     const [isResponseCollapsed, setIsResponseCollapsed] = useState(true);
-    const [translatedText, setTranslatedText] = useState<string | null>(null);
-    const [isActionLoading, setIsActionLoading] = useState<'archive' | 'extract' | 'rerun' | 'translate' | null>(null);
+    const [isActionLoading, setIsActionLoading] = useState<'archive' | 'extract' | 'rerun' | 'update_world_model' | null>(null);
 
     const activeConstitution = constitutions.find(c => c.id === message.constitutionId);
-
-    const handleTranslate = async () => {
-        if (!message.text) return;
-        setIsActionLoading('translate');
-        setTranslatedText(null);
-        try {
-            const targetLanguage = props.language === 'en' ? 'ar' : 'en';
-            const translation = await onTranslate(message.id, message.text, targetLanguage);
-            setTranslatedText(translation);
-        } catch (e) {
-            setTranslatedText("Translation failed.");
-        } finally {
-            setIsActionLoading(null);
-        }
-    };
 
     const handleArchive = async () => {
         setIsActionLoading('archive');
@@ -331,6 +315,18 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
         setIsActionLoading('rerun');
         onRerunTrace(message);
     }
+
+    const handleUpdateWorldModel = async () => {
+        if (!message.text) return;
+        setIsActionLoading('update_world_model');
+        try {
+            await props.onUpdateWorldModel(message);
+        } catch(e) {
+            // Error is logged in the service
+        } finally {
+            setIsActionLoading(null);
+        }
+    };
 
 
     const renderContent = () => {
@@ -467,15 +463,6 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
                                  <pre className="text-sm whitespace-pre-wrap font-sans text-nexus-text">{String(message.text || "...")}</pre>
                                  {isResponseCollapsed && <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-nexus-surface/80 to-transparent"></div>}
                              </div>
-                             {translatedText && (
-                                <div className="mt-3 pt-3 border-t border-dashed border-nexus-surface/50">
-                                    <h5 className="text-xs font-semibold text-nexus-secondary">Translation:</h5>
-                                    <div className="relative group">
-                                        <TextActionOverlay content={translatedText} filename={`nexus-ai-translation-${message.id}.txt`} />
-                                        <pre className="text-sm whitespace-pre-wrap font-sans text-nexus-text-muted">{translatedText}</pre>
-                                    </div>
-                                </div>
-                             )}
                             <div className="flex justify-center items-center gap-2 flex-wrap mt-4">
                                 <button 
                                     onClick={handleArchive}
@@ -483,7 +470,7 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
                                     className="action-btn bg-blue-500/20 text-blue-400 border-blue-500/50 hover:bg-blue-500/40"
                                 >
                                     <ArchiveBoxArrowDownIcon className="w-5 h-5" />
-                                    {isActionLoading === 'archive' ? 'Archiving...' : 'Archive'}
+                                    {isActionLoading === 'archive' ? 'Archiving...' : t('cognitiveProcess.archive')}
                                 </button>
                                 <button 
                                     onClick={handleExtract}
@@ -491,7 +478,7 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
                                     className="action-btn bg-pink-500/20 text-pink-400 border-pink-500/50 hover:bg-pink-500/40"
                                 >
                                     <SparklesIcon className="w-5 h-5" />
-                                    {isActionLoading === 'extract' ? 'Extracting...' : 'Extract Behavior'}
+                                    {isActionLoading === 'extract' ? 'Extracting...' : t('cognitiveProcess.extractBehavior')}
                                 </button>
                                 <button 
                                     onClick={handleRerun}
@@ -499,15 +486,15 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
                                     className="action-btn bg-green-500/20 text-green-400 border-green-500/50 hover:bg-green-500/40"
                                 >
                                     <RefreshIcon className="w-5 h-5" />
-                                     {isActionLoading === 'rerun' ? 'Rerunning...' : 'Rerun'}
+                                     {isActionLoading === 'rerun' ? 'Rerunning...' : t('cognitiveProcess.rerun')}
                                 </button>
                                 <button 
-                                    onClick={handleTranslate}
+                                    onClick={handleUpdateWorldModel}
                                     disabled={!!isActionLoading}
                                     className="action-btn bg-purple-500/20 text-purple-400 border-purple-500/50 hover:bg-purple-500/40"
                                 >
-                                    <GlobeAltIcon className="w-5 h-5" />
-                                    {isActionLoading === 'translate' ? 'Translating...' : 'Translate'}
+                                    <DicesIcon className="w-5 h-5" />
+                                    {isActionLoading === 'update_world_model' ? t('cognitiveProcess.updating') : t('cognitiveProcess.updateWorldModel')}
                                 </button>
                             </div>
                         </div>

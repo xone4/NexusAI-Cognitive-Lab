@@ -5,7 +5,7 @@ import type { EvolutionState, EvolutionConfig, FitnessGoal, IndividualPlan, Plan
 import { nexusAIService } from '../services/nexusAIService';
 import DashboardCard from './DashboardCard';
 import MemorySelectorModal from './MemorySelectorModal';
-import { DnaIcon, PlayIcon, LinkIcon, XCircleIcon, SparklesIcon, BrainCircuitIcon, BookOpenIcon, GlobeAltIcon, RefreshIcon, ArchiveBoxArrowDownIcon } from './Icons';
+import { DnaIcon, PlayIcon, LinkIcon, XCircleIcon, SparklesIcon, BrainCircuitIcon, BookOpenIcon, GlobeAltIcon, RefreshIcon, ArchiveBoxArrowDownIcon, DicesIcon } from './Icons';
 
 interface EvolutionChamberProps {
     evolutionState: EvolutionState;
@@ -14,7 +14,7 @@ interface EvolutionChamberProps {
     onArchive: (trace: ChatMessage) => void;
     onExtractBehavior: (trace: ChatMessage) => void;
     onRerun: (problemStatement: string) => void;
-    onTranslate: (messageId: string, text: string, language: Language) => Promise<string>;
+    onUpdateWorldModel: (trace: ChatMessage) => void;
     language: string;
 }
 
@@ -54,15 +54,14 @@ const IndividualPlanCard: React.FC<{
 });
 IndividualPlanCard.displayName = "IndividualPlanCard";
 
-const EvolutionChamber: React.FC<EvolutionChamberProps> = ({ evolutionState, archivedTraces, playbook, onArchive, onExtractBehavior, onRerun, onTranslate, language }) => {
+const EvolutionChamber: React.FC<EvolutionChamberProps> = ({ evolutionState, archivedTraces, playbook, onArchive, onExtractBehavior, onRerun, onUpdateWorldModel, language }) => {
     const { t } = useTranslation();
     const [problemStatement, setProblemStatement] = useState(evolutionState.problemStatement);
     const [config, setConfig] = useState<EvolutionConfig>(evolutionState.config);
     const [selectedIndividualId, setSelectedIndividualId] = useState<string | null>(null);
     const [isSynthesizing, setIsSynthesizing] = useState(false);
     const [isMemorySelectorOpen, setIsMemorySelectorOpen] = useState(false);
-    const [translatedText, setTranslatedText] = useState<string | null>(null);
-    const [isActionLoading, setIsActionLoading] = useState<'archive' | 'extract' | 'rerun' | 'translate' | null>(null);
+    const [isActionLoading, setIsActionLoading] = useState<'archive' | 'extract' | 'rerun' | 'update_world_model' | null>(null);
     
     const { isRunning, progress, population, statusMessage, finalEnsembleResult } = evolutionState;
 
@@ -79,7 +78,6 @@ const EvolutionChamber: React.FC<EvolutionChamberProps> = ({ evolutionState, arc
             return;
         }
         setSelectedIndividualId(null);
-        setTranslatedText(null);
         nexusAIService.initializeEvolution(problemStatement, config);
     };
 
@@ -88,7 +86,6 @@ const EvolutionChamber: React.FC<EvolutionChamberProps> = ({ evolutionState, arc
     
     const handleSynthesize = async () => {
         setIsSynthesizing(true);
-        setTranslatedText(null);
         await nexusAIService.ensembleAndFinalize();
         setIsSynthesizing(false);
     };
@@ -119,14 +116,11 @@ const EvolutionChamber: React.FC<EvolutionChamberProps> = ({ evolutionState, arc
         onRerun(finalEnsembleResult.evolutionProblemStatement);
     };
 
-    const handleTranslate = async () => {
-        if (!finalEnsembleResult?.text) return;
-        setIsActionLoading('translate');
-        setTranslatedText(null);
+    const handleUpdateWorldModel = async () => {
+        if (!finalEnsembleResult) return;
+        setIsActionLoading('update_world_model');
         try {
-            const targetLanguage = language === 'en' ? 'ar' : 'en';
-            const translation = await onTranslate(finalEnsembleResult.id, finalEnsembleResult.text, targetLanguage as Language);
-            setTranslatedText(translation);
+            await onUpdateWorldModel(finalEnsembleResult);
         } finally {
             setIsActionLoading(null);
         }
@@ -239,12 +233,6 @@ const EvolutionChamber: React.FC<EvolutionChamberProps> = ({ evolutionState, arc
                                  <div>
                                      <h4 className="font-bold text-nexus-primary">{t('evolution.finalAnswer')}</h4>
                                      <pre className="text-sm whitespace-pre-wrap font-sans text-nexus-text bg-nexus-dark/50 p-3 rounded-xl max-h-48 overflow-y-auto mt-2">{finalEnsembleResult.text}</pre>
-                                     {translatedText && (
-                                        <div className="mt-3 pt-3 border-t border-dashed border-nexus-surface/50">
-                                            <h5 className="text-xs font-semibold text-nexus-secondary">{t('cognitiveProcess.translation')}</h5>
-                                            <pre className="text-sm whitespace-pre-wrap font-sans text-nexus-text-muted">{translatedText}</pre>
-                                        </div>
-                                     )}
                                     <div className="flex justify-center items-center gap-2 flex-wrap mt-4">
                                         <button onClick={handleArchive} disabled={!!isActionLoading} className="action-btn bg-blue-500/20 text-blue-400 border-blue-500/50 hover:bg-blue-500/40">
                                             <ArchiveBoxArrowDownIcon className="w-5 h-5" /> {isActionLoading === 'archive' ? 'Archiving...' : t('cognitiveProcess.archive')}
@@ -255,8 +243,8 @@ const EvolutionChamber: React.FC<EvolutionChamberProps> = ({ evolutionState, arc
                                         <button onClick={handleRerun} disabled={!!isActionLoading} className="action-btn bg-green-500/20 text-green-400 border-green-500/50 hover:bg-green-500/40">
                                             <RefreshIcon className="w-5 h-5" /> {isActionLoading === 'rerun' ? 'Rerunning...' : t('cognitiveProcess.rerun')}
                                         </button>
-                                        <button onClick={handleTranslate} disabled={!!isActionLoading} className="action-btn bg-purple-500/20 text-purple-400 border-purple-500/50 hover:bg-purple-500/40">
-                                            <GlobeAltIcon className="w-5 h-5" /> {isActionLoading === 'translate' ? 'Translating...' : t('cognitiveProcess.translate')}
+                                        <button onClick={handleUpdateWorldModel} disabled={!!isActionLoading} className="action-btn bg-purple-500/20 text-purple-400 border-purple-500/50 hover:bg-purple-500/40">
+                                            <DicesIcon className="w-5 h-5" /> {isActionLoading === 'update_world_model' ? t('cognitiveProcess.updating') : t('cognitiveProcess.updateWorldModel')}
                                         </button>
                                     </div>
                                  </div>

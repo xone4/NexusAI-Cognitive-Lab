@@ -120,7 +120,7 @@ export interface LogEntry {
   source?: string; // Optional Replica ID
 }
 
-export type ActiveView = 'dashboard' | 'replicas' | 'tools' | 'architecture' | 'analysis' | 'settings' | 'evolution' | 'memory' | 'dreaming' | 'world_model' | 'video_forge' | 'simulation_lab';
+export type ActiveView = 'dashboard' | 'replicas' | 'tools' | 'architecture' | 'analysis' | 'settings' | 'evolution' | 'memory' | 'dreaming' | 'world_model' | 'modalities_lab' | 'simulation_lab';
 
 export type LogVerbosity = 'STANDARD' | 'VERBOSE';
 export type AnimationLevel = 'FULL' | 'MINIMAL' | 'NONE';
@@ -177,7 +177,6 @@ export interface AffectiveState {
 export interface TraceDetails {
     reflection?: string;
     discussion?: { role: 'user' | 'model', text: string }[];
-    translations?: Partial<Record<Language, string>>;
 }
 
 // --- Cognitive Geometry Types ---

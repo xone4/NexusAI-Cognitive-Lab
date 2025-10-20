@@ -46,7 +46,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) => {
     { view: 'memory' as ActiveView, label: t('sidebar.memoryExplorer'), icon: <BookOpenIcon /> },
     { view: 'evolution' as ActiveView, label: t('sidebar.evolutionChamber'), icon: <DnaIcon /> },
     { view: 'dreaming' as ActiveView, label: t('sidebar.dreamingChamber'), icon: <SparklesIcon /> },
-    { view: 'video_forge' as ActiveView, label: t('sidebar.videoForge'), icon: <FilmIcon /> },
+    { view: 'modalities_lab' as ActiveView, label: t('sidebar.modalitiesLab'), icon: <FilmIcon /> },
     { view: 'simulation_lab' as ActiveView, label: t('sidebar.simulationLab'), icon: <FlaskConicalIcon /> },
     { view: 'analysis' as ActiveView, label: t('sidebar.analysisLab'), icon: <MagnifyingGlassIcon /> },
     { view: 'architecture' as ActiveView, label: t('sidebar.architecture'), icon: <ArchIcon /> },
