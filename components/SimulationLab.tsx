@@ -136,6 +136,14 @@ const SimulationLab: React.FC<SimulationLabProps> = ({ simulationState, isGlobal
                                             <p className="font-bold text-nexus-primary">Step {step.step} - <span className="text-nexus-text">{step.strategy}</span></p>
                                             <p className="text-xs text-nexus-text-muted"><strong>Action:</strong> {step.action}</p>
                                             <p className="text-xs text-nexus-secondary"><strong>Outcome:</strong> {step.outcome}</p>
+                                            {step.state && Object.keys(step.state).length > 0 && (
+                                                <div className="mt-1">
+                                                    <p className="text-xs text-nexus-text-muted"><strong>State:</strong></p>
+                                                    <pre className="text-xs font-mono bg-nexus-dark/70 p-2 rounded text-cyan-400 whitespace-pre-wrap">
+                                                        {JSON.stringify(step.state, null, 2)}
+                                                    </pre>
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                 </div>

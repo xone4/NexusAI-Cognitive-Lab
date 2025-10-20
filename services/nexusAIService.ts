@@ -1,6 +1,6 @@
 // FIX: Aliased `Blob` to `GenAIBlob` to resolve name collision with the native browser Blob type.
 import { GoogleGenAI, Type, Modality, Blob as GenAIBlob, LiveServerMessage } from "@google/genai";
-import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails, UserKeyword, Personality, PlaybookItem, RawInsight, PlaybookItemCategory, WorldModel, WorldModelEntity, CognitiveTrajectory, WorldModelRelationship, LiveTranscriptionState, VideoGenerationState, SimulationState, SimulationConfig } from '../types';
+import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails, UserKeyword, Personality, PlaybookItem, RawInsight, PlaybookItemCategory, WorldModel, WorldModelEntity, CognitiveTrajectory, WorldModelRelationship, LiveTranscriptionState, VideoGenerationState, SimulationState, SimulationConfig, SimulationResult } from '../types';
 import { dbService, STORES } from './dbService';
 import * as geometryService from './geometryService';
 import { calculateTrajectorySimilarity } from './geometryService';
@@ -913,6 +913,29 @@ const _generateStrategicGuidance = (trajectories: CognitiveTrajectory[]): string
     const guidance = `Guidance from similar past tasks suggests a successful approach involves ${planLength} and ${pathStyle}. Consider this 'thought shape' when creating your plan.`;
     log('AI', `[Cognitive Navigator] Generated strategic guidance: ${guidance}`);
     return guidance;
+};
+
+const simulationResultSchema = {
+    type: Type.OBJECT,
+    properties: {
+        summary: { type: Type.STRING },
+        winningStrategy: { type: Type.STRING },
+        stepByStepTrace: {
+            type: Type.ARRAY,
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    step: { type: Type.INTEGER },
+                    strategy: { type: Type.STRING },
+                    action: { type: Type.STRING },
+                    outcome: { type: Type.STRING },
+                    state: { type: Type.OBJECT } // Flexible state object
+                },
+                required: ['step', 'strategy', 'action', 'outcome', 'state']
+            }
+        }
+    },
+    required: ['summary', 'winningStrategy', 'stepByStepTrace']
 };
 
 
@@ -3318,16 +3341,22 @@ ${text}
         }
     },
 
-    // FIX: Added mock implementation for runSimulation.
     runSimulation: async (config: SimulationConfig) => {
         if (simulationState.isRunning) {
             log('WARN', 'A simulation is already in progress.');
             return;
         }
-        log('SYSTEM', `Starting new simulation: "${config.name}"`);
+        if (!API_KEY) {
+            log('ERROR', 'API Key not configured. Cannot run simulation.');
+            simulationState.error = 'API Key not configured.';
+            notifySimulation();
+            return;
+        }
+
+        log('SYSTEM', `Starting new AI-driven simulation: "${config.name}"`);
         simulationState = {
             isRunning: true,
-            statusMessage: 'Initializing simulation with AI...',
+            statusMessage: 'Constructing simulation prompt for AI...',
             config,
             result: null,
             error: null,
@@ -3335,33 +3364,53 @@ ${text}
         notifySimulation();
 
         try {
-            await new Promise(res => setTimeout(res, 2000));
-            
-            simulationState.statusMessage = 'AI is evaluating strategies...';
+            const strategyDescriptions = config.strategies.map((s, i) => `Strategy ${i + 1}: "${s.name}"\nLogic: ${s.description}`).join('\n\n');
+
+            const prompt = `You are a world-class simulation engine. Your task is to run a turn-based simulation based on the provided scenario and strategies.
+
+**Simulation Scenario:**
+${config.scenario}
+
+**Competing Strategies:**
+${strategyDescriptions}
+
+**Simulation Parameters:**
+- Maximum Steps: ${config.maxSteps}
+- Evaluation Criteria (How to determine the winner): ${config.evaluationCriteria}
+
+**Execution Instructions:**
+1.  Initialize a starting state based on the scenario.
+2.  For each step, up to the maximum:
+    a. Determine the action each strategy would take.
+    b. Describe the outcome of those actions.
+    c. Update the simulation state (e.g., cash reserves, market share, etc.). The 'state' object should reflect key metrics.
+3.  After the final step, evaluate the outcome based on the criteria.
+4.  Provide a final summary, declare the winning strategy, and return the complete step-by-step trace.
+
+Return ONLY a valid JSON object matching the provided schema.`;
+
+            simulationState.statusMessage = 'AI is running the simulation...';
             notifySimulation();
-
-            // Mocked AI call
-            await new Promise(res => setTimeout(res, 5000));
             
-            const winnerIndex = Math.floor(Math.random() * config.strategies.length);
-            simulationState.result = {
-                summary: `After ${config.maxSteps} steps, the simulation concluded that '${config.strategies[winnerIndex].name}' was the most effective strategy based on the criteria: "${config.evaluationCriteria}".`,
-                winningStrategy: config.strategies[winnerIndex].name,
-                stepByStepTrace: Array.from({ length: config.maxSteps }, (_, i) => ({
-                    step: i + 1,
-                    strategy: config.strategies[i % config.strategies.length].name,
-                    action: `(Mocked action for step ${i+1})`,
-                    outcome: `(Mocked outcome for step ${i+1})`,
-                    state: { cash_reserve: 10000 - i * 500 },
-                }))
-            };
+            const response = await ai.models.generateContent({
+                model: appSettings.model,
+                contents: prompt,
+                config: {
+                    responseMimeType: "application/json",
+                    responseSchema: simulationResultSchema
+                }
+            });
 
+            const simulationResult: SimulationResult = JSON.parse(response.text);
+
+            simulationState.result = simulationResult;
             simulationState.isRunning = false;
             simulationState.statusMessage = 'Simulation complete.';
-            log('SYSTEM', 'Simulation complete.');
+            log('SYSTEM', 'AI simulation complete. Results received.');
+
         } catch (e) {
-            const errorMessage = e instanceof Error ? e.message : 'Unknown error';
-            log('ERROR', `Simulation failed: ${errorMessage}`);
+            const errorMessage = e instanceof Error ? e.message : 'Unknown AI error';
+            log('ERROR', `AI simulation failed: ${errorMessage}`);
             simulationState.isRunning = false;
             simulationState.error = errorMessage;
             simulationState.statusMessage = 'Simulation failed.';
