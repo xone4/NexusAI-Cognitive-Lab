@@ -1,7 +1,7 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
 import type { CognitiveProcess, ChatMessage, PlanStep, CognitiveConstitution, GeneratedImage, Language } from '../types';
 import { useTranslation } from 'react-i18next';
-import { BrainCircuitIcon, UserIcon, BookOpenIcon, CogIcon, CheckCircleIcon, CubeTransparentIcon, PlayIcon, PencilIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, PlusCircleIcon, CodeBracketIcon, LightBulbIcon, LinkIcon, ArrowRightIcon, PhotographIcon, SparklesIcon, ArchiveBoxArrowDownIcon, RefreshIcon, GlobeAltIcon, DocumentTextIcon, ShareIcon, ReplicaIcon, DicesIcon, ArrowsRightLeftIcon, XCircleIcon, SaveIcon } from './Icons';
+import { BrainCircuitIcon, UserIcon, BookOpenIcon, CogIcon, CheckCircleIcon, CubeTransparentIcon, PlayIcon, PencilIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, PlusCircleIcon, CodeBracketIcon, LightBulbIcon, LinkIcon, ArrowRightIcon, PhotographIcon, SparklesIcon, ArchiveBoxArrowDownIcon, RefreshIcon, GlobeAltIcon, DocumentTextIcon, ShareIcon, ReplicaIcon, DicesIcon, ArrowsRightLeftIcon, XCircleIcon, SaveIcon, TrajectoryIcon } from './Icons';
 import TextActionOverlay from './TextActionOverlay';
 
 interface CognitiveProcessVisualizerProps {
@@ -181,6 +181,8 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
             case 'code_interpreter': return <CodeBracketIcon className="w-4 h-4 text-purple-400" />;
             case 'world_model': return <DicesIcon className="w-4 h-4 text-cyan-300" />;
             case 'update_world_model': return <SaveIcon className="w-4 h-4 text-teal-400" />;
+            case 'knowledge_graph_synthesizer': return <TrajectoryIcon className="w-4 h-4 text-pink-400" />;
+            case 'causal_inference_engine': return <TrajectoryIcon className="w-4 h-4 text-orange-500" />;
             case 'recall_memory': return <BookOpenIcon className="w-4 h-4 text-yellow-400" />;
             case 'induce_emotion': return <LightBulbIcon className="w-4 h-4 text-orange-400" />;
             case 'generate_image': return <PhotographIcon className="w-4 h-4 text-green-400" />;
@@ -207,7 +209,7 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
         return <pre className="text-xs text-green-400/80 font-mono italic whitespace-pre-wrap">Result: {String(step.result)}</pre>;
     };
 
-    const isCodeEditable = ['code_interpreter', 'code_sandbox', 'google_search', 'recall_memory', 'generate_image', 'analyze_image_input', 'induce_emotion', 'translate_text', 'summarize_text', 'replan', 'spawn_cognitive_clone', 'update_world_model'].includes(step.tool);
+    const isCodeEditable = ['code_interpreter', 'code_sandbox', 'google_search', 'recall_memory', 'generate_image', 'analyze_image_input', 'induce_emotion', 'translate_text', 'summarize_text', 'replan', 'spawn_cognitive_clone', 'update_world_model', 'knowledge_graph_synthesizer'].includes(step.tool);
 
     return (
         <li className={`p-2 rounded-xl transition-all duration-300 ${isCurrent ? 'bg-nexus-primary/10' : ''} ${isEditable ? 'hover:bg-nexus-surface/50' : ''}`}>

@@ -120,7 +120,7 @@ export interface LogEntry {
   source?: string; // Optional Replica ID
 }
 
-export type ActiveView = 'dashboard' | 'replicas' | 'tools' | 'architecture' | 'analysis' | 'settings' | 'evolution' | 'memory' | 'dreaming' | 'world_model' | 'video_forge';
+export type ActiveView = 'dashboard' | 'replicas' | 'tools' | 'architecture' | 'analysis' | 'settings' | 'evolution' | 'memory' | 'dreaming' | 'world_model' | 'video_forge' | 'simulation_lab';
 
 export type LogVerbosity = 'STANDARD' | 'VERBOSE';
 export type AnimationLevel = 'FULL' | 'MINIMAL' | 'NONE';
@@ -146,7 +146,7 @@ export type ThinkingState = 'Idle' | 'Receiving' | 'Planning' | 'AwaitingExecuti
 export interface PlanStep {
     step: number;
     description: string;
-    tool: 'google_search' | 'synthesize_answer' | 'code_interpreter' | 'code_sandbox' | 'recall_memory' | 'generate_image' | 'analyze_image_input' | 'forge_tool' | 'spawn_replica' | 'induce_emotion' | 'replan' | 'summarize_text' | 'translate_text' | 'analyze_sentiment' | 'execute_toolchain' | 'apply_behavior' | 'delegate_task_to_replica' | 'spawn_cognitive_clone' | 'peek_context' | 'search_context' | 'world_model' | 'update_world_model';
+    tool: 'google_search' | 'synthesize_answer' | 'code_interpreter' | 'code_sandbox' | 'recall_memory' | 'generate_image' | 'analyze_image_input' | 'forge_tool' | 'spawn_replica' | 'induce_emotion' | 'replan' | 'summarize_text' | 'translate_text' | 'analyze_sentiment' | 'execute_toolchain' | 'apply_behavior' | 'delegate_task_to_replica' | 'spawn_cognitive_clone' | 'peek_context' | 'search_context' | 'world_model' | 'update_world_model' | 'knowledge_graph_synthesizer' | 'causal_inference_engine' | 'run_simulation';
     query?: string;
     code?: string;
     concept?: string; // For induce_emotion & generate_image
@@ -444,7 +444,39 @@ export interface VideoGenerationState {
   error: string | null;
 }
 
-// FIX: Removed export to prevent global type collision. This interface is only used for augmenting the global window object.
+// --- Simulation Lab Types ---
+export interface SimulationConfig {
+    name: string;
+    scenario: string;
+    strategies: { name: string; description: string }[];
+    maxSteps: number;
+    evaluationCriteria: string;
+}
+
+export interface SimulationStep {
+    step: number;
+    strategy: string;
+    action: string;
+    outcome: string;
+    state: Record<string, any>;
+}
+
+export interface SimulationResult {
+    summary: string;
+    winningStrategy: string;
+    stepByStepTrace: SimulationStep[];
+}
+
+export interface SimulationState {
+    isRunning: boolean;
+    statusMessage: string;
+    config: SimulationConfig | null;
+    result: SimulationResult | null;
+    error: string | null;
+}
+
+
+// FIX: To resolve type collision errors, defined the AIStudio interface locally and used it to augment the global Window object, ensuring a consistent type signature.
 interface AIStudio {
   hasSelectedApiKey: () => Promise<boolean>;
   openSelectKey: () => Promise<void>;

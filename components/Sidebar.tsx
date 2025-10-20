@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ActiveView } from '../types';
-import { DashboardIcon, ReplicaIcon, ToolIcon, ArchIcon, CogIcon, MagnifyingGlassIcon, DnaIcon, BookOpenIcon, SparklesIcon, DicesIcon, FilmIcon } from './Icons';
+import { DashboardIcon, ReplicaIcon, ToolIcon, ArchIcon, CogIcon, MagnifyingGlassIcon, DnaIcon, BookOpenIcon, SparklesIcon, DicesIcon, FilmIcon, FlaskConicalIcon } from './Icons';
 
 interface SidebarProps {
   activeView: ActiveView;
@@ -21,7 +21,7 @@ const NavItem: React.FC<{
   return (
     <li
       onClick={() => onClick(view)}
-      className={`flex items-center p-3 my-2 cursor-pointer rounded-full transition-all duration-300
+      className={`flex items-center p-2 my-1 cursor-pointer rounded-full transition-all duration-300
         ${isActive
           ? 'bg-nexus-primary/20 text-nexus-secondary shadow-lg'
           : 'text-nexus-text-muted hover:bg-nexus-surface hover:text-nexus-text'
@@ -47,6 +47,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) => {
     { view: 'evolution' as ActiveView, label: t('sidebar.evolutionChamber'), icon: <DnaIcon /> },
     { view: 'dreaming' as ActiveView, label: t('sidebar.dreamingChamber'), icon: <SparklesIcon /> },
     { view: 'video_forge' as ActiveView, label: t('sidebar.videoForge'), icon: <FilmIcon /> },
+    { view: 'simulation_lab' as ActiveView, label: t('sidebar.simulationLab'), icon: <FlaskConicalIcon /> },
     { view: 'analysis' as ActiveView, label: t('sidebar.analysisLab'), icon: <MagnifyingGlassIcon /> },
     { view: 'architecture' as ActiveView, label: t('sidebar.architecture'), icon: <ArchIcon /> },
   ];
@@ -55,7 +56,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) => {
 
   return (
     <nav className="w-64 bg-nexus-dark p-4 flex flex-col border-e border-nexus-surface">
-      <div className="text-center py-4 mb-4">
+      <div className="text-center py-4 mb-2">
         <span className={`text-lg font-bold text-nexus-text tracking-widest ${isRtl ? 'font-tahoma' : ''}`}>{t('sidebar.nexus_ai')}</span>
       </div>
       <ul className="flex-grow">

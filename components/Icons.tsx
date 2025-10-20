@@ -61,6 +61,7 @@ import {
   Film,
   Camera,
   CameraOff,
+  FlaskConical,
   type LucideProps,
 } from 'lucide-react';
 
@@ -131,3 +132,4 @@ export const MicOffIcon: React.FC<IconProps> = (props) => <MicOff {...props} str
 export const FilmIcon: React.FC<IconProps> = (props) => <Film {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;
 export const CameraIcon: React.FC<IconProps> = (props) => <Camera {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;
 export const CameraOffIcon: React.FC<IconProps> = (props) => <CameraOff {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;
+export const FlaskConicalIcon: React.FC<IconProps> = (props) => <FlaskConical {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;

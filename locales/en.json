@@ -13,6 +13,7 @@
     "evolutionChamber": "Evolution Chamber",
     "dreamingChamber": "Dreaming Chamber",
     "videoForge": "Video Forge",
+    "simulationLab": "Simulation Lab",
     "analysisLab": "Analysis Lab",
     "architecture": "Architecture",
     "settings": "Settings",
@@ -584,5 +585,22 @@
     "apiKeyDescription": "Video generation is a premium feature and requires you to select your API key. Charges may apply based on your usage.",
     "billingInfo": "View billing information",
     "selectApiKey": "Select API Key"
+  },
+  "simulationLab": {
+    "title": "Simulation Lab",
+    "description": "Design a scenario, define competing strategies, and run a simulation to see how the AI predicts their outcomes. This is a powerful tool for strategic foresight and hypothesis testing.",
+    "scenario": "Scenario Definition",
+    "scenarioPlaceholder": "Describe the environment, agents, and rules of the simulation...",
+    "strategy": "Strategy {{number}}",
+    "strategyNamePlaceholder": "e.g., 'Aggressive Expansion'",
+    "strategyDescPlaceholder": "Describe the core logic of this strategy...",
+    "evaluationCriteria": "Evaluation Criteria",
+    "evaluationPlaceholder": "e.g., 'The strategy that maintains the highest cash reserve wins.'",
+    "run": "Run Simulation",
+    "running": "Running Simulation...",
+    "resultsTitle": "Simulation Results",
+    "winningStrategy": "Winning Strategy",
+    "summary": "AI Summary & Rationale",
+    "trace": "Step-by-Step Trace"
   }
 }

@@ -1,6 +1,6 @@
 // FIX: Aliased `Blob` to `GenAIBlob` to resolve name collision with the native browser Blob type.
 import { GoogleGenAI, Type, Modality, Blob as GenAIBlob, LiveServerMessage } from "@google/genai";
-import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails, UserKeyword, Personality, PlaybookItem, RawInsight, PlaybookItemCategory, WorldModel, WorldModelEntity, CognitiveTrajectory, WorldModelRelationship, LiveTranscriptionState, VideoGenerationState } from '../types';
+import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails, UserKeyword, Personality, PlaybookItem, RawInsight, PlaybookItemCategory, WorldModel, WorldModelEntity, CognitiveTrajectory, WorldModelRelationship, LiveTranscriptionState, VideoGenerationState, SimulationState, SimulationConfig } from '../types';
 import { dbService, STORES } from './dbService';
 import * as geometryService from './geometryService';
 import { calculateTrajectorySimilarity } from './geometryService';
@@ -21,6 +21,8 @@ let toolchainsState: Toolchain[];
 let playbookState: PlaybookItem[];
 let constitutionsState: CognitiveConstitution[];
 let evolutionState: EvolutionState;
+// FIX: Added simulationState to hold the state for the Simulation Lab.
+let simulationState: SimulationState;
 let worldModelState: WorldModel | null = null;
 let cognitiveProcess: CognitiveProcess;
 let cognitiveNetworkState: CognitiveNetworkState = { activeProblems: [] };
@@ -64,6 +66,8 @@ let toolchainSubscribers: ((toolchains: Toolchain[]) => void)[] = [];
 let playbookSubscribers: ((playbook: PlaybookItem[]) => void)[] = [];
 let constitutionSubscribers: ((constitutions: CognitiveConstitution[]) => void)[] = [];
 let evolutionSubscribers: ((evolutionState: EvolutionState) => void)[] = [];
+// FIX: Added subscribers list for simulation state updates.
+let simulationSubscribers: ((state: SimulationState) => void)[] = [];
 let archiveSubscribers: ((archives: ChatMessage[]) => void)[] = [];
 let dreamProcessSubscribers: ((update: DreamProcessUpdate) => void)[] = [];
 let worldModelSubscribers: ((worldModel: WorldModel) => void)[] = [];
@@ -207,6 +211,8 @@ const notifyToolchains = () => toolchainSubscribers.forEach(cb => cb(JSON.parse(
 const notifyPlaybook = () => playbookSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(playbookState))));
 const notifyConstitutions = () => constitutionSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(constitutionsState))));
 const notifyEvolution = () => evolutionSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(evolutionState))));
+// FIX: Added a notifier function for simulation state.
+const notifySimulation = () => simulationSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(simulationState))));
 const notifyArchives = () => archiveSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(archivedTracesState))));
 const notifyDreamProcess = (update: DreamProcessUpdate) => dreamProcessSubscribers.forEach(cb => cb(update));
 const notifyCognitiveNetwork = () => cognitiveNetworkSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(cognitiveNetworkState))));
@@ -409,6 +415,14 @@ const initialize = async () => {
         statusMessage: '',
         finalEnsembleResult: null,
     };
+    // FIX: Initialized simulationState.
+    simulationState = {
+        isRunning: false,
+        statusMessage: '',
+        config: null,
+        result: null,
+        error: null,
+    };
     
     return {
         initialReplicas: JSON.parse(JSON.stringify(replicaState)),
@@ -417,6 +431,8 @@ const initialize = async () => {
         initialPlaybook: JSON.parse(JSON.stringify(playbookState)),
         initialConstitutions: JSON.parse(JSON.stringify(constitutionsState)),
         initialEvolutionState: JSON.parse(JSON.stringify(evolutionState)),
+        // FIX: Added initialSimulationState to the returned object.
+        initialSimulationState: JSON.parse(JSON.stringify(simulationState)),
         initialArchives: JSON.parse(JSON.stringify(archivedTracesState)),
         initialCognitiveProcess: JSON.parse(JSON.stringify(cognitiveProcess)),
         initialWorldModel: JSON.parse(JSON.stringify(worldModelState)),
@@ -450,7 +466,7 @@ const initialize = async () => {
 };
 
 
-const planSchema = { type: Type.OBJECT, properties: { plan: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { step: { type: Type.INTEGER }, description: { type: Type.STRING }, tool: { type: Type.STRING, enum: ['google_search', 'synthesize_answer', 'code_interpreter', 'code_sandbox', 'recall_memory', 'generate_image', 'analyze_image_input', 'forge_tool', 'spawn_replica', 'induce_emotion', 'replan', 'summarize_text', 'translate_text', 'analyze_sentiment', 'execute_toolchain', 'apply_behavior', 'delegate_task_to_replica', 'spawn_cognitive_clone', 'peek_context', 'search_context', 'world_model', 'update_world_model'] }, query: { type: Type.STRING }, code: { type: Type.STRING }, concept: { type: Type.STRING }, inputRef: { type: Type.INTEGER }, replicaId: { type: Type.STRING }, task: { type: Type.STRING } }, required: ['step', 'description', 'tool'] } } }, required: ['plan'] };
+const planSchema = { type: Type.OBJECT, properties: { plan: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { step: { type: Type.INTEGER }, description: { type: Type.STRING }, tool: { type: Type.STRING, enum: ['google_search', 'synthesize_answer', 'code_interpreter', 'code_sandbox', 'recall_memory', 'generate_image', 'analyze_image_input', 'forge_tool', 'spawn_replica', 'induce_emotion', 'replan', 'summarize_text', 'translate_text', 'analyze_sentiment', 'execute_toolchain', 'apply_behavior', 'delegate_task_to_replica', 'spawn_cognitive_clone', 'peek_context', 'search_context', 'world_model', 'update_world_model', 'knowledge_graph_synthesizer', 'causal_inference_engine', 'run_simulation'] }, query: { type: Type.STRING }, code: { type: Type.STRING }, concept: { type: Type.STRING }, inputRef: { type: Type.INTEGER }, replicaId: { type: Type.STRING }, task: { type: Type.STRING } }, required: ['step', 'description', 'tool'] } } }, required: ['plan'] };
 
 const languageMap: Record<Language, string> = {
     'en': 'English',
@@ -574,7 +590,9 @@ const getSystemInstruction = () => {
     - \`execute_toolchain\`: To run a pre-defined sequence of tools.
     - \`apply_behavior\`: To apply a pre-existing learned strategy.
     - \`world_model\`: Interact with your internal knowledge base. Use 'query' to ask questions about entities, relationships, and principles.
-    - \`update_world_model\`: Persists new factual knowledge to your internal World Model. Use 'code' to provide a JSON object: \`{ "entities": [...], "relationships": [...] }\`. Use this after discovering new information, for example via \`google_search\`.
+    - \`knowledge_graph_synthesizer\`: Takes unstructured text (e.g., from a search result) and automatically extracts entities and relationships to update your World Model. Use 'query' to provide the text.
+    - \`causal_inference_engine\`: Analyzes a dataset or text to distinguish correlation from true causation, identifying potential confounding variables. Use 'query' for the data.
+    - \`update_world_model\`: Persists new factual knowledge to your internal World Model. Use 'code' to provide a JSON object: \`{ "entities": [...], "relationships": [...] }\`. Use this for adding specific, pre-formatted facts.
     - \`synthesize_answer\`: This must be the final step. It compiles the final answer based on results from your Sub-Agents and other tools.`;
 }
 
@@ -2358,6 +2376,93 @@ const service = {
                         log('ERROR', `World Model update failed: ${step.result}`);
                     }
                     executionContext.push(`Step ${stepIndex + 1} (${step.description}) Result: ${step.result}`);
+                } else if (step.tool === 'knowledge_graph_synthesizer') {
+                    const textToAnalyze = step.query || '';
+                    if (!textToAnalyze) {
+                        step.status = 'error';
+                        step.result = 'Error: No text provided to the knowledge_graph_synthesizer tool.';
+                        log('ERROR', step.result);
+                    } else if (!worldModelState) {
+                        step.status = 'error';
+                        step.result = 'Error: World Model is not initialized.';
+                        log('ERROR', step.result);
+                    } else {
+                        const knowledgeGraphSchema = {
+                            type: Type.OBJECT, properties: { entities: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { id: { type: Type.STRING, description: "A unique, descriptive ID in snake_case (e.g., 'artificial_intelligence')." }, name: { type: Type.STRING }, type: { type: Type.STRING, enum: ['CONCEPT', 'PERSON', 'PLACE', 'OBJECT', 'EVENT', 'ORGANIZATION'] }, properties: { type: Type.OBJECT, description: "A JSON object of key-value pairs for relevant attributes." }, summary: { type: Type.STRING, description: "A concise, one-sentence summary of the entity." } }, required: ['id', 'name', 'type', 'summary'] } }, relationships: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { id: { type: Type.STRING, description: "A unique ID for the relationship (e.g., 'ai_is_a_concept')." }, sourceId: { type: Type.STRING, description: "The ID of the source entity." }, targetId: { type: Type.STRING, description: "The ID of the target entity." }, type: { type: Type.STRING, enum: ['IS_A', 'HAS_A', 'PART_OF', 'CAUSES', 'RELATED_TO', 'LOCATED_IN', 'INTERACTS_WITH'] }, description: { type: Type.STRING, description: "A sentence describing the relationship (e.g., 'Artificial Intelligence is a concept within computer science')." }, strength: { type: Type.NUMBER, description: "Confidence score from 0.0 to 1.0." } }, required: ['id', 'sourceId', 'targetId', 'type', 'description', 'strength'] } } }, required: ['entities', 'relationships']
+                        };
+                        const prompt = `You are a knowledge extraction engine. Analyze the following text and extract all relevant entities and their relationships. Create unique IDs for each entity and relationship. Ensure that the 'sourceId' and 'targetId' in relationships correctly reference the IDs of the entities you've extracted.\n\nText to analyze:\n---\n${textToAnalyze}\n---\n\nReturn ONLY the JSON object matching the schema.`;
+                        try {
+                            const response = await ai.models.generateContent({
+                                model: appSettings.model, contents: prompt,
+                                config: { responseMimeType: "application/json", responseSchema: knowledgeGraphSchema }
+                            });
+                            const { entities: extractedEntities, relationships: extractedRelationships } = JSON.parse(response.text);
+
+                            let updateCount = 0;
+                            if (Array.isArray(extractedEntities)) {
+                                extractedEntities.forEach((newEntity: WorldModelEntity) => {
+                                    const existingIndex = worldModelState.entities.findIndex(e => e.id === newEntity.id || e.name.toLowerCase() === newEntity.name.toLowerCase());
+                                    const entityToSave = { ...newEntity, lastUpdated: Date.now() };
+                                    if (existingIndex > -1) {
+                                        const existingEntity = worldModelState.entities[existingIndex];
+                                        worldModelState.entities[existingIndex] = { ...existingEntity, ...entityToSave, properties: {...existingEntity.properties, ...entityToSave.properties} };
+                                    } else {
+                                        worldModelState.entities.push(entityToSave);
+                                    }
+                                    updateCount++;
+                                });
+                            }
+                            if (Array.isArray(extractedRelationships)) {
+                                extractedRelationships.forEach((newRel: WorldModelRelationship) => {
+                                     const existingIndex = worldModelState.relationships.findIndex(r => r.id === newRel.id);
+                                     const relToSave = { ...newRel, lastUpdated: Date.now() };
+                                     if (existingIndex > -1) {
+                                        worldModelState.relationships[existingIndex] = { ...worldModelState.relationships[existingIndex], ...relToSave };
+                                     } else {
+                                        worldModelState.relationships.push(relToSave);
+                                     }
+                                     updateCount++;
+                                });
+                            }
+                            worldModelState.lastUpdated = Date.now();
+                            await dbService.put('worldModel', worldModelState);
+                            notifyWorldModel();
+
+                            step.result = `Successfully synthesized and updated world model with ${updateCount} item(s).`;
+                            log('AI', `Knowledge Graph Synthesizer updated the World Model from text.`);
+                        } catch (e) {
+                            step.status = 'error';
+                            step.result = e instanceof Error ? e.message : 'Unknown error synthesizing knowledge graph.';
+                            log('ERROR', `Knowledge Graph Synthesizer failed: ${step.result}`);
+                        }
+                    }
+                    executionContext.push(`Step ${stepIndex + 1} (${step.description}) Result: ${step.result}`);
+                } else if (step.tool === 'causal_inference_engine') {
+                    const textToAnalyze = step.query || '';
+                    if (!textToAnalyze) {
+                        step.status = 'error';
+                        step.result = 'Error: No text/data provided to the causal_inference_engine tool.';
+                        log('ERROR', step.result);
+                    } else {
+                        const prompt = `You are a specialized Causal Inference Engine. Analyze the following data or text to distinguish correlation from causation. Identify potential causal links, confounding variables, and provide a structured analysis. Do not simply state correlations.
+
+Data to analyze:
+---
+${textToAnalyze}
+---
+
+Provide your analysis in well-formatted markdown.`;
+                        try {
+                            const response = await ai.models.generateContent({ model: appSettings.model, contents: prompt });
+                            step.result = response.text;
+                            log('AI', `Causal Inference Engine analyzed the provided data.`);
+                        } catch (e) {
+                            step.status = 'error';
+                            step.result = e instanceof Error ? e.message : 'Unknown error during causal inference.';
+                            log('ERROR', `Causal Inference Engine failed: ${step.result}`);
+                        }
+                    }
+                    executionContext.push(`Step ${stepIndex + 1} (${step.description}) Result: ${step.result}`);
                 } else if (step.tool === 'apply_behavior') {
                     const item = playbookState.find(b => b.description === step.query || b.id === step.query);
                     if (item) {
@@ -3213,6 +3318,58 @@ ${text}
         }
     },
 
+    // FIX: Added mock implementation for runSimulation.
+    runSimulation: async (config: SimulationConfig) => {
+        if (simulationState.isRunning) {
+            log('WARN', 'A simulation is already in progress.');
+            return;
+        }
+        log('SYSTEM', `Starting new simulation: "${config.name}"`);
+        simulationState = {
+            isRunning: true,
+            statusMessage: 'Initializing simulation with AI...',
+            config,
+            result: null,
+            error: null,
+        };
+        notifySimulation();
+
+        try {
+            await new Promise(res => setTimeout(res, 2000));
+            
+            simulationState.statusMessage = 'AI is evaluating strategies...';
+            notifySimulation();
+
+            // Mocked AI call
+            await new Promise(res => setTimeout(res, 5000));
+            
+            const winnerIndex = Math.floor(Math.random() * config.strategies.length);
+            simulationState.result = {
+                summary: `After ${config.maxSteps} steps, the simulation concluded that '${config.strategies[winnerIndex].name}' was the most effective strategy based on the criteria: "${config.evaluationCriteria}".`,
+                winningStrategy: config.strategies[winnerIndex].name,
+                stepByStepTrace: Array.from({ length: config.maxSteps }, (_, i) => ({
+                    step: i + 1,
+                    strategy: config.strategies[i % config.strategies.length].name,
+                    action: `(Mocked action for step ${i+1})`,
+                    outcome: `(Mocked outcome for step ${i+1})`,
+                    state: { cash_reserve: 10000 - i * 500 },
+                }))
+            };
+
+            simulationState.isRunning = false;
+            simulationState.statusMessage = 'Simulation complete.';
+            log('SYSTEM', 'Simulation complete.');
+        } catch (e) {
+            const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+            log('ERROR', `Simulation failed: ${errorMessage}`);
+            simulationState.isRunning = false;
+            simulationState.error = errorMessage;
+            simulationState.statusMessage = 'Simulation failed.';
+        } finally {
+            notifySimulation();
+        }
+    },
+
     subscribeToLogs: (callback: (log: LogEntry) => void) => { logSubscribers.push(callback); },
     subscribeToPerformance: (callback: (dataPoint: PerformanceDataPoint) => void) => { performanceSubscribers.push(callback); },
     subscribeToReplicas: (callback: (replicaState: Replica) => void) => { replicaSubscribers.push(callback); },
@@ -3222,6 +3379,8 @@ ${text}
     subscribeToPlaybook: (callback: (playbook: PlaybookItem[]) => void) => { playbookSubscribers.push(callback); },
     subscribeToConstitutions: (callback: (constitutions: CognitiveConstitution[]) => void) => { constitutionSubscribers.push(callback); },
     subscribeToEvolution: (callback: (evolutionState: EvolutionState) => void) => { evolutionSubscribers.push(callback); },
+    // FIX: Added subscribeToSimulation method.
+    subscribeToSimulation: (callback: (state: SimulationState) => void) => { simulationSubscribers.push(callback); },
     subscribeToArchives: (callback: (archives: ChatMessage[]) => void) => { archiveSubscribers.push(callback); },
     subscribeToDreamProcess: (callback: (update: DreamProcessUpdate) => void) => { dreamProcessSubscribers.push(callback); },
     subscribeToWorldModel: (callback: (worldModel: WorldModel) => void) => { worldModelSubscribers.push(callback); },
@@ -3249,6 +3408,8 @@ ${text}
         playbookSubscribers = [];
         constitutionSubscribers = [];
         evolutionSubscribers = [];
+        // FIX: Added simulationSubscribers to the cleanup.
+        simulationSubscribers = [];
         archiveSubscribers = [];
         dreamProcessSubscribers = [];
         worldModelSubscribers = [];

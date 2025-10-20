@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, ActiveView, CognitiveProcess, AppSettings, Toolchain, ChatMessage, PlanStep, CognitiveConstitution, EvolutionState, PlaybookItem, Language, Personality, WorldModelEntity, CognitiveNetworkState, LiveTranscriptionState } from './types';
+import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, ActiveView, CognitiveProcess, AppSettings, Toolchain, ChatMessage, PlanStep, CognitiveConstitution, EvolutionState, PlaybookItem, Language, Personality, WorldModelEntity, CognitiveNetworkState, LiveTranscriptionState, SimulationState } from './types';
 import { nexusAIService } from './services/nexusAIService';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -22,6 +22,7 @@ import DreamingView from './components/DreamingView';
 import WorldModelView from './components/WorldModelView';
 import LiveTranscriptionDisplay from './components/LiveTranscriptionDisplay';
 import VideoForge from './components/VideoForge';
+import SimulationLab from './components/SimulationLab';
 
 type SystemStatus = 'Online' | 'Degraded' | 'Offline' | 'Initializing';
 
@@ -34,6 +35,7 @@ const App: React.FC = () => {
   const [playbook, setPlaybook] = useState<PlaybookItem[]>([]);
   const [constitutions, setConstitutions] = useState<CognitiveConstitution[]>([]);
   const [evolutionState, setEvolutionState] = useState<EvolutionState | null>(null);
+  const [simulationState, setSimulationState] = useState<SimulationState | null>(null);
   const [worldModel, setWorldModel] = useState<any | null>(null);
   const [cognitiveNetwork, setCognitiveNetwork] = useState<CognitiveNetworkState>({ activeProblems: [] });
   const [archivedTraces, setArchivedTraces] = useState<ChatMessage[]>([]);
@@ -150,6 +152,10 @@ const App: React.FC = () => {
     setEvolutionState(newState);
   }, []);
 
+  const handleSimulationUpdate = useCallback((newState: SimulationState) => {
+    setSimulationState(newState);
+  }, []);
+
   const handleWorldModelUpdate = useCallback((newWorldModelState: any) => {
     setWorldModel(newWorldModelState);
   }, []);
@@ -202,13 +208,14 @@ const App: React.FC = () => {
     const initializeApp = async () => {
       nexusAIService.updateSettings(settings);
   
-      const { initialReplicas, initialTools, initialToolchains, initialPlaybook, initialConstitutions, initialEvolutionState, initialLogs, initialPerfData, initialCognitiveProcess, initialArchives, initialWorldModel, initialCognitiveNetworkState } = await nexusAIService.initialize();
+      const { initialReplicas, initialTools, initialToolchains, initialPlaybook, initialConstitutions, initialEvolutionState, initialSimulationState, initialLogs, initialPerfData, initialCognitiveProcess, initialArchives, initialWorldModel, initialCognitiveNetworkState } = await nexusAIService.initialize();
       setReplicas(initialReplicas);
       setTools(initialTools);
       setToolchains(initialToolchains);
       setPlaybook(initialPlaybook);
       setConstitutions(initialConstitutions);
       setEvolutionState(initialEvolutionState);
+      setSimulationState(initialSimulationState);
       setArchivedTraces(initialArchives);
       setWorldModel(initialWorldModel);
       setCognitiveNetwork(initialCognitiveNetworkState);
@@ -226,6 +233,7 @@ const App: React.FC = () => {
       nexusAIService.subscribeToPlaybook(handlePlaybookUpdate);
       nexusAIService.subscribeToConstitutions(handleConstitutionsUpdate);
       nexusAIService.subscribeToEvolution(handleEvolutionUpdate);
+      nexusAIService.subscribeToSimulation(handleSimulationUpdate);
       nexusAIService.subscribeToWorldModel(handleWorldModelUpdate);
       nexusAIService.subscribeToCognitiveNetwork(handleCognitiveNetworkUpdate);
       nexusAIService.subscribeToCognitiveProcess(handleCognitiveProcessUpdate);
@@ -378,16 +386,17 @@ const App: React.FC = () => {
     const state = cognitiveProcess?.state ?? 'Idle';
     const isProcessing = state === 'Receiving' || state === 'Executing' || state === 'Synthesizing' || state === 'Planning';
     const isLive = liveTranscription.isLive;
+    const isSimulating = simulationState?.isRunning || false;
 
     return {
-        canSubmitQuery: (state === 'Idle' || state === 'Done' || state === 'Error' || state === 'Cancelled') && !isLive,
-        canEditPlan: state === 'AwaitingExecution' && !isLive,
-        canExecutePlan: state === 'AwaitingExecution' && !isLive,
+        canSubmitQuery: (state === 'Idle' || state === 'Done' || state === 'Error' || state === 'Cancelled') && !isLive && !isSimulating,
+        canEditPlan: state === 'AwaitingExecution' && !isLive && !isSimulating,
+        canExecutePlan: state === 'AwaitingExecution' && !isLive && !isSimulating,
         canCancelProcess: isProcessing && !isLive,
-        canUseManualControls: (state === 'Idle' || state === 'Done' || state === 'Error' || state === 'Cancelled') && !isLive,
-        isGloballyBusy: isProcessing || state === 'AwaitingExecution' || isLive,
+        canUseManualControls: (state === 'Idle' || state === 'Done' || state === 'Error' || state === 'Cancelled') && !isLive && !isSimulating,
+        isGloballyBusy: isProcessing || state === 'AwaitingExecution' || isLive || isSimulating,
     };
-  }, [cognitiveProcess?.state, liveTranscription.isLive]);
+  }, [cognitiveProcess?.state, liveTranscription.isLive, simulationState?.isRunning]);
 
 
   const replicaCount = useMemo(() => {
@@ -537,6 +546,11 @@ const App: React.FC = () => {
                 />;
       case 'video_forge':
         return <VideoForge />;
+      case 'simulation_lab':
+        return simulationState && <SimulationLab
+                  simulationState={simulationState}
+                  isGloballyBusy={cognitivePermissions.isGloballyBusy}
+                />;
       case 'dashboard':
       default:
         return renderDashboard();
