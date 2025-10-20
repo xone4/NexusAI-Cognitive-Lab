@@ -24,11 +24,11 @@ const NavItem: React.FC<{
       className={`flex items-center p-2 my-1 cursor-pointer rounded-full transition-all duration-300
         ${isActive
           ? 'bg-nexus-primary/20 text-nexus-secondary shadow-lg'
-          : 'text-nexus-text-muted hover:bg-nexus-surface hover:text-nexus-text'
+          : 'text-nexus-text/[.65] hover:bg-nexus-surface hover:text-nexus-text'
         }`}
     >
       <div className="w-6 h-6 me-4">{icon}</div>
-      <span className={`font-semibold ${isRtl ? 'font-tahoma' : ''}`}>{label}</span>
+      <span className={`${isActive ? 'font-semibold' : ''} ${isRtl ? 'font-tahoma' : ''}`}>{label}</span>
     </li>
   );
 });
