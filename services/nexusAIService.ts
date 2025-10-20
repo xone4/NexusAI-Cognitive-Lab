@@ -1,4 +1,5 @@
-import { GoogleGenAI, Type, Modality, Blob, LiveServerMessage } from "@google/genai";
+// FIX: Aliased `Blob` to `GenAIBlob` to resolve name collision with the native browser Blob type.
+import { GoogleGenAI, Type, Modality, Blob as GenAIBlob, LiveServerMessage } from "@google/genai";
 import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails, UserKeyword, Personality, PlaybookItem, RawInsight, PlaybookItemCategory, WorldModel, WorldModelEntity, CognitiveTrajectory, WorldModelRelationship, LiveTranscriptionState, VideoGenerationState } from '../types';
 import { dbService, STORES } from './dbService';
 import * as geometryService from './geometryService';
@@ -23,7 +24,6 @@ let evolutionState: EvolutionState;
 let worldModelState: WorldModel | null = null;
 let cognitiveProcess: CognitiveProcess;
 let cognitiveNetworkState: CognitiveNetworkState = { activeProblems: [] };
-// FIX: Added isVideoActive to initial state to match LiveTranscriptionState type.
 let liveTranscriptionState: LiveTranscriptionState = { isLive: false, isVideoActive: false, userTranscript: '', modelTranscript: '', history: [] };
 let archivedTracesState: ChatMessage[];
 let systemDirectivesState: SystemDirective[];
@@ -46,9 +46,14 @@ let evolutionInterval: any = null;
 
 let liveSessionPromise: Promise<any> | null = null;
 let microphoneStream: MediaStream | null = null;
+let videoStream: MediaStream | null = null;
+let frameInterval: any = null;
 let audioProcessor: ScriptProcessorNode | null = null;
 let audioContext: AudioContext | null = null;
 let audioSource: MediaStreamAudioSourceNode | null = null;
+const FRAME_RATE = 2; // Send 2 frames per second
+const JPEG_QUALITY = 0.7;
+
 
 let logSubscribers: ((log: LogEntry) => void)[] = [];
 let performanceSubscribers: ((dataPoint: PerformanceDataPoint) => void)[] = [];
@@ -82,7 +87,8 @@ function encode(bytes: Uint8Array) {
   return btoa(binary);
 }
 
-function createBlob(data: Float32Array): Blob {
+// FIX: Updated return type to use the aliased `GenAIBlob`
+function createBlob(data: Float32Array): GenAIBlob {
   const l = data.length;
   const int16 = new Int16Array(l);
   for (let i = 0; i < l; i++) {
@@ -123,6 +129,18 @@ async function decodeAudioData(
   }
   return buffer;
 }
+
+const blobToBase64 = (blob: Blob): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64data = (reader.result as string).split(',')[1];
+      resolve(base64data);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+};
 
 
 class TrajectoryTracker {
@@ -1090,8 +1108,56 @@ const service = {
     },
     
     startVideoSession: async () => {
-        log('WARN', 'Video session start requested. Note: Video frame streaming is not fully implemented in this mock.');
+        log('SYSTEM', 'Starting live video session...');
         await service.startLiveSession(true);
+    
+        try {
+            videoStream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    width: { ideal: 640 },
+                    height: { ideal: 480 },
+                    frameRate: { ideal: 10 }
+                }
+            });
+    
+            const videoEl = document.createElement('video');
+            videoEl.srcObject = videoStream;
+            videoEl.muted = true;
+            videoEl.play();
+    
+            const canvasEl = document.createElement('canvas');
+            const ctx = canvasEl.getContext('2d');
+    
+            if (!ctx) {
+                throw new Error("Could not create canvas context for video streaming.");
+            }
+    
+            frameInterval = setInterval(() => {
+                canvasEl.width = videoEl.videoWidth;
+                canvasEl.height = videoEl.videoHeight;
+                ctx.drawImage(videoEl, 0, 0, videoEl.videoWidth, videoEl.videoHeight);
+                
+                canvasEl.toBlob(
+                    async (blob) => {
+                        if (blob && liveSessionPromise) {
+                            const base64Data = await blobToBase64(blob);
+                            liveSessionPromise.then((session) => {
+                                session.sendRealtimeInput({
+                                    media: { data: base64Data, mimeType: 'image/jpeg' }
+                                });
+                            });
+                        }
+                    },
+                    'image/jpeg',
+                    JPEG_QUALITY
+                );
+            }, 1000 / FRAME_RATE);
+            log('SYSTEM', `Video frame streaming started at ${FRAME_RATE} fps.`);
+    
+        } catch (error) {
+            log('ERROR', `Failed to start video stream: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            await service.stopLiveSession();
+        }
     },
 
     stopLiveSession: async () => {
@@ -1101,6 +1167,15 @@ const service = {
         liveTranscriptionState.isVideoActive = false;
         log('SYSTEM', 'Stopping live session...');
         notifyLiveTranscription();
+
+        if (frameInterval) {
+            clearInterval(frameInterval);
+            frameInterval = null;
+        }
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop());
+            videoStream = null;
+        }
 
         if (liveSessionPromise) {
             try {

@@ -444,14 +444,12 @@ export interface VideoGenerationState {
   error: string | null;
 }
 
-// FIX: Define AIStudio here to provide a single source of truth for the type.
-// This prevents declaration conflicts when this type is used with `declare global`.
-export interface AIStudio {
+// FIX: Removed export to prevent global type collision. This interface is only used for augmenting the global window object.
+interface AIStudio {
   hasSelectedApiKey: () => Promise<boolean>;
   openSelectKey: () => Promise<void>;
 }
 
-// FIX: Augment the global Window interface here to ensure a single point of declaration for `aistudio`.
 declare global {
   interface Window {
     aistudio: AIStudio;

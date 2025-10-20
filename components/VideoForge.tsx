@@ -3,11 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { nexusAIService, VideoGenerationState } from '../services/nexusAIService';
 import DashboardCard from './DashboardCard';
 import { FilmIcon, DownloadIcon, CheckCircleIcon, XCircleIcon } from './Icons';
-// FIX: Import AIStudio from the central types file to resolve declaration conflicts.
-import type { AIStudio } from '../types';
-
-// FIX: Removed `declare global` block. The global Window interface is now augmented
-// in `types.ts` to prevent declaration conflicts.
+// FIX: Removed unused import to prevent global type collision.
+// import type { AIStudio } from '../types';
 
 const VideoForge: React.FC = () => {
     const { t } = useTranslation();

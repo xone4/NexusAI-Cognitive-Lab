@@ -41,7 +41,6 @@ const App: React.FC = () => {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [systemStatus, setSystemStatus] = useState<SystemStatus>('Initializing');
   const [cognitiveProcess, setCognitiveProcess] = useState<CognitiveProcess | null>(null);
-  // FIX: Added isVideoActive to initial state to match LiveTranscriptionState type.
   const [liveTranscription, setLiveTranscription] = useState<LiveTranscriptionState>({ isLive: false, isVideoActive: false, userTranscript: '', modelTranscript: '', history: [] });
   const [isRawIntrospectionOpen, setIsRawIntrospectionOpen] = useState(false);
   const [activeTrace, setActiveTrace] = useState<ChatMessage | null>(null);
