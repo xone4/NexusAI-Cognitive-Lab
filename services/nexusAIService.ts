@@ -23,7 +23,8 @@ let evolutionState: EvolutionState;
 let worldModelState: WorldModel | null = null;
 let cognitiveProcess: CognitiveProcess;
 let cognitiveNetworkState: CognitiveNetworkState = { activeProblems: [] };
-let liveTranscriptionState: LiveTranscriptionState = { isLive: false, userTranscript: '', modelTranscript: '', history: [] };
+// FIX: Added isVideoActive to initial state to match LiveTranscriptionState type.
+let liveTranscriptionState: LiveTranscriptionState = { isLive: false, isVideoActive: false, userTranscript: '', modelTranscript: '', history: [] };
 let archivedTracesState: ChatMessage[];
 let systemDirectivesState: SystemDirective[];
 let isCancelled = false;
@@ -978,13 +979,13 @@ const service = {
         }
     },
 
-    startLiveSession: async () => {
+    startLiveSession: async (isVideo: boolean = false) => {
         if (liveSessionPromise || !API_KEY) {
             log('WARN', 'Live session already active or API key is missing.');
             return;
         }
-        log('SYSTEM', 'Starting live session...');
-        liveTranscriptionState = { isLive: true, userTranscript: '', modelTranscript: '', history: [] };
+        log('SYSTEM', `Starting live ${isVideo ? 'video' : 'audio'} session...`);
+        liveTranscriptionState = { isLive: true, isVideoActive: isVideo, userTranscript: '', modelTranscript: '', history: [] };
         notifyLiveTranscription();
 
         try {
@@ -1088,10 +1089,16 @@ const service = {
         }
     },
     
+    startVideoSession: async () => {
+        log('WARN', 'Video session start requested. Note: Video frame streaming is not fully implemented in this mock.');
+        await service.startLiveSession(true);
+    },
+
     stopLiveSession: async () => {
         if (!liveTranscriptionState.isLive) return;
 
         liveTranscriptionState.isLive = false;
+        liveTranscriptionState.isVideoActive = false;
         log('SYSTEM', 'Stopping live session...');
         notifyLiveTranscription();
 

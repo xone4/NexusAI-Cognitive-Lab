@@ -41,7 +41,8 @@ const App: React.FC = () => {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [systemStatus, setSystemStatus] = useState<SystemStatus>('Initializing');
   const [cognitiveProcess, setCognitiveProcess] = useState<CognitiveProcess | null>(null);
-  const [liveTranscription, setLiveTranscription] = useState<LiveTranscriptionState>({ isLive: false, userTranscript: '', modelTranscript: '', history: [] });
+  // FIX: Added isVideoActive to initial state to match LiveTranscriptionState type.
+  const [liveTranscription, setLiveTranscription] = useState<LiveTranscriptionState>({ isLive: false, isVideoActive: false, userTranscript: '', modelTranscript: '', history: [] });
   const [isRawIntrospectionOpen, setIsRawIntrospectionOpen] = useState(false);
   const [activeTrace, setActiveTrace] = useState<ChatMessage | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -188,6 +189,14 @@ const App: React.FC = () => {
         nexusAIService.startLiveSession();
     }
   }, [liveTranscription.isLive]);
+
+  const handleVideoSessionToggle = useCallback(() => {
+    if (liveTranscription.isLive && liveTranscription.isVideoActive) {
+        nexusAIService.stopLiveSession(); // a single stop function for both
+    } else if (!liveTranscription.isLive) {
+        nexusAIService.startVideoSession();
+    }
+  }, [liveTranscription.isLive, liveTranscription.isVideoActive]);
 
 
   useEffect(() => {
@@ -426,9 +435,10 @@ const App: React.FC = () => {
               process={cognitiveProcess}
               settings={settings}
               isTtsEnabled={isTtsEnabled}
-              isLive={liveTranscription.isLive}
+              liveTranscription={liveTranscription}
               onTtsToggle={handleTtsToggle}
               onLiveSessionToggle={handleLiveSessionToggle}
+              onVideoSessionToggle={handleVideoSessionToggle}
               onSubmitQuery={submitQuery}
               onCancelQuery={cancelQuery}
               onNewChat={startNewChat}

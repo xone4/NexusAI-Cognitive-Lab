@@ -6,13 +6,8 @@ import { FilmIcon, DownloadIcon, CheckCircleIcon, XCircleIcon } from './Icons';
 // FIX: Import AIStudio from the central types file to resolve declaration conflicts.
 import type { AIStudio } from '../types';
 
-// The AIStudio interface is now defined in types.ts to provide a single source of truth,
-// which resolves the error about subsequent property declarations.
-declare global {
-  interface Window {
-    aistudio: AIStudio;
-  }
-}
+// FIX: Removed `declare global` block. The global Window interface is now augmented
+// in `types.ts` to prevent declaration conflicts.
 
 const VideoForge: React.FC = () => {
     const { t } = useTranslation();

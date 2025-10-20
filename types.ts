@@ -244,6 +244,7 @@ export interface CognitiveProcess {
 
 export interface LiveTranscriptionState {
   isLive: boolean;
+  isVideoActive: boolean;
   userTranscript: string;
   modelTranscript: string;
   history: { role: 'user' | 'model', text: string }[];
@@ -444,7 +445,15 @@ export interface VideoGenerationState {
 }
 
 // FIX: Define AIStudio here to provide a single source of truth for the type.
+// This prevents declaration conflicts when this type is used with `declare global`.
 export interface AIStudio {
   hasSelectedApiKey: () => Promise<boolean>;
   openSelectKey: () => Promise<void>;
+}
+
+// FIX: Augment the global Window interface here to ensure a single point of declaration for `aistudio`.
+declare global {
+  interface Window {
+    aistudio: AIStudio;
+  }
 }

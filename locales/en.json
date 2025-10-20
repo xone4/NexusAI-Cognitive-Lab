@@ -81,7 +81,9 @@
     "enableTTS": "Enable Text-to-Speech",
     "disableTTS": "Disable Text-to-Speech",
     "startLive": "Start Live Conversation",
-    "stopLive": "Stop Live Conversation"
+    "stopLive": "Stop Live Conversation",
+    "startVideoChat": "Start Video Chat",
+    "stopVideoChat": "Stop Video Chat"
   },
   "live": {
     "you": "You:",

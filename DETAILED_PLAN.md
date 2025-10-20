@@ -52,9 +52,10 @@ This plan outlines the upcoming phases to enhance NexusAI's capabilities further
     *   **Real-time Audio Processor:** A full-duplex voice interface has been implemented using Gemini's Live API (`gemini-2.5-flash-native-audio-preview-09-2025`). This enables natural, low-latency voice conversations with real-time transcription for both user input and model output.
     *   **Voice Synthesis:** A Text-to-Speech (TTS) module has been integrated using the `gemini-2.5-flash-preview-tts` model. This allows the AI to generate a spoken voice for its final synthesized answers, providing a multi-modal response.
     *   **Video Generation Agent:** The `VideoForge` component and `generateVideo` service function have been implemented, integrating `veo-3.1-fast-generate-preview` to create video from text prompts. The UI handles API key selection, generation state, and video playback.
+    *   **Multi-modal Session Foundation:** The UI and service layers now support initiating video chat sessions. The application can access the user's camera feed and differentiate between audio-only and video-enabled conversations, laying the groundwork for real-time visual analysis.
 *   **Future Work:**
-    1.  **Develop Multi-Modal Creative Output:**
-        *   **Real-time Video Stream Analyzer:** Enable the AI to process live camera feeds by sending sequential image frames to the Live API, allowing it to identify objects, describe scenes, and understand visual context.
+    1.  **Complete Multi-Modal Sensory Input:**
+        *   **Implement Real-time Frame Streaming:** Add the client-side logic to capture frames from the live video feed (e.g., using a `<canvas>`) and send them as image blobs to the Gemini Live API session at a regular interval.
         *   **Narrative Weaver:** Enhance the AI's storytelling capabilities to build complex, coherent narratives with character development and plot structure, which can then be used as input for the Video Generation Agent.
 
 ---
