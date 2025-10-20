@@ -51,7 +51,7 @@ This plan outlines the upcoming phases to enhance NexusAI's capabilities further
 *   **Completed Implementation:**
     *   **Real-time Audio Processor:** A full-duplex voice interface has been implemented using Gemini's Live API (`gemini-2.5-flash-native-audio-preview-09-2025`). This enables natural, low-latency voice conversations with real-time transcription for both user input and model output.
     *   **Voice Synthesis:** A Text-to-Speech (TTS) module has been integrated using the `gemini-2.5-flash-preview-tts` model. This allows the AI to generate a spoken voice for its final synthesized answers, providing a multi-modal response.
-    *   **Video Generation Agent:** The `VideoForge` component and `generateVideo` service function have been implemented, integrating `veo-3.1-fast-generate-preview` to create video from text prompts. The UI handles API key selection, generation state, and video playback.
+    *   **Video Generation Agent (Modalities Lab):** The `ModalitiesLab` component and `generateVideo` service function have been implemented, integrating `veo-3.1-fast-generate-preview` to create video from text prompts. The UI handles API key selection, generation state, and video playback.
     *   **Multi-modal Sensory Input (Audio & Video):** The client-side logic for real-time video frame streaming is complete. The system can capture frames from the live video feed and send them as image blobs to the Gemini Live API session, enabling true multi-modal conversations.
 *   **Future Work:**
     1.  **Enhance Creative Generation:**
@@ -66,7 +66,7 @@ This plan outlines the upcoming phases to enhance NexusAI's capabilities further
     *   **AI Interaction Tools:** The `world_model` and `update_world_model` tools are available, allowing the AI to query and manually update its internal knowledge graph.
     *   **Visualization Interface:** A dedicated `WorldModelView.tsx` component provides a graph-based visualization of entities and their relationships, along with an editor to manually curate the model.
     *   **Autonomous Knowledge Ingestion:** The `knowledge_graph_synthesizer` tool has been implemented. This pivotal tool uses the Gemini API to analyze unstructured text, extract entities and relationships according to a defined schema, and automatically updates the World Model. This transforms the World Model from a passive repository to a self-populating knowledge base.
-    *   **Causal Reasoning:** Implemented the `Causal Inference Engine` tool, enabling the AI to analyze data for cause-and-effect relationships beyond simple correlation. [Status: ✅ Complete]
+    *   **Causal Reasoning:** Implemented the `Causal Inference Engine` tool, enabling the AI to analyze data for cause-and-effect relationships beyond simple correlation.
 *   **Future Work:**
     1.  **Enable Proactive Monitoring:** Create an `Anomaly Detection Sentinel` tool to proactively identify unusual patterns in system data or external feeds.
 

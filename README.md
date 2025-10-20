@@ -61,7 +61,8 @@ Observe the four pillars directly within the Cognitive Lab:
 -   **Evolutionary Problem Solving**: The **Evolution Chamber** uses genetic algorithms to tackle complex problems. It evolves populations of plans, visualizes their fitness over generations, and automatically converges on an optimal solution. Past memories and learned behaviors can be used as starting points for new evolutionary tasks.
 -   **Cognitive Dreaming & Self-Improvement**: A dedicated **Dreaming Chamber** where the AI analyzes its collective memory to synthesize new, high-level directives. This allows it to learn from experience, form abstract principles, and improve its core logic autonomously.
 -   **Architectural Plasticity**: The AI can dynamically `forge_tool` or `spawn_replica` as part of its plan, modifying its own capabilities to meet the demands of a task.
--   **Video Synthesis (Video Forge)**: A dedicated interface for generating dynamic video content from textual prompts using Google's Veo model.
+-   **Video Synthesis (Modalities Lab)**: A dedicated interface for generating dynamic video content from textual prompts using Google's Veo model.
+-   **Simulation Lab**: A strategic sandbox where the AI can define scenarios, test competing strategies, and predict future outcomes.
 
 ## System Architecture
 
@@ -99,27 +100,28 @@ This roadmap is aligned with the maturation of our Agent 2.0 architecture.
 ### **Phase 10: Advanced Sensory & Creative Synthesis - ✅ Complete**
 *   **Objective:** Expand the AI's capabilities beyond text to include real-time audio/video processing and creative generation, making it a multi-modal entity.
 *   **Completed Features:**
-    *   **Real-time Audio Processor:** The system supports natural, low-latency voice conversations through the integration of Gemini's Live API.
+    *   **Real-time Audio/Video Processor:** The system supports natural, low-latency voice and video conversations through the integration of Gemini's Live API.
     *   **Voice Synthesis:** The AI can generate spoken responses for its synthesized answers using advanced Text-to-Speech (TTS) models.
-    *   **Video Generation Agent (Video Forge):** The system includes a dedicated "Video Forge" module that integrates Google's Veo model, allowing the AI to transform textual descriptions into dynamic video content.
-    *   **Real-time Video Stream Analyzer:** The system now supports multi-modal video conversations. It can initiate a video session, access the user's camera, and actively stream frames to the Gemini Live API for real-time visual analysis.
+    *   **Video Generation Agent (Modalities Lab):** The system includes a dedicated module that integrates Google's Veo model, allowing the AI to transform textual descriptions into dynamic video content.
 *   **Future Work:**
     *   **Narrative Weaver:** Enhance the AI's storytelling capabilities to build complex, coherent narratives with character development and plot structure, which can then be used as input for the Video Generation Agent.
 
 ---
-### **Phase 11: Deep Analysis & Insight Generation - ⚙️ In Progress**
+### **Phase 11: Deep Analysis & Insight Generation - ✅ Complete**
 *   **Objective:** Equip the AI with tools for advanced reasoning, allowing it to move from simple data processing to understanding causality and building structured knowledge.
-*   **Current Progress:**
-    *   The foundational **World Model** is implemented, allowing the AI to store and query structured knowledge about entities and relationships.
-    *   **Knowledge Graph Synthesizer:** An intelligent tool (`knowledge_graph_synthesizer`) has been implemented. It allows the AI to autonomously ingest unstructured text (e.g., from search results) and automatically extract entities and relationships to populate its World Model, significantly accelerating its learning process.
+*   **Completed Features:**
+    *   **World Model & Knowledge Graph:** A structured, persistent knowledge base that the AI can query and update.
+    *   **Autonomous Knowledge Ingestion:** The `knowledge_graph_synthesizer` tool allows the AI to autonomously parse unstructured text and populate its World Model.
+    *   **Causal Reasoning:** The `Causal Inference Engine` tool enables the AI to distinguish correlation from causation.
 *   **Future Work:**
-    *   **Causal Reasoning:** Develop a `Causal Inference Engine` to distinguish correlation from causation.
+    *   **Enable Proactive Monitoring:** Create an `Anomaly Detection Sentinel` tool to proactively identify unusual patterns in system data or external feeds.
 
 ---
 ### **Phase 12: Strategic Foresight & Simulation - ⚙️ In Progress**
 *   **Objective:** Evolve the AI into a strategist that can simulate future outcomes and test hypotheses in a safe, virtual environment.
-*   **Key Initiatives:**
-    *   **Simulation Sandbox:** Build a flexible virtual environment where the AI can define rules and run "what-if" scenarios.
+*   **Current Progress:**
+    *   **Simulation Sandbox:** The `Simulation Lab` provides a user-facing interface to define scenarios, configure competing strategies, and have the AI run a turn-based simulation, predicting the outcome.
+*   **Future Work:**
     *   **"Wargaming" with Sub-Agents:** Enable the AI to assign competing strategies to teams of Sub-Agents to test their effectiveness within the sandbox.
 
 ---
