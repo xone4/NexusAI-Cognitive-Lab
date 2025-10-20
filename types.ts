@@ -242,6 +242,14 @@ export interface CognitiveProcess {
   activeAffectiveState?: AffectiveState | null; // REPLACES activeQualiaVector
 }
 
+export interface LiveTranscriptionState {
+  isLive: boolean;
+  userTranscript: string;
+  modelTranscript: string;
+  history: { role: 'user' | 'model', text: string }[];
+}
+
+
 export interface SystemSuggestion {
   type: 'query' | 'action';
   description: string;

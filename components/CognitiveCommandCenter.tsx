@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Tab } from '@headlessui/react';
 import type { CognitiveProcess, AppSettings } from '../types';
 import { nexusAIService } from '../services/nexusAIService';
-import { BrainCircuitIcon, PlusCircleIcon, XCircleIcon, RefreshIcon, PhotographIcon, DocumentMagnifyingGlassIcon, LightBulbIcon, SparklesIcon, SpeakerLoudIcon, SpeakerOffIcon } from './Icons';
+import { BrainCircuitIcon, PlusCircleIcon, XCircleIcon, RefreshIcon, PhotographIcon, DocumentMagnifyingGlassIcon, LightBulbIcon, SparklesIcon, SpeakerLoudIcon, SpeakerOffIcon, MicIcon, MicOffIcon } from './Icons';
 import AffectiveDashboard from './AffectiveDashboard';
 
 interface CognitiveCommandCenterProps {
@@ -18,7 +18,9 @@ interface CognitiveCommandCenterProps {
     process: CognitiveProcess | null;
     settings: AppSettings;
     isTtsEnabled: boolean;
+    isLive: boolean;
     onTtsToggle: (enabled: boolean) => void;
+    onLiveSessionToggle: () => void;
     onSubmitQuery: (query: string, image?: { mimeType: string; data: string; }) => void;
     onCancelQuery: () => void;
     onNewChat: () => void;
@@ -28,8 +30,8 @@ interface CognitiveCommandCenterProps {
     onGoToDreaming: () => void;
 }
 
-const QueryTab: React.FC<Pick<CognitiveCommandCenterProps, 'permissions' | 'process' | 'onSubmitQuery' | 'onCancelQuery' | 'onNewChat' | 'isTtsEnabled' | 'onTtsToggle'>> = 
-({ permissions, process, onSubmitQuery, onCancelQuery, onNewChat, isTtsEnabled, onTtsToggle }) => {
+const QueryTab: React.FC<Pick<CognitiveCommandCenterProps, 'permissions' | 'process' | 'onSubmitQuery' | 'onCancelQuery' | 'onNewChat' | 'isTtsEnabled' | 'onTtsToggle' | 'isLive' | 'onLiveSessionToggle'>> = 
+({ permissions, process, onSubmitQuery, onCancelQuery, onNewChat, isTtsEnabled, onTtsToggle, isLive, onLiveSessionToggle }) => {
     const { t, i18n } = useTranslation();
     const isRtl = i18n.dir() === 'rtl';
     const [query, setQuery] = useState('');
@@ -101,8 +103,8 @@ const QueryTab: React.FC<Pick<CognitiveCommandCenterProps, 'permissions' | 'proc
                 <textarea
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder={isAwaitingInput ? t('commandCenter.planReviewPlaceholder') : (!permissions.canSubmitQuery ? t('commandCenter.aiProcessingPlaceholder') : t('commandCenter.queryPlaceholder'))}
-                    disabled={!permissions.canSubmitQuery}
+                    placeholder={isLive ? t('live.listening') : (isAwaitingInput ? t('commandCenter.planReviewPlaceholder') : (!permissions.canSubmitQuery ? t('commandCenter.aiProcessingPlaceholder') : t('commandCenter.queryPlaceholder')))}
+                    disabled={!permissions.canSubmitQuery && !isLive}
                     onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(e); } }}
                     className="w-full h-12 p-3 bg-nexus-dark/70 border border-nexus-surface rounded-xl focus:outline-none focus:ring-2 focus:ring-nexus-primary text-nexus-text resize-none text-sm font-mono"
                     rows={1}
@@ -112,6 +114,10 @@ const QueryTab: React.FC<Pick<CognitiveCommandCenterProps, 'permissions' | 'proc
                     {getButtonText()}
                 </button>
                 
+                 <button type="button" onClick={onLiveSessionToggle} disabled={permissions.isGloballyBusy && !isLive} className={`p-2 rounded-full bg-nexus-surface transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${isLive ? 'text-red-500 bg-red-500/10' : 'text-nexus-text-muted hover:text-nexus-primary'}`} title={isLive ? t('commandCenter.stopLive') : t('commandCenter.startLive')}>
+                    {isLive ? <MicOffIcon className="w-5 h-5" /> : <MicIcon className="w-5 h-5" />}
+                </button>
+
                 {permissions.canSubmitQuery && (
                      <button type="button" onClick={() => onTtsToggle(!isTtsEnabled)} className={`p-2 rounded-full bg-nexus-surface transition-colors ${isTtsEnabled ? 'text-nexus-primary' : 'text-nexus-text-muted hover:text-nexus-primary'}`} title={isTtsEnabled ? t('commandCenter.disableTTS') : t('commandCenter.enableTTS')}>
                         {isTtsEnabled ? <SpeakerLoudIcon className="w-5 h-5" /> : <SpeakerOffIcon className="w-5 h-5" />}

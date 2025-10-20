@@ -1,5 +1,5 @@
-import { GoogleGenAI, Type, Modality } from "@google/genai";
-import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails, UserKeyword, Personality, PlaybookItem, RawInsight, PlaybookItemCategory, WorldModel, WorldModelEntity, CognitiveTrajectory, WorldModelRelationship } from '../types';
+import { GoogleGenAI, Type, Modality, Blob, LiveServerMessage } from "@google/genai";
+import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails, UserKeyword, Personality, PlaybookItem, RawInsight, PlaybookItemCategory, WorldModel, WorldModelEntity, CognitiveTrajectory, WorldModelRelationship, LiveTranscriptionState } from '../types';
 import { dbService, STORES } from './dbService';
 import * as geometryService from './geometryService';
 import { calculateTrajectorySimilarity } from './geometryService';
@@ -21,6 +21,8 @@ let evolutionState: EvolutionState;
 let worldModelState: WorldModel | null = null;
 let cognitiveProcess: CognitiveProcess;
 let cognitiveNetworkState: CognitiveNetworkState = { activeProblems: [] };
+// Fix: Add state for live transcription.
+let liveTranscriptionState: LiveTranscriptionState = { isLive: false, userTranscript: '', modelTranscript: '', history: [] };
 let archivedTracesState: ChatMessage[];
 let systemDirectivesState: SystemDirective[];
 let isCancelled = false;
@@ -39,6 +41,13 @@ let appSettings: AppSettings = {
 let currentController: AbortController | null = null;
 let evolutionInterval: any = null;
 
+// Fix: Add variables for live session management.
+let liveSessionPromise: Promise<any> | null = null;
+let microphoneStream: MediaStream | null = null;
+let audioProcessor: ScriptProcessorNode | null = null;
+let audioContext: AudioContext | null = null;
+let audioSource: MediaStreamAudioSourceNode | null = null;
+
 let logSubscribers: ((log: LogEntry) => void)[] = [];
 let performanceSubscribers: ((dataPoint: PerformanceDataPoint) => void)[] = [];
 let replicaSubscribers: ((replicaState: Replica) => void)[] = [];
@@ -52,6 +61,8 @@ let archiveSubscribers: ((archives: ChatMessage[]) => void)[] = [];
 let dreamProcessSubscribers: ((update: DreamProcessUpdate) => void)[] = [];
 let worldModelSubscribers: ((worldModel: WorldModel) => void)[] = [];
 let cognitiveNetworkSubscribers: ((state: CognitiveNetworkState) => void)[] = [];
+// Fix: Add subscribers array for live transcription.
+let liveTranscriptionSubscribers: ((state: LiveTranscriptionState) => void)[] = [];
 
 // --- Phase 9: Temporal Synchronization State ---
 let isGlobalSyncActive = false;
@@ -59,6 +70,29 @@ let globalSyncTempo = 1.0;
 // ---------------------------------------------
 
 let traceDetailsCache = new Map<string, TraceDetails>();
+
+// Fix: Add encode function for audio data.
+function encode(bytes: Uint8Array) {
+  let binary = '';
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+// Fix: Add createBlob function for audio data.
+function createBlob(data: Float32Array): Blob {
+  const l = data.length;
+  const int16 = new Int16Array(l);
+  for (let i = 0; i < l; i++) {
+    int16[i] = data[i] * 32768;
+  }
+  return {
+    data: encode(new Uint8Array(int16.buffer)),
+    mimeType: 'audio/pcm;rate=16000',
+  };
+}
 
 // --- Audio Decoding Helpers (Phase 10) ---
 function decode(base64: string) {
@@ -158,6 +192,8 @@ const notifyEvolution = () => evolutionSubscribers.forEach(cb => cb(JSON.parse(J
 const notifyArchives = () => archiveSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(archivedTracesState))));
 const notifyDreamProcess = (update: DreamProcessUpdate) => dreamProcessSubscribers.forEach(cb => cb(update));
 const notifyCognitiveNetwork = () => cognitiveNetworkSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(cognitiveNetworkState))));
+// Fix: Add notifier for live transcription.
+const notifyLiveTranscription = () => liveTranscriptionSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(liveTranscriptionState))));
 const notifyWorldModel = () => {
     if (worldModelState) {
         worldModelSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(worldModelState!))));
@@ -943,6 +979,152 @@ const service = {
         }
     },
 
+    // Fix: Add startLiveSession method.
+    startLiveSession: async () => {
+        if (liveSessionPromise || !API_KEY) {
+            log('WARN', 'Live session already active or API key is missing.');
+            return;
+        }
+        log('SYSTEM', 'Starting live session...');
+        liveTranscriptionState = { isLive: true, userTranscript: '', modelTranscript: '', history: [] };
+        notifyLiveTranscription();
+
+        try {
+            // Audio setup
+            microphoneStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
+            audioSource = audioContext.createMediaStreamSource(microphoneStream);
+            audioProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+            
+            audioProcessor.onaudioprocess = (audioProcessingEvent) => {
+                const inputData = audioProcessingEvent.inputBuffer.getChannelData(0);
+                const pcmBlob = createBlob(inputData);
+                if (liveSessionPromise) {
+                    liveSessionPromise.then((session) => {
+                        session.sendRealtimeInput({ media: pcmBlob });
+                    });
+                }
+            };
+            audioSource.connect(audioProcessor);
+            audioProcessor.connect(audioContext.destination);
+
+            let nextStartTime = 0;
+            const outputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+            const outputNode = outputAudioContext.createGain();
+            outputNode.connect(outputAudioContext.destination);
+            const sources = new Set<AudioBufferSourceNode>();
+
+            liveSessionPromise = ai.live.connect({
+                model: 'gemini-2.5-flash-native-audio-preview-09-2025',
+                callbacks: {
+                    onopen: () => {
+                        log('SYSTEM', 'Live session connection opened.');
+                    },
+                    onmessage: async (message: LiveServerMessage) => {
+                        let stateChanged = false;
+                        if (message.serverContent?.inputTranscription) {
+                            liveTranscriptionState.userTranscript += message.serverContent.inputTranscription.text;
+                            stateChanged = true;
+                        }
+                        if (message.serverContent?.outputTranscription) {
+                            liveTranscriptionState.modelTranscript += message.serverContent.outputTranscription.text;
+                            stateChanged = true;
+                        }
+
+                        if (message.serverContent?.turnComplete) {
+                            if (liveTranscriptionState.userTranscript) liveTranscriptionState.history.push({ role: 'user', text: liveTranscriptionState.userTranscript });
+                            if (liveTranscriptionState.modelTranscript) liveTranscriptionState.history.push({ role: 'model', text: liveTranscriptionState.modelTranscript });
+                            liveTranscriptionState.userTranscript = '';
+                            liveTranscriptionState.modelTranscript = '';
+                            stateChanged = true;
+                        }
+
+                        if (stateChanged) notifyLiveTranscription();
+
+                        // handle audio output
+                        const base64EncodedAudioString = message.serverContent?.modelTurn?.parts[0]?.inlineData.data;
+                        if (base64EncodedAudioString) {
+                            nextStartTime = Math.max(nextStartTime, outputAudioContext.currentTime);
+                            const audioBuffer = await decodeAudioData(decode(base64EncodedAudioString), outputAudioContext, 24000, 1);
+                            const source = outputAudioContext.createBufferSource();
+                            source.buffer = audioBuffer;
+                            source.connect(outputNode);
+                            source.addEventListener('ended', () => {
+                                sources.delete(source);
+                            });
+                            source.start(nextStartTime);
+                            nextStartTime += audioBuffer.duration;
+                            sources.add(source);
+                        }
+                        
+                        const interrupted = message.serverContent?.interrupted;
+                        if (interrupted) {
+                            for (const source of sources.values()) {
+                                source.stop();
+                                sources.delete(source);
+                            }
+                            nextStartTime = 0;
+                        }
+                    },
+                    onerror: (e: ErrorEvent) => {
+                        log('ERROR', `Live session error: ${e.message}`);
+                        service.stopLiveSession();
+                    },
+                    onclose: (e: CloseEvent) => {
+                        log('SYSTEM', 'Live session closed.');
+                        if(liveTranscriptionState.isLive) {
+                            service.stopLiveSession();
+                        }
+                    },
+                },
+                config: {
+                    responseModalities: [Modality.AUDIO],
+                    inputAudioTranscription: {},
+                    outputAudioTranscription: {},
+                },
+            });
+
+        } catch (error) {
+            log('ERROR', `Failed to start live session: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            await service.stopLiveSession();
+        }
+    },
+    
+    // Fix: Add stopLiveSession method.
+    stopLiveSession: async () => {
+        if (!liveTranscriptionState.isLive) return;
+
+        liveTranscriptionState.isLive = false;
+        log('SYSTEM', 'Stopping live session...');
+        notifyLiveTranscription();
+
+        if (liveSessionPromise) {
+            try {
+                const session = await liveSessionPromise;
+                session.close();
+            } catch (e) {
+                log('WARN', `Error closing live session: ${e instanceof Error ? e.message : 'Unknown error'}`);
+            }
+            liveSessionPromise = null;
+        }
+        if (microphoneStream) {
+            microphoneStream.getTracks().forEach(track => track.stop());
+            microphoneStream = null;
+        }
+        if (audioProcessor) {
+            try { audioProcessor.disconnect(); } catch(e) {}
+            audioProcessor = null;
+        }
+        if (audioSource) {
+            try { audioSource.disconnect(); } catch(e) {}
+            audioSource = null;
+        }
+        if (audioContext && audioContext.state !== 'closed') {
+            try { await audioContext.close(); } catch(e) {}
+            audioContext = null;
+        }
+    },
+    
     initiateDreamCycle: async () => {
         log('SYSTEM', 'Dream cycle initiated by user.');
 
@@ -2893,6 +3075,8 @@ ${text}
     subscribeToDreamProcess: (callback: (update: DreamProcessUpdate) => void) => { dreamProcessSubscribers.push(callback); },
     subscribeToWorldModel: (callback: (worldModel: WorldModel) => void) => { worldModelSubscribers.push(callback); },
     subscribeToCognitiveNetwork: (callback: (state: CognitiveNetworkState) => void) => { cognitiveNetworkSubscribers.push(callback); },
+    // Fix: Add subscribeToLiveTranscription method.
+    subscribeToLiveTranscription: (callback: (state: LiveTranscriptionState) => void) => { liveTranscriptionSubscribers.push(callback); },
     unsubscribeFromDreamProcess: (callback: (update: DreamProcessUpdate) => void) => {
         dreamProcessSubscribers = dreamProcessSubscribers.filter(cb => cb !== callback);
     },
@@ -2911,6 +3095,8 @@ ${text}
         dreamProcessSubscribers = [];
         worldModelSubscribers = [];
         cognitiveNetworkSubscribers = [];
+        // Fix: Clear live transcription subscribers.
+        liveTranscriptionSubscribers = [];
     }
 };
 

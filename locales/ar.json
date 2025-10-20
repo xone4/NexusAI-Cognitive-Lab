@@ -78,7 +78,15 @@
     "stateDormant": "الحالة خاملة.",
     "induceEmotion": "تحفيز {{emotion}}",
     "enableTTS": "تفعيل تحويل النص إلى كلام",
-    "disableTTS": "تعطيل تحويل النص إلى كلام"
+    "disableTTS": "تعطيل تحويل النص إلى كلام",
+    "startLive": "بدء محادثة مباشرة",
+    "stopLive": "إيقاف المحادثة المباشرة"
+  },
+  "live": {
+    "you": "أنت:",
+    "nexusai": "NexusAI:",
+    "listening": "يستمع...",
+    "thinking": "يفكر..."
   },
   "cognitiveProcess": {
     "sources": "المصادر",

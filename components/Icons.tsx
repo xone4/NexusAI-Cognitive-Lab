@@ -56,6 +56,8 @@ import {
   Save,
   Volume2,
   VolumeX,
+  Mic,
+  MicOff,
   type LucideProps,
 } from 'lucide-react';
 
@@ -121,3 +123,5 @@ export const TrajectoryIcon: React.FC<IconProps> = (props) => <Spline {...props}
 export const SaveIcon: React.FC<IconProps> = (props) => <Save {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;
 export const SpeakerLoudIcon: React.FC<IconProps> = (props) => <Volume2 {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;
 export const SpeakerOffIcon: React.FC<IconProps> = (props) => <VolumeX {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;
+export const MicIcon: React.FC<IconProps> = (props) => <Mic {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;
+export const MicOffIcon: React.FC<IconProps> = (props) => <MicOff {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;

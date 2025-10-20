@@ -78,7 +78,15 @@
     "stateDormant": "State is dormant.",
     "induceEmotion": "Induce {{emotion}}",
     "enableTTS": "Enable Text-to-Speech",
-    "disableTTS": "Disable Text-to-Speech"
+    "disableTTS": "Disable Text-to-Speech",
+    "startLive": "Start Live Conversation",
+    "stopLive": "Stop Live Conversation"
+  },
+  "live": {
+    "you": "You:",
+    "nexusai": "NexusAI:",
+    "listening": "Listening...",
+    "thinking": "Thinking..."
   },
   "cognitiveProcess": {
     "sources": "Sources",

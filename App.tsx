@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, ActiveView, CognitiveProcess, AppSettings, Toolchain, ChatMessage, PlanStep, CognitiveConstitution, EvolutionState, PlaybookItem, Language, Personality, WorldModelEntity, CognitiveNetworkState } from './types';
+import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, ActiveView, CognitiveProcess, AppSettings, Toolchain, ChatMessage, PlanStep, CognitiveConstitution, EvolutionState, PlaybookItem, Language, Personality, WorldModelEntity, CognitiveNetworkState, LiveTranscriptionState } from './types';
 import { nexusAIService } from './services/nexusAIService';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -20,6 +20,7 @@ import VitalsPanel from './components/VitalsPanel';
 import SuggestionTray from './components/SuggestionTray';
 import DreamingView from './components/DreamingView';
 import WorldModelView from './components/WorldModelView';
+import LiveTranscriptionDisplay from './components/LiveTranscriptionDisplay';
 
 type SystemStatus = 'Online' | 'Degraded' | 'Offline' | 'Initializing';
 
@@ -39,6 +40,7 @@ const App: React.FC = () => {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [systemStatus, setSystemStatus] = useState<SystemStatus>('Initializing');
   const [cognitiveProcess, setCognitiveProcess] = useState<CognitiveProcess | null>(null);
+  const [liveTranscription, setLiveTranscription] = useState<LiveTranscriptionState>({ isLive: false, userTranscript: '', modelTranscript: '', history: [] });
   const [isRawIntrospectionOpen, setIsRawIntrospectionOpen] = useState(false);
   const [activeTrace, setActiveTrace] = useState<ChatMessage | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -159,6 +161,10 @@ const App: React.FC = () => {
     setCognitiveProcess(process);
   }, []);
 
+  const handleLiveTranscriptionUpdate = useCallback((newState: LiveTranscriptionState) => {
+    setLiveTranscription(newState);
+  }, []);
+
   const handleArchivesUpdate = useCallback((archives: ChatMessage[]) => {
     setArchivedTraces(archives);
   }, []);
@@ -173,6 +179,15 @@ const App: React.FC = () => {
     setIsTtsEnabled(enabled);
     nexusAIService.setTtsEnabled(enabled);
   }, []);
+
+  const handleLiveSessionToggle = useCallback(() => {
+    if (liveTranscription.isLive) {
+        nexusAIService.stopLiveSession();
+    } else {
+        nexusAIService.startLiveSession();
+    }
+  }, [liveTranscription.isLive]);
+
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -205,6 +220,7 @@ const App: React.FC = () => {
       nexusAIService.subscribeToWorldModel(handleWorldModelUpdate);
       nexusAIService.subscribeToCognitiveNetwork(handleCognitiveNetworkUpdate);
       nexusAIService.subscribeToCognitiveProcess(handleCognitiveProcessUpdate);
+      nexusAIService.subscribeToLiveTranscription(handleLiveTranscriptionUpdate);
       nexusAIService.subscribeToArchives(handleArchivesUpdate);
   
       const serviceInterval = nexusAIService.start();
@@ -352,16 +368,17 @@ const App: React.FC = () => {
   const cognitivePermissions = useMemo(() => {
     const state = cognitiveProcess?.state ?? 'Idle';
     const isProcessing = state === 'Receiving' || state === 'Executing' || state === 'Synthesizing' || state === 'Planning';
+    const isLive = liveTranscription.isLive;
 
     return {
-        canSubmitQuery: state === 'Idle' || state === 'Done' || state === 'Error' || state === 'Cancelled',
-        canEditPlan: state === 'AwaitingExecution',
-        canExecutePlan: state === 'AwaitingExecution',
-        canCancelProcess: isProcessing,
-        canUseManualControls: state === 'Idle' || state === 'Done' || state === 'Error' || state === 'Cancelled',
-        isGloballyBusy: isProcessing || state === 'AwaitingExecution',
+        canSubmitQuery: (state === 'Idle' || state === 'Done' || state === 'Error' || state === 'Cancelled') && !isLive,
+        canEditPlan: state === 'AwaitingExecution' && !isLive,
+        canExecutePlan: state === 'AwaitingExecution' && !isLive,
+        canCancelProcess: isProcessing && !isLive,
+        canUseManualControls: (state === 'Idle' || state === 'Done' || state === 'Error' || state === 'Cancelled') && !isLive,
+        isGloballyBusy: isProcessing || state === 'AwaitingExecution' || isLive,
     };
-  }, [cognitiveProcess?.state]);
+  }, [cognitiveProcess?.state, liveTranscription.isLive]);
 
 
   const replicaCount = useMemo(() => {
@@ -375,6 +392,7 @@ const App: React.FC = () => {
   const renderDashboard = () => (
     <div className="flex flex-col h-full bg-nexus-bg">
         <div className="flex-grow h-full overflow-hidden relative">
+             <LiveTranscriptionDisplay state={liveTranscription} />
              {cognitiveProcess && <CognitiveProcessVisualizer
               process={cognitiveProcess}
               constitutions={constitutions}
@@ -407,7 +425,9 @@ const App: React.FC = () => {
               process={cognitiveProcess}
               settings={settings}
               isTtsEnabled={isTtsEnabled}
+              isLive={liveTranscription.isLive}
               onTtsToggle={handleTtsToggle}
+              onLiveSessionToggle={handleLiveSessionToggle}
               onSubmitQuery={submitQuery}
               onCancelQuery={cancelQuery}
               onNewChat={startNewChat}
