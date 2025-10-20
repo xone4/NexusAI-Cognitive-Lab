@@ -131,21 +131,34 @@ const SimulationLab: React.FC<SimulationLabProps> = ({ simulationState, isGlobal
                             <div>
                                 <h4 className="font-semibold text-nexus-text">{t('simulationLab.trace')}</h4>
                                 <div className="mt-2 space-y-2 max-h-96 overflow-y-auto bg-nexus-dark/30 p-2 rounded-xl">
-                                    {result.stepByStepTrace.map(step => (
-                                        <div key={step.step} className="p-2 border-b border-nexus-surface/50">
-                                            <p className="font-bold text-nexus-primary">Step {step.step} - <span className="text-nexus-text">{step.strategy}</span></p>
-                                            <p className="text-xs text-nexus-text-muted"><strong>Action:</strong> {step.action}</p>
-                                            <p className="text-xs text-nexus-secondary"><strong>Outcome:</strong> {step.outcome}</p>
-                                            {step.state && Object.keys(step.state).length > 0 && (
-                                                <div className="mt-1">
-                                                    <p className="text-xs text-nexus-text-muted"><strong>State:</strong></p>
-                                                    <pre className="text-xs font-mono bg-nexus-dark/70 p-2 rounded text-cyan-400 whitespace-pre-wrap">
-                                                        {JSON.stringify(step.state, null, 2)}
-                                                    </pre>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
+                                    {result.stepByStepTrace.map(step => {
+                                        let formattedState = '';
+                                        try {
+                                            // Try to parse if it's a string, otherwise stringify if it's an object
+                                            formattedState = typeof step.state === 'string'
+                                                ? JSON.stringify(JSON.parse(step.state), null, 2)
+                                                : JSON.stringify(step.state, null, 2);
+                                        } catch (e) {
+                                            // If parsing fails, just show the raw string
+                                            formattedState = String(step.state);
+                                        }
+
+                                        return (
+                                            <div key={step.step} className="p-2 border-b border-nexus-surface/50">
+                                                <p className="font-bold text-nexus-primary">Step {step.step} - <span className="text-nexus-text">{step.strategy}</span></p>
+                                                <p className="text-xs text-nexus-text-muted"><strong>Action:</strong> {step.action}</p>
+                                                <p className="text-xs text-nexus-secondary"><strong>Outcome:</strong> {step.outcome}</p>
+                                                {step.state && (
+                                                    <div className="mt-1">
+                                                        <p className="text-xs text-nexus-text-muted"><strong>State:</strong></p>
+                                                        <pre className="text-xs font-mono bg-nexus-dark/70 p-2 rounded text-cyan-400 whitespace-pre-wrap">
+                                                            {formattedState}
+                                                        </pre>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </div>

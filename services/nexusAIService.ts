@@ -929,7 +929,7 @@ const simulationResultSchema = {
                     strategy: { type: Type.STRING },
                     action: { type: Type.STRING },
                     outcome: { type: Type.STRING },
-                    state: { type: Type.OBJECT } // Flexible state object
+                    state: { type: Type.STRING, description: "A JSON string representing the key metrics of the simulation state at this step." }
                 },
                 required: ['step', 'strategy', 'action', 'outcome', 'state']
             }
@@ -3383,7 +3383,7 @@ ${strategyDescriptions}
 2.  For each step, up to the maximum:
     a. Determine the action each strategy would take.
     b. Describe the outcome of those actions.
-    c. Update the simulation state (e.g., cash reserves, market share, etc.). The 'state' object should reflect key metrics.
+    c. Update the simulation state. The 'state' field should be a JSON string reflecting key metrics (e.g., '{"cash_reserves": 10000, "market_share": 0.1}').
 3.  After the final step, evaluate the outcome based on the criteria.
 4.  Provide a final summary, declare the winning strategy, and return the complete step-by-step trace.
 
