@@ -1,8 +1,10 @@
 import { GoogleGenAI, Type, Modality, Blob, LiveServerMessage } from "@google/genai";
-import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails, UserKeyword, Personality, PlaybookItem, RawInsight, PlaybookItemCategory, WorldModel, WorldModelEntity, CognitiveTrajectory, WorldModelRelationship, LiveTranscriptionState } from '../types';
+import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails, UserKeyword, Personality, PlaybookItem, RawInsight, PlaybookItemCategory, WorldModel, WorldModelEntity, CognitiveTrajectory, WorldModelRelationship, LiveTranscriptionState, VideoGenerationState } from '../types';
 import { dbService, STORES } from './dbService';
 import * as geometryService from './geometryService';
 import { calculateTrajectorySimilarity } from './geometryService';
+
+export type { VideoGenerationState } from '../types';
 
 // IMPORTANT: This would be populated by a secure mechanism in a real app
 const API_KEY = process.env.API_KEY;
@@ -21,7 +23,6 @@ let evolutionState: EvolutionState;
 let worldModelState: WorldModel | null = null;
 let cognitiveProcess: CognitiveProcess;
 let cognitiveNetworkState: CognitiveNetworkState = { activeProblems: [] };
-// Fix: Add state for live transcription.
 let liveTranscriptionState: LiveTranscriptionState = { isLive: false, userTranscript: '', modelTranscript: '', history: [] };
 let archivedTracesState: ChatMessage[];
 let systemDirectivesState: SystemDirective[];
@@ -37,11 +38,11 @@ let appSettings: AppSettings = {
     language: 'en',
     cognitiveStyle: 'balanced',
 };
+let videoGenerationState: VideoGenerationState = { isGenerating: false, statusMessage: '', videoUrl: null, error: null };
 
 let currentController: AbortController | null = null;
 let evolutionInterval: any = null;
 
-// Fix: Add variables for live session management.
 let liveSessionPromise: Promise<any> | null = null;
 let microphoneStream: MediaStream | null = null;
 let audioProcessor: ScriptProcessorNode | null = null;
@@ -61,8 +62,8 @@ let archiveSubscribers: ((archives: ChatMessage[]) => void)[] = [];
 let dreamProcessSubscribers: ((update: DreamProcessUpdate) => void)[] = [];
 let worldModelSubscribers: ((worldModel: WorldModel) => void)[] = [];
 let cognitiveNetworkSubscribers: ((state: CognitiveNetworkState) => void)[] = [];
-// Fix: Add subscribers array for live transcription.
 let liveTranscriptionSubscribers: ((state: LiveTranscriptionState) => void)[] = [];
+let videoGenerationSubscribers: ((state: VideoGenerationState) => void)[] = [];
 
 // --- Phase 9: Temporal Synchronization State ---
 let isGlobalSyncActive = false;
@@ -71,7 +72,6 @@ let globalSyncTempo = 1.0;
 
 let traceDetailsCache = new Map<string, TraceDetails>();
 
-// Fix: Add encode function for audio data.
 function encode(bytes: Uint8Array) {
   let binary = '';
   const len = bytes.byteLength;
@@ -81,7 +81,6 @@ function encode(bytes: Uint8Array) {
   return btoa(binary);
 }
 
-// Fix: Add createBlob function for audio data.
 function createBlob(data: Float32Array): Blob {
   const l = data.length;
   const int16 = new Int16Array(l);
@@ -192,8 +191,8 @@ const notifyEvolution = () => evolutionSubscribers.forEach(cb => cb(JSON.parse(J
 const notifyArchives = () => archiveSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(archivedTracesState))));
 const notifyDreamProcess = (update: DreamProcessUpdate) => dreamProcessSubscribers.forEach(cb => cb(update));
 const notifyCognitiveNetwork = () => cognitiveNetworkSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(cognitiveNetworkState))));
-// Fix: Add notifier for live transcription.
 const notifyLiveTranscription = () => liveTranscriptionSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(liveTranscriptionState))));
+const notifyVideoGeneration = () => videoGenerationSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(videoGenerationState))));
 const notifyWorldModel = () => {
     if (worldModelState) {
         worldModelSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(worldModelState!))));
@@ -979,7 +978,6 @@ const service = {
         }
     },
 
-    // Fix: Add startLiveSession method.
     startLiveSession: async () => {
         if (liveSessionPromise || !API_KEY) {
             log('WARN', 'Live session already active or API key is missing.');
@@ -1090,7 +1088,6 @@ const service = {
         }
     },
     
-    // Fix: Add stopLiveSession method.
     stopLiveSession: async () => {
         if (!liveTranscriptionState.isLive) return;
 
@@ -3062,6 +3059,78 @@ ${text}
         }
     },
 
+    generateVideo: async ({ prompt, config }: { prompt: string, config: { aspectRatio: '16:9' | '9:16', resolution: '720p' | '1080p' } }) => {
+        if (!process.env.API_KEY) {
+            const errorMsg = "API Key not found. Please select a key in the UI.";
+            log('ERROR', errorMsg);
+            videoGenerationState = { isGenerating: false, statusMessage: '', videoUrl: null, error: errorMsg };
+            notifyVideoGeneration();
+            return;
+        }
+
+        videoGenerationState = { isGenerating: true, statusMessage: 'Initializing video generation...', videoUrl: null, error: null };
+        notifyVideoGeneration();
+        
+        try {
+            const localAi = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+            let operation = await localAi.models.generateVideos({
+                model: 'veo-3.1-fast-generate-preview',
+                prompt,
+                config: {
+                numberOfVideos: 1,
+                resolution: config.resolution,
+                aspectRatio: config.aspectRatio,
+                }
+            });
+            
+            log('AI', `Video generation started for prompt: "${prompt}"`);
+            videoGenerationState.statusMessage = 'Generation initiated. Polling for updates...';
+            notifyVideoGeneration();
+
+            while (!operation.done) {
+                await new Promise(resolve => setTimeout(resolve, 10000));
+                operation = await localAi.operations.getVideosOperation({ operation: operation });
+                const progressMessage = `Processing... (State: ${operation.metadata?.state ?? 'UNKNOWN'})`;
+                log('AI', progressMessage);
+                videoGenerationState.statusMessage = progressMessage;
+                notifyVideoGeneration();
+            }
+
+            const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
+            if (!downloadLink) {
+                throw new Error("Video generation completed but no download link was provided.");
+            }
+            
+            log('SYSTEM', `Video generated. Fetching from URI...`);
+            videoGenerationState.statusMessage = 'Generation complete. Fetching video file...';
+            notifyVideoGeneration();
+            
+            const response = await fetch(`${downloadLink}&key=${process.env.API_KEY}`);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch video file: ${response.statusText}`);
+            }
+
+            const videoBlob = await response.blob();
+            const videoUrl = URL.createObjectURL(videoBlob);
+
+            videoGenerationState = { isGenerating: false, statusMessage: 'Complete!', videoUrl, error: null };
+            notifyVideoGeneration();
+            log('SYSTEM', `Video successfully fetched and is ready for playback.`);
+
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "An unknown error occurred during video generation.";
+            log('ERROR', `Video generation failed: ${errorMessage}`);
+            
+            if (errorMessage.includes("Requested entity was not found")) {
+                videoGenerationState = { isGenerating: false, statusMessage: '', videoUrl: null, error: `API Key Error: ${errorMessage}` };
+            } else {
+                videoGenerationState = { isGenerating: false, statusMessage: '', videoUrl: null, error: errorMessage };
+            }
+            notifyVideoGeneration();
+        }
+    },
+
     subscribeToLogs: (callback: (log: LogEntry) => void) => { logSubscribers.push(callback); },
     subscribeToPerformance: (callback: (dataPoint: PerformanceDataPoint) => void) => { performanceSubscribers.push(callback); },
     subscribeToReplicas: (callback: (replicaState: Replica) => void) => { replicaSubscribers.push(callback); },
@@ -3075,8 +3144,15 @@ ${text}
     subscribeToDreamProcess: (callback: (update: DreamProcessUpdate) => void) => { dreamProcessSubscribers.push(callback); },
     subscribeToWorldModel: (callback: (worldModel: WorldModel) => void) => { worldModelSubscribers.push(callback); },
     subscribeToCognitiveNetwork: (callback: (state: CognitiveNetworkState) => void) => { cognitiveNetworkSubscribers.push(callback); },
-    // Fix: Add subscribeToLiveTranscription method.
     subscribeToLiveTranscription: (callback: (state: LiveTranscriptionState) => void) => { liveTranscriptionSubscribers.push(callback); },
+    subscribeToVideoGeneration: (callback: (state: VideoGenerationState) => void) => {
+        videoGenerationSubscribers.push(callback);
+        return {
+            unsubscribe: () => {
+                videoGenerationSubscribers = videoGenerationSubscribers.filter(cb => cb !== callback);
+            }
+        };
+    },
     unsubscribeFromDreamProcess: (callback: (update: DreamProcessUpdate) => void) => {
         dreamProcessSubscribers = dreamProcessSubscribers.filter(cb => cb !== callback);
     },
@@ -3095,8 +3171,8 @@ ${text}
         dreamProcessSubscribers = [];
         worldModelSubscribers = [];
         cognitiveNetworkSubscribers = [];
-        // Fix: Clear live transcription subscribers.
         liveTranscriptionSubscribers = [];
+        videoGenerationSubscribers = [];
     }
 };
 

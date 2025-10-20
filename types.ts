@@ -120,7 +120,7 @@ export interface LogEntry {
   source?: string; // Optional Replica ID
 }
 
-export type ActiveView = 'dashboard' | 'replicas' | 'tools' | 'architecture' | 'analysis' | 'settings' | 'evolution' | 'memory' | 'dreaming' | 'world_model';
+export type ActiveView = 'dashboard' | 'replicas' | 'tools' | 'architecture' | 'analysis' | 'settings' | 'evolution' | 'memory' | 'dreaming' | 'world_model' | 'video_forge';
 
 export type LogVerbosity = 'STANDARD' | 'VERBOSE';
 export type AnimationLevel = 'FULL' | 'MINIMAL' | 'NONE';
@@ -434,4 +434,17 @@ export interface WorldModel {
   relationships: WorldModelRelationship[];
   principles: WorldModelPrinciple[];
   lastUpdated: number;
+}
+
+export interface VideoGenerationState {
+  isGenerating: boolean;
+  statusMessage: string;
+  videoUrl: string | null;
+  error: string | null;
+}
+
+// FIX: Define AIStudio here to provide a single source of truth for the type.
+export interface AIStudio {
+  hasSelectedApiKey: () => Promise<boolean>;
+  openSelectKey: () => Promise<void>;
 }

@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ActiveView } from '../types';
-import { DashboardIcon, ReplicaIcon, ToolIcon, ArchIcon, CogIcon, MagnifyingGlassIcon, DnaIcon, BookOpenIcon, SparklesIcon, DicesIcon } from './Icons';
+import { DashboardIcon, ReplicaIcon, ToolIcon, ArchIcon, CogIcon, MagnifyingGlassIcon, DnaIcon, BookOpenIcon, SparklesIcon, DicesIcon, FilmIcon } from './Icons';
 
 interface SidebarProps {
   activeView: ActiveView;
@@ -46,6 +46,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, setActiveView }) => {
     { view: 'memory' as ActiveView, label: t('sidebar.memoryExplorer'), icon: <BookOpenIcon /> },
     { view: 'evolution' as ActiveView, label: t('sidebar.evolutionChamber'), icon: <DnaIcon /> },
     { view: 'dreaming' as ActiveView, label: t('sidebar.dreamingChamber'), icon: <SparklesIcon /> },
+    { view: 'video_forge' as ActiveView, label: t('sidebar.videoForge'), icon: <FilmIcon /> },
     { view: 'analysis' as ActiveView, label: t('sidebar.analysisLab'), icon: <MagnifyingGlassIcon /> },
     { view: 'architecture' as ActiveView, label: t('sidebar.architecture'), icon: <ArchIcon /> },
   ];

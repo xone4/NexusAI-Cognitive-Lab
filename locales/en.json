@@ -12,6 +12,7 @@
     "memoryExplorer": "Memory Explorer",
     "evolutionChamber": "Evolution Chamber",
     "dreamingChamber": "Dreaming Chamber",
+    "videoForge": "Video Forge",
     "analysisLab": "Analysis Lab",
     "architecture": "Architecture",
     "settings": "Settings",
@@ -561,5 +562,25 @@
     "type": "Type",
     "summary": "Summary",
     "properties": "Properties"
+  },
+  "videoForge": {
+    "title": "Video Forge",
+    "promptPlaceholder": "Describe the video you want to create...",
+    "aspectRatio": "Aspect Ratio",
+    "landscape": "16:9 (Landscape)",
+    "portrait": "9:16 (Portrait)",
+    "resolution": "Resolution",
+    "generate": "Generate Video",
+    "generating": "Generating...",
+    "generationStatus": "Generation Status",
+    "patience": "This process can take several minutes. Please be patient.",
+    "result": "Generated Video",
+    "download": "Download Video",
+    "errorTitle": "Generation Error",
+    "errorOccurred": "An error occurred while generating the video:",
+    "apiKeyRequired": "API Key Required",
+    "apiKeyDescription": "Video generation is a premium feature and requires you to select your API key. Charges may apply based on your usage.",
+    "billingInfo": "View billing information",
+    "selectApiKey": "Select API Key"
   }
 }

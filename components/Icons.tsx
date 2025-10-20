@@ -58,6 +58,7 @@ import {
   VolumeX,
   Mic,
   MicOff,
+  Film,
   type LucideProps,
 } from 'lucide-react';
 
@@ -125,3 +126,4 @@ export const SpeakerLoudIcon: React.FC<IconProps> = (props) => <Volume2 {...prop
 export const SpeakerOffIcon: React.FC<IconProps> = (props) => <VolumeX {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;
 export const MicIcon: React.FC<IconProps> = (props) => <Mic {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;
 export const MicOffIcon: React.FC<IconProps> = (props) => <MicOff {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;
+export const FilmIcon: React.FC<IconProps> = (props) => <Film {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;

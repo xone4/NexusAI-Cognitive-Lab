@@ -21,6 +21,7 @@ import SuggestionTray from './components/SuggestionTray';
 import DreamingView from './components/DreamingView';
 import WorldModelView from './components/WorldModelView';
 import LiveTranscriptionDisplay from './components/LiveTranscriptionDisplay';
+import VideoForge from './components/VideoForge';
 
 type SystemStatus = 'Online' | 'Degraded' | 'Offline' | 'Initializing';
 
@@ -525,6 +526,8 @@ const App: React.FC = () => {
                   worldModel={worldModel} 
                   onUpdateEntity={handleUpdateWorldModelEntity}
                 />;
+      case 'video_forge':
+        return <VideoForge />;
       case 'dashboard':
       default:
         return renderDashboard();

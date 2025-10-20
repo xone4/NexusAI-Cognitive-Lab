@@ -16,7 +16,8 @@
     "architecture": "الهيكلية",
     "settings": "الإعدادات",
     "systemVer": "إصدار النظام 3.0",
-    "cognitiveCore": "النواة المعرفية: متزامنة"
+    "cognitiveCore": "النواة المعرفية: متزامنة",
+    "videoForge": "صانع الفيديو"
   },
   "vitals": {
     "vitalsPanel": "لوحة المؤشرات الحيوية",
@@ -559,5 +560,25 @@
     "type": "النوع",
     "summary": "ملخص",
     "properties": "الخصائص"
+  },
+  "videoForge": {
+    "title": "صانع الفيديو",
+    "promptPlaceholder": "صف الفيديو الذي تريد إنشاءه...",
+    "aspectRatio": "نسبة العرض إلى الارتفاع",
+    "landscape": "16:9 (أفقي)",
+    "portrait": "9:16 (عمودي)",
+    "resolution": "الدقة",
+    "generate": "إنشاء الفيديو",
+    "generating": "جاري الإنشاء...",
+    "generationStatus": "حالة الإنشاء",
+    "patience": "قد تستغرق هذه العملية عدة دقائق. يرجى التحلي بالصبر.",
+    "result": "الفيديو المُنشأ",
+    "download": "تحميل الفيديو",
+    "errorTitle": "خطأ في الإنشاء",
+    "errorOccurred": "حدث خطأ أثناء إنشاء الفيديو:",
+    "apiKeyRequired": "مفتاح API مطلوب",
+    "apiKeyDescription": "إنشاء الفيديو ميزة متميزة وتتطلب منك تحديد مفتاح API الخاص بك. قد يتم تطبيق رسوم بناءً على استخدامك.",
+    "billingInfo": "عرض معلومات الفوترة",
+    "selectApiKey": "تحديد مفتاح API"
   }
 }
