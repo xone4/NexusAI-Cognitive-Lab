@@ -61,6 +61,7 @@ Observe the four pillars directly within the Cognitive Lab:
 -   **Evolutionary Problem Solving**: The **Evolution Chamber** uses genetic algorithms to tackle complex problems. It evolves populations of plans, visualizes their fitness over generations, and automatically converges on an optimal solution. Past memories and learned behaviors can be used as starting points for new evolutionary tasks.
 -   **Cognitive Dreaming & Self-Improvement**: A dedicated **Dreaming Chamber** where the AI analyzes its collective memory to synthesize new, high-level directives. This allows it to learn from experience, form abstract principles, and improve its core logic autonomously.
 -   **Architectural Plasticity**: The AI can dynamically `forge_tool` or `spawn_replica` as part of its plan, modifying its own capabilities to meet the demands of a task.
+-   **Video Synthesis (Video Forge)**: A dedicated interface for generating dynamic video content from textual prompts using Google's Veo model.
 
 ## System Architecture
 
@@ -100,8 +101,10 @@ This roadmap is aligned with the maturation of our Agent 2.0 architecture.
 *   **Current Progress:**
     *   **Real-time Audio Processor:** The system now supports natural, low-latency voice conversations through the integration of Gemini's Live API.
     *   **Voice Synthesis:** The AI can generate spoken responses for its synthesized answers using advanced Text-to-Speech (TTS) models.
+    *   **Video Generation Agent (Video Forge):** The system now includes a dedicated "Video Forge" module that integrates Google's Veo model, allowing the AI to transform textual descriptions into dynamic video content.
 *   **Future Work:**
-    *   **Video Generation Agent:** The next step is to integrate models like VEO, allowing the AI to transform textual descriptions or narratives into dynamic video content.
+    *   **Real-time Video Stream Analyzer:** Enable the AI to process live camera feeds by sending sequential image frames to the Live API, allowing it to identify objects, describe scenes, and understand visual context.
+    *   **Narrative Weaver:** Enhance the AI's storytelling capabilities to build complex, coherent narratives with character development and plot structure, which can then be used as input for the Video Generation Agent.
 
 ---
 ### **Phase 11: Deep Analysis & Insight Generation - ⚙️ In Progress**

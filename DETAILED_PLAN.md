@@ -51,9 +51,9 @@ This plan outlines the upcoming phases to enhance NexusAI's capabilities further
 *   **Completed Implementation:**
     *   **Real-time Audio Processor:** A full-duplex voice interface has been implemented using Gemini's Live API (`gemini-2.5-flash-native-audio-preview-09-2025`). This enables natural, low-latency voice conversations with real-time transcription for both user input and model output.
     *   **Voice Synthesis:** A Text-to-Speech (TTS) module has been integrated using the `gemini-2.5-flash-preview-tts` model. This allows the AI to generate a spoken voice for its final synthesized answers, providing a multi-modal response.
+    *   **Video Generation Agent:** The `VideoForge` component and `generateVideo` service function have been implemented, integrating `veo-3.1-fast-generate-preview` to create video from text prompts. The UI handles API key selection, generation state, and video playback.
 *   **Future Work:**
     1.  **Develop Multi-Modal Creative Output:**
-        *   **Video Generation Agent:** Integrate models like VEO to allow the AI to transform textual descriptions or narratives into dynamic video content.
         *   **Real-time Video Stream Analyzer:** Enable the AI to process live camera feeds by sending sequential image frames to the Live API, allowing it to identify objects, describe scenes, and understand visual context.
         *   **Narrative Weaver:** Enhance the AI's storytelling capabilities to build complex, coherent narratives with character development and plot structure, which can then be used as input for the Video Generation Agent.
 
@@ -68,7 +68,7 @@ This plan outlines the upcoming phases to enhance NexusAI's capabilities further
 *   **Future Work:**
     1.  **Implement Causal Reasoning:** Develop a `Causal Inference Engine` tool to distinguish correlation from causation.
     2.  **Enable Proactive Monitoring:** Create an `Anomaly Detection Sentinel` tool to proactively identify unusual patterns in system data or external feeds.
-    3.  **Build Structured Knowledge:** Evolve the `update_world_model` tool into a full **Knowledge Graph Synthesizer** that can automatically ingest unstructured text (from memory, search results) and transform it into structured entities and relationships.
+    3.  **Build Structured Knowledge:** Evolve the `update_world_model` tool into a full **Knowledge Graph Synthesizer** that can automatically ingest unstructured text (from memory, search results) and transform it into a structured entities and relationships.
 
 ---
 ### Phase 12: Strategic Foresight & Simulation - 💡 Planned
@@ -115,7 +115,7 @@ These tools go beyond surface-level data processing to achieve a deeper understa
 ### 2. Creative & Generative Tools
 Expanding the AI's creative abilities to include multiple media.
 
-*   **Tool Name:** `Video Generation Agent`
+*   **Tool Name:** `Video Generation Agent` `[Status: Implemented in Phase 10]`
     *   **Description:** Using advanced models like Google's `veo-3.1-fast-generate-preview`, this tool can transform text descriptions or images into short video clips.
     *   **Benefit:** A quantum leap in creative capabilities, as the AI can turn its ideas and plans into dynamic visual content, opening new horizons in storytelling and simulation.
 
