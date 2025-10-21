@@ -1,3 +1,4 @@
+
 {
   "header": {
     "title": "NexusAI",
@@ -587,7 +588,7 @@
   },
   "simulationLab": {
     "title": "Simulation Lab",
-    "description": "Design a scenario, define competing strategies, and run a simulation to see how the AI predicts their outcomes. This is a powerful tool for strategic foresight and hypothesis testing.",
+    "description": "Design a scenario, define competing strategies, and run a simulation to see how the AI predicts it will unfold. A powerful tool for strategic foresight and hypothesis testing.",
     "scenario": "Scenario Definition",
     "scenarioPlaceholder": "Describe the environment, agents, and rules of the simulation...",
     "strategy": "Strategy {{number}}",
@@ -600,6 +601,10 @@
     "resultsTitle": "Simulation Results",
     "winningStrategy": "Winning Strategy",
     "summary": "AI Summary & Rationale",
-    "trace": "Step-by-Step Trace"
+    "trace": "Step-by-Step Trace",
+    "aiGenerateStrategies": "AI Generate Strategies",
+    "generatingStrategies": "Generating Strategies...",
+    "wargamingMode": "Wargaming Mode",
+    "wargamingDesc": "Simulate each strategy as an independent agent competing against the others."
   }
 }

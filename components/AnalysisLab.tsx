@@ -4,6 +4,7 @@ import type { Replica, MentalTool, LogEntry, SystemSuggestion, AnalysisConfig, S
 import { nexusAIService } from '../services/nexusAIService';
 import DashboardCard from './DashboardCard';
 import { MagnifyingGlassIcon, LightBulbIcon, CogIcon, BrainCircuitIcon } from './Icons';
+import ConfigToggle from './ConfigToggle';
 
 interface AnalysisLabProps {
     replicas: Replica | null;
@@ -15,17 +16,6 @@ interface AnalysisLabProps {
     onRecalibrate: (id: string) => void;
     onOptimizeTool: (id: string) => void;
 }
-
-const ConfigToggle: React.FC<{ label: string; checked: boolean; onChange: (checked: boolean) => void; disabled: boolean; }> = ({ label, checked, onChange, disabled }) => (
-    <label className="flex items-center space-x-3 cursor-pointer">
-        <div className="relative">
-            <input type="checkbox" className="sr-only" checked={checked} onChange={(e) => onChange(e.target.checked)} disabled={disabled} />
-            <div className={`block w-10 h-6 rounded-full transition-colors ${checked ? 'bg-nexus-primary' : 'bg-nexus-dark'}`}></div>
-            <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${checked ? 'translate-x-full' : ''}`}></div>
-        </div>
-        <span className={`text-sm font-medium ${disabled ? 'text-nexus-text-muted/50' : 'text-nexus-text-muted'}`}>{label}</span>
-    </label>
-);
 
 const SuggestionCard: React.FC<{
     suggestion: SystemSuggestion;
@@ -120,9 +110,9 @@ const AnalysisLab: React.FC<AnalysisLabProps> = (props) => {
                         <div>
                             <h4 className="font-semibold text-nexus-text mb-3">{t('analysis.scope')}</h4>
                             <div className="space-y-3">
-                                <ConfigToggle label={t('analysis.replicas')} checked={config.scope.replicas} onChange={c => setConfig(p => ({ ...p, scope: {...p.scope, replicas: c}}))} disabled={isLoading || isThinking} />
-                                <ConfigToggle label={t('analysis.mentalTools')} checked={config.scope.tools} onChange={c => setConfig(p => ({ ...p, scope: {...p.scope, tools: c}}))} disabled={isLoading || isThinking}/>
-                                <ConfigToggle label={t('analysis.systemLogs')} checked={config.scope.logs} onChange={c => setConfig(p => ({ ...p, scope: {...p.scope, logs: c}}))} disabled={isLoading || isThinking}/>
+                                <ConfigToggle label={t('analysis.replicas')} description="Analyze replica health, load, and efficiency." checked={config.scope.replicas} onChange={c => setConfig(p => ({ ...p, scope: {...p.scope, replicas: c}}))} disabled={isLoading || isThinking} />
+                                <ConfigToggle label={t('analysis.mentalTools')} description="Analyze tool usage, version, and status." checked={config.scope.tools} onChange={c => setConfig(p => ({ ...p, scope: {...p.scope, tools: c}}))} disabled={isLoading || isThinking}/>
+                                <ConfigToggle label={t('analysis.systemLogs')} description="Analyze recent system logs for errors or warnings." checked={config.scope.logs} onChange={c => setConfig(p => ({ ...p, scope: {...p.scope, logs: c}}))} disabled={isLoading || isThinking}/>
                             </div>
                         </div>
                         {/* Depth */}

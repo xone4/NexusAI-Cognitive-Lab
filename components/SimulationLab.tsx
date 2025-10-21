@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next';
 import type { SimulationState, SimulationConfig } from '../types';
 import { nexusAIService } from '../services/nexusAIService';
 import DashboardCard from './DashboardCard';
-import { FlaskConicalIcon, PlayIcon, BrainCircuitIcon, CheckCircleIcon, XCircleIcon } from './Icons';
+import { FlaskConicalIcon, PlayIcon, BrainCircuitIcon, CheckCircleIcon, XCircleIcon, SparklesIcon } from './Icons';
+import ConfigToggle from './ConfigToggle';
 
 interface SimulationLabProps {
     simulationState: SimulationState;
@@ -22,22 +23,38 @@ const SimulationLab: React.FC<SimulationLabProps> = ({ simulationState, isGlobal
         { name: 'Aggressive Expansion', description: 'Double down on marketing and release a new feature to capture market share, funded by a small loan.' },
         { name: 'Defensive Downsizing', description: 'Cut all non-essential costs, reduce marketing spend by 80%, and focus only on retaining existing customers.' },
     ]);
+    const [isGeneratingStrategies, setIsGeneratingStrategies] = useState(false);
+    const [isWargamingMode, setIsWargamingMode] = useState(false);
 
     const { isRunning, statusMessage, result, error } = simulationState;
-    const isBusy = isRunning || isGloballyBusy;
+    const isBusy = isRunning || isGloballyBusy || isGeneratingStrategies;
 
     const handleRunSimulation = () => {
         const fullConfig: SimulationConfig = {
             ...config,
             strategies,
         };
-        nexusAIService.runSimulation(fullConfig);
+        nexusAIService.runSimulation(fullConfig, isWargamingMode);
     };
 
     const handleStrategyChange = (index: number, field: 'name' | 'description', value: string) => {
         const newStrategies = [...strategies];
         newStrategies[index][field] = value;
         setStrategies(newStrategies);
+    };
+
+    const handleGenerateStrategies = async () => {
+        setIsGeneratingStrategies(true);
+        try {
+            const newStrategies = await nexusAIService.generateSimulationStrategies(config.scenario, config.evaluationCriteria);
+            if (newStrategies && newStrategies.length > 0) {
+                setStrategies(newStrategies);
+            }
+        } catch (e) {
+            console.error("Failed to generate strategies", e);
+        } finally {
+            setIsGeneratingStrategies(false);
+        }
     };
 
     return (
@@ -58,6 +75,29 @@ const SimulationLab: React.FC<SimulationLabProps> = ({ simulationState, isGlobal
                         />
                     </div>
                     
+                    {/* AI Strategy Generation Button */}
+                    <div className="border-t border-nexus-surface/50 py-4">
+                         <div className="flex flex-col sm:flex-row gap-4">
+                            <button 
+                                onClick={handleGenerateStrategies} 
+                                disabled={isBusy}
+                                className="flex-1 flex items-center justify-center gap-2 bg-purple-500/20 text-purple-400 font-bold py-3 px-4 rounded-full border border-purple-500/50 hover:bg-purple-500/40 hover:text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <SparklesIcon className={`w-5 h-5 ${isGeneratingStrategies ? 'animate-spin' : ''}`}/>
+                                {isGeneratingStrategies ? t('simulationLab.generatingStrategies') : t('simulationLab.aiGenerateStrategies')}
+                            </button>
+                             <div className="flex-shrink-0 bg-nexus-dark/30 p-2 rounded-full flex items-center justify-center">
+                                <ConfigToggle
+                                  label={t('simulationLab.wargamingMode')}
+                                  description={t('simulationLab.wargamingDesc')}
+                                  checked={isWargamingMode}
+                                  onChange={setIsWargamingMode}
+                                  disabled={isBusy}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Strategies */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {strategies.map((strategy, index) => (
@@ -146,7 +186,10 @@ const SimulationLab: React.FC<SimulationLabProps> = ({ simulationState, isGlobal
                                         return (
                                             <div key={step.step} className="p-2 border-b border-nexus-surface/50">
                                                 <p className="font-bold text-nexus-primary">Step {step.step} - <span className="text-nexus-text">{step.strategy}</span></p>
-                                                <p className="text-xs text-nexus-text-muted"><strong>Action:</strong> {step.action}</p>
+                                                <div className="text-xs text-nexus-text-muted prose prose-invert prose-p:my-1 prose-strong:text-nexus-text-muted">
+                                                    <strong>Action:</strong>
+                                                    <div dangerouslySetInnerHTML={{ __html: step.action.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
+                                                </div>
                                                 <p className="text-xs text-nexus-secondary"><strong>Outcome:</strong> {step.outcome}</p>
                                                 {step.state && (
                                                     <div className="mt-1">

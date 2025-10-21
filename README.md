@@ -62,7 +62,7 @@ Observe the four pillars directly within the Cognitive Lab:
 -   **Cognitive Dreaming & Self-Improvement**: A dedicated **Dreaming Chamber** where the AI analyzes its collective memory to synthesize new, high-level directives. This allows it to learn from experience, form abstract principles, and improve its core logic autonomously.
 -   **Architectural Plasticity**: The AI can dynamically `forge_tool` or `spawn_replica` as part of its plan, modifying its own capabilities to meet the demands of a task.
 -   **Video Synthesis (Modalities Lab)**: A dedicated interface for generating dynamic video content from textual prompts using Google's Veo model.
--   **Simulation Lab**: A strategic sandbox where the AI can define scenarios, test competing strategies, and predict future outcomes.
+-   **Simulation Lab**: A strategic sandbox where the user can define a scenario, and the AI can **autonomously generate competing strategies**. The simulation can be run in a "Wargaming" mode, treating each strategy as an independent agent and simulating their turn-by-turn interactions.
 
 ## System Architecture
 
@@ -120,9 +120,10 @@ This roadmap is aligned with the maturation of our Agent 2.0 architecture.
 ### **Phase 12: Strategic Foresight & Simulation - ⚙️ In Progress**
 *   **Objective:** Evolve the AI into a strategist that can simulate future outcomes and test hypotheses in a safe, virtual environment.
 *   **Current Progress:**
-    *   **Simulation Sandbox:** The `Simulation Lab` provides a user-facing interface to define scenarios, configure competing strategies, and have the AI run a turn-based simulation, predicting the outcome.
+    *   The `Simulation Lab` is now more dynamic. The user can define a scenario, and the AI can **autonomously generate multiple competing strategies**.
+    *   The simulation engine can run in a **"Wargaming" mode**, where it treats each competing strategy as an independent agent, simulating their interactions and providing a detailed, turn-by-turn breakdown of each agent's decisions.
 *   **Future Work:**
-    *   **"Wargaming" with Sub-Agents:** Enable the AI to assign competing strategies to teams of Sub-Agents to test their effectiveness within the sandbox.
+    *   **"Wargaming" with Sub-Agents:** Integrate live Sub-Agents (Replicas) into the Wargaming mode, allowing them to execute their assigned strategies dynamically instead of being simulated by the core AI.
 
 ---
 ### **Phase 13: Metacognitive Self-Assembly - 💡 Planned**
@@ -132,13 +133,28 @@ This roadmap is aligned with the maturation of our Agent 2.0 architecture.
     *   **Cognitive Bias Detector:** Implement a metacognitive tool that analyzes the AI's own plans and reasoning for common logical fallacies, enabling true self-correction.
 
 ---
-### **The Next Horizon: Towards Agent 3.0**
+## The Next Horizon: A New Strategic Roadmap
 
-Beyond the current roadmap lies the evolution toward a truly autonomous, collaborative intelligence. This involves three strategic shifts:
+The next evolution of NexusAI focuses on building a truly autonomous and scalable architecture. This roadmap replaces previous conceptual goals with concrete engineering phases.
 
-1.  **From Delegation to True Collaboration:** Evolving the Sub-Agent network to support horizontal communication via a shared "message bus," reducing the orchestrator bottleneck and enabling emergent problem-solving.
-2.  **Advanced Memory Architecture:** Transitioning from key-value storage to a **Vector Database** for powerful semantic search and a **Graph Database** to create a rich, interconnected World Model.
-3.  **Objective Evaluation Framework:** Building a **Cognitive Test Suite** to quantitatively measure improvements in efficiency, robustness, and creativity, providing empirical data to guide the AI's self-evolution.
+### Phase 1: Building a Flexible and Dynamic Infrastructure
+*   **Objective:** Overhaul the core architecture to move from a centralized to a distributed model.
+*   **Key Initiatives:**
+    *   **Agent Message Bus (AMB):** Implement a message bus for direct agent-to-agent communication, enabling parallel processing and reducing bottlenecks.
+    *   **Resource Governor:** Create a service to monitor and control resource consumption (cost, API calls) to ensure sustainability.
+    *   **Adaptive Goal Planner:** Enable the system to dynamically modify its plan in response to new information or failures.
+
+### Phase 2: Deepening Self-Awareness and Capabilities
+*   **Objective:** Transition the system from a "smart executor" to a "strategic thinker" that learns from its own performance.
+*   **Key Initiatives:**
+    *   **Meta-Analysis Agent:** An agent that analyzes system performance logs to discover patterns, identify inefficiencies, and suggest fundamental improvements.
+    *   **Tool Use Expansion:** Create a centralized tool registry and executor, allowing agents to reliably use external tools like `web_search` and a `python_code_interpreter`.
+
+### Phase 3: The Quantum Leap Towards Autonomy
+*   **Objective:** Grant the system the ability to self-evolve its own structure and proactively identify new goals.
+*   **Key Initiatives:**
+    *   **Self-Generating Agents:** An "Agent Architect Agent" that can design and register new agents at runtime to fill identified capability gaps.
+    *   **Emergent Goal Identification:** A proactive agent that analyzes the World Model to find knowledge gaps and propose new, meaningful tasks to the user, shifting the interaction from command-and-response to a strategic dialogue.
 
 ## Contributing
 

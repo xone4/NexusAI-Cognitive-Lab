@@ -593,6 +593,7 @@ const getSystemInstruction = () => {
     - \`knowledge_graph_synthesizer\`: Takes unstructured text (e.g., from a search result) and automatically extracts entities and relationships to update your World Model. Use 'query' to provide the text.
     - \`causal_inference_engine\`: Analyzes a dataset or text to distinguish correlation from true causation, identifying potential confounding variables. Use 'query' for the data.
     - \`update_world_model\`: Persists new factual knowledge to your internal World Model. Use 'code' to provide a JSON object: \`{ "entities": [...], "relationships": [...] }\`. Use this for adding specific, pre-formatted facts.
+    - \`run_simulation\`: Runs a turn-based simulation based on a defined scenario and competing strategies to predict an outcome.
     - \`synthesize_answer\`: This must be the final step. It compiles the final answer based on results from your Sub-Agents and other tools.`;
 }
 
@@ -936,6 +937,24 @@ const simulationResultSchema = {
         }
     },
     required: ['summary', 'winningStrategy', 'stepByStepTrace']
+};
+
+const simulationStrategiesSchema = {
+    type: Type.OBJECT,
+    properties: {
+        strategies: {
+            type: Type.ARRAY,
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    name: { type: Type.STRING },
+                    description: { type: Type.STRING }
+                },
+                required: ['name', 'description']
+            }
+        }
+    },
+    required: ['strategies']
 };
 
 
@@ -3524,6 +3543,48 @@ Return ONLY a valid JSON object matching the provided schema.`;
             simulationState.statusMessage = 'Simulation failed.';
         } finally {
             notifySimulation();
+        }
+    },
+
+    generateSimulationStrategies: async (scenario: string, evaluationCriteria: string): Promise<{name: string, description: string}[]> => {
+        if (!API_KEY) {
+            log('ERROR', 'API Key not configured. Cannot generate strategies.');
+            throw new Error('API Key not configured.');
+        }
+
+        log('AI', 'Generating competing strategies for simulation scenario...');
+
+        const prompt = `You are a world-class strategist and game theorist. Your task is to devise distinct, plausible, and creative strategies for the given scenario.
+
+**Simulation Scenario:**
+${scenario}
+
+**Evaluation Criteria (How the winner is determined):**
+${evaluationCriteria}
+
+**Instructions:**
+Based on the scenario and criteria, generate between 2 and 4 competing strategies. Each strategy should have a unique name and a clear description of its core logic and actions.
+
+Return ONLY a valid JSON object matching the provided schema.`;
+
+        try {
+            const response = await ai.models.generateContent({
+                model: appSettings.model,
+                contents: prompt,
+                config: {
+                    responseMimeType: "application/json",
+                    responseSchema: simulationStrategiesSchema
+                }
+            });
+            
+            const result = JSON.parse(response.text);
+            log('AI', `Successfully generated ${result.strategies.length} strategies.`);
+            return result.strategies;
+
+        } catch (e) {
+            const errorMessage = e instanceof Error ? e.message : 'Unknown AI error';
+            log('ERROR', `Failed to generate simulation strategies: ${errorMessage}`);
+            throw new Error(errorMessage);
         }
     },
 
