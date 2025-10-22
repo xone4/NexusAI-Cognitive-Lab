@@ -132,6 +132,33 @@ This roadmap is aligned with the maturation of our Agent 2.0 architecture.
     *   **Constitution Forger:** Allow the AI to propose modifications or create new `CognitiveConstitutions` as part of a plan, enabling it to dynamically shift its operational mode.
     *   **Cognitive Bias Detector:** Implement a metacognitive tool that analyzes the AI's own plans and reasoning for common logical fallacies, enabling true self-correction.
 
+## The Next Evolution: Engineering under Rose-Frame Governance
+
+The next major leap for NexusAI is the integration of the **Rose-Frame** cognitive model. This framework is designed to diagnose and correct the fundamental cognitive traps inherent in LLMs, such as mistaking fluent intuition for grounded reason. Our goal is to use our existing Cognitive Geometry engine as a sensor to detect these traps and trigger automated governance mechanisms, effectively building a **System 2 (Reason)** layer to guide the AI's powerful **System 1 (Intuition)**.
+
+### Phase 14: System 2 Reflection Mechanisms - 💡 Planned
+*   **Objective:** To govern the AI's fast, intuitive "System 1" thinking by introducing automated "System 2" reflection. This directly addresses the cognitive trap of mistaking fluent intuition for grounded reason.
+*   **Key Initiatives:**
+    *   **Intuition Signal:** Use cognitive geometry (high velocity, sharp curvature) to detect when the AI makes an intuitive leap.
+    *   **Reality Check Reflector:** When an intuition signal is detected, force the AI to validate its leap against the original input data ("Territory"), not just its internal linguistic model ("Map").
+    *   **Deceleration Rule:** Slow down the AI's processing after an intuitive leap, forcing it into a more deliberate, analytical mode of thought.
+
+---
+### Phase 15: Falsifiability & Conflict Engine - 💡 Planned
+*   **Objective:** To combat confirmation bias by engineering "cognitive conflict." This addresses the cognitive trap of confusing confirmation with correctness.
+*   **Key Initiatives:**
+    *   **Confirmation Signal:** Use cognitive geometry (prolonged low curvature) to detect when the AI is stuck in a self-confirming loop.
+    *   **Falsification Engine:** When a confirmation signal is detected, inject a prompt that forces the AI to generate the strongest possible counter-argument to its current hypothesis.
+    *   **Learning from Failure:** Tag and store trajectories that were successfully falsified, teaching the AI to avoid unproductive reasoning paths in the future.
+
+---
+### Phase 16: Cognitive Governance & Style Modulation - 💡 Planned
+*   **Objective:** To enable the AI to strategically select its "thinking style" based on the task, using the Rose-Frame principles as a guide. This represents a higher level of metacognitive control.
+*   **Key Initiatives:**
+    *   **Geometric Governance Goals:** Define different cognitive tasks in terms of optimal geometric trajectories (e.g., 'Analytical' tasks require low-curvature paths; 'Creative' tasks allow for higher curvature).
+    *   **Style Modulator:** A system that adjusts the sensitivity of the Intuition and Confirmation signals based on the selected cognitive style, effectively managing the balance between System 1 and System 2 thinking.
+    *   **Cognition Quality KPI:** Develop a new key performance indicator that measures not just the correctness of an answer, but the "wisdom" of the cognitive process used to reach it (e.g., efficiency vs. number of self-corrections).
+
 ---
 ## The Next Horizon: A New Strategic Roadmap
 

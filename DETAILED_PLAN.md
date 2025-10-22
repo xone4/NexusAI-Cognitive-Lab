@@ -90,8 +90,54 @@ This plan outlines the upcoming phases to enhance NexusAI's capabilities further
     2.  **Supervised Metamorphosis:**
         *   Enable the AI to analyze its historical performance to identify structural weaknesses and propose architectural improvements (e.g., creating a new permanent Sub-Agent) for user review.
 
+## Part 3: The Next Evolution - Engineering under Rose-Frame Governance
+
+The next major leap for NexusAI is the integration of the **Rose-Frame** cognitive model, a framework for diagnosing and correcting the fundamental failure modes of Large Language Models. This plan operationalizes the Rose-Frame by using the existing Cognitive Geometry metrics (velocity $v$, curvature $C$) as sensors to detect cognitive traps and trigger automated governance mechanisms.
+
+The goal is to evolve NexusAI from an agent that simply *thinks* to one that *thinks about its own thinking*. It's about building a robust **System 2 (Reason)** layer to govern the powerful but fallible **System 1 (Intuition)** of the underlying LLM. This directly addresses the core challenges of:
+1.  **Map vs. Territory:** Distinguishing linguistic representation from grounded reality.
+2.  **Intuition vs. Reason:** Separating fast, associative pattern-matching from slow, reflective logic.
+3.  **Confirmation vs. Conflict:** Moving beyond self-confirmation to embrace critical falsification.
+
+The following phases replace all previously planned future work.
+
 ---
-## Part 3: Proposed New Mental Tools
+
+### Phase 14: System 2 Reflection Mechanisms
+
+**Goal:** Use cognitive geometry to enforce **self-reflection** on the agent's fast, intuitive outputs (System 1), directly addressing the **"Intuition vs. Reason"** cognitive trap.
+
+| Step | Detail & Required Actions | Rose-Frame Link |
+| :--- | :--- | :--- |
+| **1. Define the Intuition Signal** | **Location:** Modify `CognitiveStateMonitor`. Define an `INTUITION_JUMP_SIGNAL` when **velocity ($\vec{v}$) is excessively high** in a single step, or **curvature ($C$) is sharp** following a series of straight steps. This signals that the LLM has relied on fast associations (System 1). | **Trap 2: Intuition ≠ Reason**: The geometric signal tells us when System 1 intuition has outpaced System 2 reasoning. |
+| **2. Build the "Reality Check Reflector"** | **Location:** Modify `CognitiveReflexes`. If an `INTUITION_JUMP_SIGNAL` is detected, this unit generates a mandatory prompt for the next step. This prompt must force the agent to **separate the Map from the Territory**. | **Trap 1: Map ≠ Territory**: The prompt must ask: "Is this logical leap justified by the **original input data (Territory)**, or is it merely a **statistical and linguistic association (Map)**? Cite the source or retract the inference." |
+| **3. Implement the Deceleration Rule** | **Location:** Modify `Executor` (or the agent core). Upon receiving an `INTUITION_JUMP_SIGNAL`, the thinking process is **slowed down** (e.g., by requiring the LLM to consider 3 possible conclusions instead of 1). This represents the **re-engagement of System 2 (Slow, Reflective Thinking)**. | **System 1 Governance**: The agent is forced to shift from a fast (System 1) to a slow, reflective (System 2) mode when undisciplined intuition is detected. |
+
+---
+
+### Phase 15: Falsifiability & Conflict Engine
+
+**Goal:** Overcome the agent's natural tendency toward self-confirmation (Confirmation Bias) by forcing it to critically test its own hypotheses, addressing the **"Conflict vs. Confirmation"** cognitive trap.
+
+| Step | Detail & Required Actions | Rose-Frame Link |
+| :--- | :--- | :--- |
+| **1. Define the Confirmation Signal** | **Location:** Modify `CognitiveStateMonitor`. Define a `CONFIRMATION_BIAS_SIGNAL` when **curvature ($C$) remains too low** for an extended period (e.g., 5-7 consecutive steps). This indicates the agent is merely repeating or confirming a single hypothesis without critical testing. | **Trap 3: Confirmation ≠ Correctness**: The geometric signal tells us when the thinking has become circular or self-validating. |
+| **2. Build the "Falsification Engine"** | **Location:** `nexusai/cognition/falsification_engine.ts` (New Module). If a `CONFIRMATION_BIAS_SIGNAL` is detected, this unit intervenes to generate a prompt based on **Conflict**. | **Re-engaging Conflict**: The prompt must be strict, such as: "The current path is self-confirming. Now, **formulate the strongest possible counter-argument** to your last hypothesis and use it as the prompt for the next step. **Search for data that falsifies** your conclusion, not data that confirms it." |
+| **3. Integrate Falsified Trajectories** | **Location:** Modify `TrajectoryStore` (Long-Term Memory). Trajectories that end in `STATE_CONFUSED` or are successfully falsified must be saved with a `FAILED_GEOMETRY` tag. On retrieval, these trajectories are used to avoid starting with the same failed geometric pattern. | **Learning from Failure**: The agent is guided to avoid geometric paths that lead to `Confirmation Bias` in the future, improving the quality of generalization. |
+
+---
+
+### Phase 16: Cognitive Governance - AGI Style Management
+
+**Goal:** Enable the agent to **choose its geometric thinking style** based on task requirements, with the geometric target defined by Rose-Frame governance.
+
+| Step | Detail & Required Actions | Rose-Frame Link |
+| :--- | :--- | :--- |
+| **1. Define Geometric "Governance Goals"** | **Cognitive Link:** Connect geometric patterns to governance requirements: **a. 'Justified Analysis' Style:** Requires a **straight path** ($C \approx 0$) to ensure **Rule-based Reasoning** (System 2). **b. 'Creative Exploration' Style:** Requires a **flexible path** (fluctuating $C$) to ensure **Hypothesis Generation** (managed Trap 3). | Translating the philosophical requirements of AGI into **quantifiable, controllable variables**. |
+| **2. Design the "Style Modulator" for Governance** | **Location:** `nexusai/cognition/style_modulator.ts`. This unit takes an input (e.g., 'Style: Analytical') and **adjusts the geometric thresholds** in the other phases to meet that style. *Example: 'Analytical' = tighten the `INTUITION_JUMP_SIGNAL` and `CONFIRMATION_BIAS_SIGNAL` thresholds to enforce a straight, disciplined path.* | Enabling high-level management to **direct the agent to adopt System 2 thinking** (disciplined) or System 1 thinking (creative) as needed. |
+| **3. Create a "Cognition Quality" KPI** | **Location:** `nexusai/analysis/metrics.ts`. Create a composite metric that combines **Efficiency** (path length relative to task complexity) and **Quality** (number of `Falsification Engine` or `Reflector` activations relative to success). | Measuring cognitive **"wisdom"**: not just whether the thinking was correct, but whether it was effectively **governed** by System 2 mechanisms. |
+---
+## Part 4: Proposed New Mental Tools
 
 This list represents a starting point for future development, with each tool marking a significant leap in the system's capabilities.
 
@@ -182,7 +228,7 @@ Beyond the phased feature implementation, the long-term vision requires foundati
     *   Build a test runner that executes this suite periodically.
     *   Feed the quantitative results from the test suite directly into the Evolution Chamber and Analysis Lab to provide an empirical basis for self-improvement.
 
-### Part 4: The Next Architectural Evolution: A New Strategic Roadmap
+### Part 5: The Next Architectural Evolution: A New Strategic Roadmap
 
 This section outlines the next major engineering push, designed to evolve NexusAI from a sophisticated "thinking agent" (Agent 2.0) into a truly autonomous, scalable, and self-improving system. This roadmap replaces previous high-level plans with a concrete, module-based implementation strategy.
 
