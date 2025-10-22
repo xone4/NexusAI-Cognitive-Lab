@@ -109,7 +109,7 @@ function encode(bytes: Uint8Array) {
   return btoa(binary);
 }
 
-// FIX: Updated return type to use the aliased `GenAIBlob`
+// FIX: Corrected the implementation to return a `{ data, mimeType }` object instead of a native Blob, conforming to the `@google/genai` Live API requirements.
 function createBlob(data: Float32Array): GenAIBlob {
   const l = data.length;
   const int16 = new Int16Array(l);
@@ -483,7 +483,7 @@ const initialize = async () => {
 };
 
 
-const planSchema = { type: Type.OBJECT, properties: { plan: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { step: { type: Type.INTEGER }, description: { type: Type.STRING }, tool: { type: Type.STRING, enum: ['google_search', 'synthesize_answer', 'code_interpreter', 'code_sandbox', 'recall_memory', 'generate_image', 'analyze_image_input', 'forge_tool', 'spawn_replica', 'induce_emotion', 'replan', 'summarize_text', 'translate_text', 'analyze_sentiment', 'execute_toolchain', 'apply_behavior', 'delegate_task_to_replica', 'spawn_cognitive_clone', 'peek_context', 'search_context', 'world_model', 'update_world_model', 'knowledge_graph_synthesizer', 'causal_inference_engine', 'run_simulation'] }, query: { type: Type.STRING }, code: { type: Type.STRING }, concept: { type: Type.STRING }, inputRef: { type: Type.INTEGER }, replicaId: { type: Type.STRING }, task: { type: Type.STRING } }, required: ['step', 'description', 'tool'] } } }, required: ['plan'] };
+const planSchema = { type: Type.OBJECT, properties: { plan: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { step: { type: Type.INTEGER }, description: { type: Type.STRING }, tool: { type: Type.STRING, enum: ['google_search', 'synthesize_answer', 'code_interpreter', 'code_sandbox', 'recall_memory', 'generate_image', 'analyze_image_input', 'forge_tool', 'spawn_replica', 'induce_emotion', 'replan', 'summarize_text', 'translate_text', 'analyze_sentiment', 'execute_toolchain', 'apply_behavior', 'delegate_task_to_replica', 'spawn_cognitive_clone', 'peek_context', 'search_context', 'world_model', 'update_world_model', 'knowledge_graph_synthesizer', 'causal_inference_engine', 'run_simulation', 'forge_constitution'] }, query: { type: Type.STRING }, code: { type: Type.STRING }, concept: { type: Type.STRING }, inputRef: { type: Type.INTEGER }, replicaId: { type: Type.STRING }, task: { type: Type.STRING } }, required: ['step', 'description', 'tool'] } } }, required: ['plan'] };
 
 const languageMap: Record<Language, string> = {
     'en': 'English',
@@ -611,6 +611,7 @@ const getSystemInstruction = () => {
     - \`causal_inference_engine\`: Analyzes a dataset or text to distinguish correlation from true causation, identifying potential confounding variables. Use 'query' for the data.
     - \`update_world_model\`: Persists new factual knowledge to your internal World Model. Use 'code' to provide a JSON object: \`{ "entities": [...], "relationships": [...] }\`. Use this for adding specific, pre-formatted facts.
     - \`run_simulation\`: Runs a turn-based simulation based on a defined scenario and competing strategies to predict an outcome.
+    - \`forge_constitution\`: Creates a new Cognitive Constitution with specific rules to govern behavior for a task.
     - \`synthesize_answer\`: This must be the final step. It compiles the final answer based on results from your Sub-Agents and other tools.`;
 }
 
@@ -2345,6 +2346,39 @@ const service = {
                         step.result = e instanceof Error ? e.message : 'Unknown replica spawning error.';
                         log('ERROR', `Replica spawning failed at step ${stepIndex + 1}: ${step.result}`);
                     }
+                } else if (step.tool === 'forge_constitution') {
+                    try {
+                        const prompt = `You are a constitutional architect sub-routine. Based on the following goal, create a new Cognitive Constitution. Goal: "${step.query}". Return ONLY a valid JSON object matching the schema. The 'value' for rules must be a JSON string (e.g., '5' for a number, or '[\"induce_emotion\"]' for a string array).`;
+                        const constitutionSchema = { type: Type.OBJECT, properties: { name: { type: Type.STRING }, description: { type: Type.STRING }, rules: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { type: { type: Type.STRING, enum: ['MAX_REPLICAS', 'MAX_PLAN_STEPS', 'FORBIDDEN_TOOLS', 'REQUIRED_TOOLS'] }, value: { type: Type.STRING, description: "JSON string representing the value." }, description: { type: Type.STRING } }, required: ['type', 'value', 'description'] } } }, required: ['name', 'description', 'rules'] };
+                        
+                        const response = await ai.models.generateContent({ ...getCognitiveModelConfig({ responseMimeType: "application/json", responseSchema: constitutionSchema }), contents: prompt });
+                        const constData = JSON.parse(response.text);
+                        
+                        const newConstitution: CognitiveConstitution = {
+                            id: `const-forged-${Date.now()}`,
+                            name: constData.name,
+                            description: constData.description,
+                            rules: constData.rules.map((rule: any) => {
+                                try {
+                                    return { ...rule, value: JSON.parse(rule.value) };
+                                } catch {
+                                    return { ...rule, value: rule.value }; // Keep as string if parsing fails
+                                }
+                            })
+                        };
+                        
+                        constitutionsState.push(newConstitution);
+                        await dbService.put('constitutions', newConstitution);
+                        notifyConstitutions();
+                        step.result = `Successfully forged new constitution: "${newConstitution.name}". It is now available in Settings.`;
+                        log('AI', step.result);
+
+                    } catch (e) {
+                        step.status = 'error';
+                        step.result = e instanceof Error ? e.message : 'Unknown constitution forging error.';
+                        log('ERROR', `Constitution forging failed at step ${stepIndex + 1}: ${step.result}`);
+                    }
+                    executionContext.push(`Step ${stepIndex + 1} (${step.description}) Result: ${step.result}`);
                 } else if (step.tool === 'world_model') {
                     if (!step.query) {
                         step.status = 'error';
@@ -2523,7 +2557,7 @@ const service = {
                             await dbService.put('worldModel', worldModelState);
                             notifyWorldModel();
 
-                            step.result = `Successfully synthesized and updated world model with ${updateCount} item(s).`;
+                            step.result = `Successfully synthesized and updated world model with ${updateCount} items.`;
                             log('AI', `Knowledge Graph Synthesizer updated the World Model from text.`);
                         } catch (e) {
                             step.status = 'error';
@@ -3563,6 +3597,34 @@ Return ONLY a valid JSON object matching the provided schema.`;
             log('ERROR', `Failed to generate simulation strategies: ${errorMessage}`);
             throw new Error(errorMessage);
         }
+    },
+
+    deleteConstitution: async (constitutionId: string) => {
+        // Prevent deleting default constitutions
+        if (['const-balanced', 'const-creative', 'const-logical'].includes(constitutionId)) {
+            const message = `Attempted to delete a default constitution (${constitutionId}). This is not allowed.`;
+            log('WARN', message);
+            alert(message);
+            return;
+        }
+
+        // Check if any replica is using this constitution
+        const isBeingUsed = (replica: Replica): boolean => {
+            if (replica.activeConstitutionId === constitutionId) return true;
+            return replica.children.some(isBeingUsed);
+        };
+
+        if (isBeingUsed(replicaState)) {
+            const message = `Cannot delete constitution ${constitutionId} as it is currently in use by a replica. Please reassign the replica first.`;
+            log('WARN', message);
+            alert(message);
+            return;
+        }
+
+        constitutionsState = constitutionsState.filter(c => c.id !== constitutionId);
+        await dbService.deleteItem('constitutions', constitutionId);
+        log('SYSTEM', `Successfully deleted constitution with ID: ${constitutionId}`);
+        notifyConstitutions();
     },
 
     subscribeToLogs: (callback: (log: LogEntry) => void) => { logSubscribers.push(callback); },

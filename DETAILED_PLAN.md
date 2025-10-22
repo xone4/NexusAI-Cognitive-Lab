@@ -49,9 +49,9 @@ This plan outlines the upcoming phases to enhance NexusAI's capabilities further
 ### Phase 10: Advanced Sensory & Creative Synthesis - ✅ Complete
 *   **Objective:** Expand the AI's capabilities beyond text to include real-time audio/video processing and creative generation, making it a multi-modal entity.
 *   **Completed Implementation:**
-    *   **Real-time Audio Processor:** A full-duplex voice interface has been implemented using Gemini's Live API (`gemini-2.5-flash-native-audio-preview-09-2025`). This enables natural, low-latency voice conversations with real-time transcription for both user input and model output.
-    *   **Voice Synthesis:** A Text-to-Speech (TTS) module has been integrated using the `gemini-2.5-flash-preview-tts` model. This allows the AI to generate a spoken voice for its final synthesized answers, providing a multi-modal response.
-    *   **Video Generation Agent (Modalities Lab):** The `ModalitiesLab` component and `generateVideo` service function have been implemented, integrating `veo-3.1-fast-generate-preview` to create video from text prompts. The UI handles API key selection, generation state, and video playback.
+    *   **Real-time Audio Processor:** A full-duplex voice interface is fully implemented using Gemini's Live API (`gemini-2.5-flash-native-audio-preview-09-2025`), enabling natural, low-latency voice conversations with real-time transcription.
+    *   **Voice Synthesis:** A Text-to-Speech (TTS) module is integrated using the `gemini-2.5-flash-preview-tts` model, allowing the AI to generate a spoken voice for its final synthesized answers.
+    *   **Video Generation Agent (Modalities Lab):** The `ModalitiesLab` component and `generateVideo` service function are operational, integrating `veo-3.1-fast-generate-preview` to create video from text prompts. The UI correctly handles API key selection, generation state, and video playback.
     *   **Multi-modal Sensory Input (Audio & Video):** The client-side logic for real-time video frame streaming is complete. The system can capture frames from the live video feed and send them as image blobs to the Gemini Live API session, enabling true multi-modal conversations.
 *   **Future Work:**
     1.  **Enhance Creative Generation:**
@@ -63,10 +63,10 @@ This plan outlines the upcoming phases to enhance NexusAI's capabilities further
 *   **Completed Implementation:**
     *   **World Model Data Structures:** `types.ts` defines `WorldModelEntity`, `WorldModelRelationship`, and `WorldModelPrinciple`.
     *   **Persistent Storage:** `dbService.ts` includes a `worldModel` store to persist the AI's knowledge base.
-    *   **AI Interaction Tools:** The `world_model` and `update_world_model` tools are available, allowing the AI to query and manually update its internal knowledge graph.
-    *   **Visualization Interface:** A dedicated `WorldModelView.tsx` component provides a graph-based visualization of entities and their relationships, along with an editor to manually curate the model.
-    *   **Autonomous Knowledge Ingestion:** The `knowledge_graph_synthesizer` tool has been implemented. This pivotal tool uses the Gemini API to analyze unstructured text, extract entities and relationships according to a defined schema, and automatically updates the World Model. This transforms the World Model from a passive repository to a self-populating knowledge base.
-    *   **Causal Reasoning:** Implemented the `Causal Inference Engine` tool, enabling the AI to analyze data for cause-and-effect relationships beyond simple correlation.
+    *   **AI Interaction Tools:** The `world_model` and `update_world_model` tools are fully available, allowing the AI to query and manually update its internal knowledge graph.
+    *   **Visualization Interface:** A dedicated `WorldModelView.tsx` component provides an interactive, graph-based visualization of entities and their relationships, along with an editor to manually curate the model.
+    *   **Autonomous Knowledge Ingestion:** The `knowledge_graph_synthesizer` tool is implemented. This pivotal tool uses the Gemini API to analyze unstructured text, extract entities and relationships according to a defined schema, and automatically updates the World Model, transforming it into a self-populating knowledge base.
+    *   **Causal Reasoning:** The `Causal Inference Engine` tool is implemented, enabling the AI to analyze data for cause-and-effect relationships beyond simple correlation.
 *   **Future Work:**
     1.  **Enable Proactive Monitoring:** Create an `Anomaly Detection Sentinel` tool to proactively identify unusual patterns in system data or external feeds.
 
@@ -74,16 +74,17 @@ This plan outlines the upcoming phases to enhance NexusAI's capabilities further
 ### Phase 12: Strategic Foresight & Simulation - ✅ Complete
 *   **Objective:** Evolve the AI into a strategist that can simulate future outcomes and test hypotheses in a safe, virtual environment.
 *   **Completed Implementation:**
-    *   The `SimulationLab` has been enhanced to be more autonomous. In addition to running user-defined simulations, the AI can now **autonomously generate multiple competing strategies** based on a user-defined scenario and evaluation criteria.
-    *   **"Wargaming" with Live Sub-Agents:** The Wargaming mode now supports true multi-agent simulation. The UI allows assigning active Replicas to competing strategies. The simulation service orchestrates an interactive loop, polling each assigned replica for its action at each step. This replaces the previous single AI call with a distributed cognitive exercise where multiple AI agents reason independently within the simulation.
-    *   **Result Analysis:** An `analyzeResults` function has been added, allowing the AI to perform a meta-analysis on the simulation trace, providing insights into why a strategy succeeded.
+    *   **Autonomous Strategy Generation:** The `SimulationLab` is fully functional and allows the AI to autonomously generate multiple competing strategies for a user-defined scenario.
+    *   **Multi-Agent Wargaming:** The Wargaming mode now supports true multi-agent simulation. The UI allows assigning active Replicas to competing strategies, and the simulation service orchestrates an interactive loop, polling each assigned replica for its action at each step.
+    *   **AI-Powered Analysis:** After a simulation, the AI can now autonomously analyze the results, explain the winning strategy's effectiveness, and provide a high-level summary.
 
 ---
-### Phase 13: Metacognitive Self-Assembly - ⚙️ In Progress
+### Phase 13: Metacognitive Self-Assembly - ✅ Complete
 *   **Objective:** Grant the AI the ability to reason about, critique, and redesign its own core architecture and cognitive processes.
-*   **Detailed Development Plan:**
+*   **Completed Implementation:**
+    *   **Constitution Forger:** The AI can now propose and create new `CognitiveConstitutions` as part of a plan using the `forge_constitution` tool. This enables it to dynamically shift its operational mode (e.g., from "Creative" to "Strictly Logical") to best suit a given task. The Settings UI has been updated to allow for the management and deletion of these AI-forged constitutions.
+*   **Future Work:**
     1.  **Constitutional Dynamics & Self-Correction:**
-        *   **Constitution Forger:** Allow the AI to propose modifications or create new `CognitiveConstitutions` as part of a plan, enabling it to dynamically shift its operational mode (e.g., from "Creative" to "Strictly Logical").
         *   **Cognitive Bias Detector:** Implement a metacognitive tool that analyzes the AI's own plans and reasoning for common logical fallacies or biases, enabling true self-correction.
     2.  **Supervised Metamorphosis:**
         *   Enable the AI to analyze its historical performance to identify structural weaknesses and propose architectural improvements (e.g., creating a new permanent Sub-Agent) for user review.
@@ -101,39 +102,31 @@ The following phases replace all previously planned future work.
 
 ---
 
-### Phase 14: System 2 Reflection Mechanisms
-
-**Goal:** Use cognitive geometry to enforce **self-reflection** on the agent's fast, intuitive outputs (System 1), directly addressing the **"Intuition vs. Reason"** cognitive trap.
-
-| Step | Detail & Required Actions | Rose-Frame Link |
-| :--- | :--- | :--- |
-| **1. Define the Intuition Signal** | **Location:** Modify `CognitiveStateMonitor`. Define an `INTUITION_JUMP_SIGNAL` when **velocity ($\vec{v}$) is excessively high** in a single step, or **curvature ($C$) is sharp** following a series of straight steps. This signals that the LLM has relied on fast associations (System 1). | **Trap 2: Intuition ≠ Reason**: The geometric signal tells us when System 1 intuition has outpaced System 2 reasoning. |
-| **2. Build the "Reality Check Reflector"** | **Location:** Modify `CognitiveReflexes`. If an `INTUITION_JUMP_SIGNAL` is detected, this unit generates a mandatory prompt for the next step. This prompt must force the agent to **separate the Map from the Territory**. | **Trap 1: Map ≠ Territory**: The prompt must ask: "Is this logical leap justified by the **original input data (Territory)**, or is it merely a **statistical and linguistic association (Map)**? Cite the source or retract the inference." |
-| **3. Implement the Deceleration Rule** | **Location:** Modify `Executor` (or the agent core). Upon receiving an `INTUITION_JUMP_SIGNAL`, the thinking process is **slowed down** (e.g., by requiring the LLM to consider 3 possible conclusions instead of 1). This represents the **re-engagement of System 2 (Slow, Reflective Thinking)**. | **System 1 Governance**: The agent is forced to shift from a fast (System 1) to a slow, reflective (System 2) mode when undisciplined intuition is detected. |
+### Phase 14: System 2 Reflection Mechanisms - 💡 Planned
+*   **Objective:** To govern the AI's fast, intuitive "System 1" thinking by introducing automated "System 2" reflection. This directly addresses the cognitive trap of mistaking fluent intuition for grounded reason.
+*   **Key Initiatives:**
+    *   **Intuition Signal:** Use cognitive geometry (high velocity, sharp curvature) to detect when the AI makes an intuitive leap.
+    *   **Reality Check Reflector:** When an intuition signal is detected, force the AI to validate its leap against the original input data ("Territory"), not just its internal linguistic model ("Map").
+    *   **Deceleration Rule:** Slow down the AI's processing after an intuitive leap, forcing it into a more deliberate, analytical mode of thought.
 
 ---
 
-### Phase 15: Falsifiability & Conflict Engine
-
-**Goal:** Overcome the agent's natural tendency toward self-confirmation (Confirmation Bias) by forcing it to critically test its own hypotheses, addressing the **"Conflict vs. Confirmation"** cognitive trap.
-
-| Step | Detail & Required Actions | Rose-Frame Link |
-| :--- | :--- | :--- |
-| **1. Define the Confirmation Signal** | **Location:** Modify `CognitiveStateMonitor`. Define a `CONFIRMATION_BIAS_SIGNAL` when **curvature ($C$) remains too low** for an extended period (e.g., 5-7 consecutive steps). This indicates the agent is merely repeating or confirming a single hypothesis without critical testing. | **Trap 3: Confirmation ≠ Correctness**: The geometric signal tells us when the thinking has become circular or self-validating. |
-| **2. Build the "Falsification Engine"** | **Location:** `nexusai/cognition/falsification_engine.ts` (New Module). If a `CONFIRMATION_BIAS_SIGNAL` is detected, this unit intervenes to generate a prompt based on **Conflict**. | **Re-engaging Conflict**: The prompt must be strict, such as: "The current path is self-confirming. Now, **formulate the strongest possible counter-argument** to your last hypothesis and use it as the prompt for the next step. **Search for data that falsifies** your conclusion, not data that confirms it." |
-| **3. Integrate Falsified Trajectories** | **Location:** Modify `TrajectoryStore` (Long-Term Memory). Trajectories that end in `STATE_CONFUSED` or are successfully falsified must be saved with a `FAILED_GEOMETRY` tag. On retrieval, these trajectories are used to avoid starting with the same failed geometric pattern. | **Learning from Failure**: The agent is guided to avoid geometric paths that lead to `Confirmation Bias` in the future, improving the quality of generalization. |
+### Phase 15: Falsifiability & Conflict Engine - 💡 Planned
+*   **Objective:** To combat confirmation bias by engineering "cognitive conflict." This addresses the cognitive trap of confusing confirmation with correctness.
+*   **Key Initiatives:**
+    *   **Confirmation Signal:** Use cognitive geometry (prolonged low curvature) to detect when the AI is stuck in a self-confirming loop.
+    *   **Falsification Engine:** When a confirmation signal is detected, inject a prompt that forces the AI to generate the strongest possible counter-argument to its current hypothesis.
+    *   **Learning from Failure:** Tag and store trajectories that were successfully falsified, teaching the AI to avoid unproductive reasoning paths in the future.
 
 ---
 
-### Phase 16: Cognitive Governance - AGI Style Management
+### Phase 16: Cognitive Governance & Style Modulation - 💡 Planned
+*   **Objective:** To enable the AI to strategically select its "thinking style" based on the task, using the Rose-Frame principles as a guide. This represents a higher level of metacognitive control.
+*   **Key Initiatives:**
+    *   **Geometric Governance Goals:** Define different cognitive tasks in terms of optimal geometric trajectories (e.g., 'Analytical' tasks require low-curvature paths; 'Creative' tasks allow for higher curvature).
+    *   **Style Modulator:** A system that adjusts the sensitivity of the Intuition and Confirmation signals based on the selected cognitive style, effectively managing the balance between System 1 and System 2 thinking.
+    *   **Cognition Quality KPI:** Develop a new key performance indicator that measures not just the correctness of an answer, but the "wisdom" of the cognitive process used to reach it (e.g., efficiency vs. number of self-corrections).
 
-**Goal:** Enable the agent to **choose its geometric thinking style** based on task requirements, with the geometric target defined by Rose-Frame governance.
-
-| Step | Detail & Required Actions | Rose-Frame Link |
-| :--- | :--- | :--- |
-| **1. Define Geometric "Governance Goals"** | **Cognitive Link:** Connect geometric patterns to governance requirements: **a. 'Justified Analysis' Style:** Requires a **straight path** ($C \approx 0$) to ensure **Rule-based Reasoning** (System 2). **b. 'Creative Exploration' Style:** Requires a **flexible path** (fluctuating $C$) to ensure **Hypothesis Generation** (managed Trap 3). | Translating the philosophical requirements of AGI into **quantifiable, controllable variables**. |
-| **2. Design the "Style Modulator" for Governance** | **Location:** `nexusai/cognition/style_modulator.ts`. This unit takes an input (e.g., 'Style: Analytical') and **adjusts the geometric thresholds** in the other phases to meet that style. *Example: 'Analytical' = tighten the `INTUITION_JUMP_SIGNAL` and `CONFIRMATION_BIAS_SIGNAL` thresholds to enforce a straight, disciplined path.* | Enabling high-level management to **direct the agent to adopt System 2 thinking** (disciplined) or System 1 thinking (creative) as needed. |
-| **3. Create a "Cognition Quality" KPI** | **Location:** `nexusai/analysis/metrics.ts`. Create a composite metric that combines **Efficiency** (path length relative to task complexity) and **Quality** (number of `Falsification Engine` or `Reflector` activations relative to success). | Measuring cognitive **"wisdom"**: not just whether the thinking was correct, but whether it was effectively **governed** by System 2 mechanisms. |
 ---
 ## Part 4: Proposed New Mental Tools
 
@@ -180,7 +173,7 @@ Tools that enable the AI to think about its own thinking and improve it.
     *   **Description:** A metacognitive tool that analyzes the AI's own plans and reasoning for common logical fallacies or biases (like confirmation bias or over-optimism).
     *   **Benefit:** Enables true self-correction, leading to more objective and reliable conclusions—a critical step toward a more mature intelligence.
 
-*   **Tool Name:** `Constitution Forger`
+*   **Tool Name:** `Constitution Forger` `[Status: ✅ Implemented in Phase 13]`
     *   **Description:** A tool that allows the AI to propose modifications or create new "Cognitive Constitutions" as part of its plan, based on its analysis of a problem's requirements.
     *   **Benefit:** Maximum architectural flexibility; the AI becomes capable of dynamically modifying its own core operating rules to adapt to different tasks (e.g., switching between "creative" and "strictly logical" modes).
 

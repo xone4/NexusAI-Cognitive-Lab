@@ -350,7 +350,11 @@
     "resetApplication": "Reset Application",
     "settingsSaved": "Settings Saved!",
     "saveChanges": "Save Changes",
-    "factoryResetConfirm": "Are you sure you want to perform a factory reset? This will clear ALL local data, including settings, and reload the application."
+    "factoryResetConfirm": "Are you sure you want to perform a factory reset? This will clear ALL local data, including settings, and reload the application.",
+    "constitutionManagement": "Cognitive Constitution Management",
+    "noConstitutions": "No custom constitutions have been forged yet.",
+    "deleteConstitution": "Delete Constitution",
+    "deleteConstitutionConfirm": "Are you sure you want to delete this AI-forged constitution? This action is permanent."
   },
   "personality": {
     "energyFocus": {
@@ -591,8 +595,8 @@
   },
   "simulationLab": {
     "title": "Simulation Lab",
-    "description": "Design a scenario, define competing strategies, and run a simulation to see how the AI predicts it will unfold. A powerful tool for strategic foresight and hypothesis testing.",
-    "scenario": "Scenario Definition",
+    "description": "Design a scenario, define competing strategies, and run a simulation to see how the AI predicts its outcome. A powerful tool for strategic foresight and hypothesis testing.",
+    "scenario": "Define Scenario",
     "scenarioPlaceholder": "Describe the environment, agents, and rules of the simulation...",
     "strategy": "Strategy {{number}}",
     "strategyNamePlaceholder": "e.g., 'Aggressive Expansion'",

@@ -1,80 +1,58 @@
-import React, { memo } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
-import type { CognitiveConstitution, RuleType } from '../types';
-import { BrainCircuitIcon } from './Icons';
+import type { CognitiveConstitution } from '../types';
+import DashboardCard from './DashboardCard';
+import { CogIcon, TrashIcon } from './Icons';
 
 interface ConstitutionManagerProps {
-  constitutions: CognitiveConstitution[];
-  activeId: string | null;
-  onSelect: (id: string) => void;
-  isThinking: boolean;
+    constitutions: CognitiveConstitution[];
+    onDelete: (id: string) => void;
 }
 
-const RuleIcon: React.FC<{ type: RuleType }> = memo(({ type }) => {
-    // A simple icon mapping for visual flair
-    const iconMap: Record<RuleType, string> = {
-        'MAX_REPLICAS': '📦',
-        'MAX_PLAN_STEPS': '📏',
-        'FORBIDDEN_TOOLS': '🚫',
-        'REQUIRED_TOOLS': '🔧'
-    };
-    return <span className="mr-2">{iconMap[type] || '⚙️'}</span>
-});
-RuleIcon.displayName = 'RuleIcon';
+const ConstitutionCard: React.FC<{ constitution: CognitiveConstitution; onDelete: (id: string) => void; }> = ({ constitution, onDelete }) => {
+    const { t } = useTranslation();
+    const isDefault = ['const-balanced', 'const-creative', 'const-logical'].includes(constitution.id);
 
-const ConstitutionManager: React.FC<ConstitutionManagerProps> = ({ constitutions, activeId, onSelect, isThinking }) => {
-  const { t } = useTranslation();
-  const activeConstitution = constitutions.find(c => c.id === activeId) ?? null;
-
-  return (
-    <div className="flex flex-col h-full space-y-3">
-        <div>
-            <label htmlFor="constitution-select" className="block text-sm font-medium text-nexus-text-muted">
-                {t('constitutionManager.title')}
-            </label>
-            <select
-                id="constitution-select"
-                value={activeId ?? ''}
-                onChange={(e) => onSelect(e.target.value)}
-                disabled={isThinking}
-                className="mt-1 block w-full rounded-xl border-0 py-2 pl-3 pr-10 bg-nexus-dark text-nexus-text ring-1 ring-inset ring-nexus-surface focus:ring-2 focus:ring-nexus-primary sm:text-sm sm:leading-6 disabled:opacity-60"
-            >
-                {constitutions.map(c => (
-                    <option key={c.id} value={c.id}>
-                        {c.name}
-                    </option>
-                ))}
-            </select>
-        </div>
-        
-        <div className="flex-grow p-3 bg-nexus-dark/50 rounded-xl border border-nexus-surface/50 overflow-y-auto">
-            {activeConstitution ? (
-                <div className="space-y-2">
-                    <p className="text-sm text-nexus-text-muted italic">"{activeConstitution.description}"</p>
-                    <div className="pt-2 border-t border-nexus-surface/30">
-                        <h4 className="font-semibold text-nexus-primary text-xs uppercase tracking-wider mb-2">{t('constitutionManager.activeRules')}</h4>
-                        {activeConstitution.rules.length > 0 ? (
-                             <ul className="space-y-1.5 text-sm text-nexus-text">
-                                {activeConstitution.rules.map((rule, i) => (
-                                    <li key={i} className="flex items-start">
-                                        <RuleIcon type={rule.type} />
-                                        <span>{rule.description}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        ) : (
-                            <p className="text-xs text-nexus-text-muted text-center py-2">{t('constitutionManager.noRules')}</p>
-                        )}
-                    </div>
+    return (
+        <div className="bg-nexus-dark/50 p-4 rounded-xl border border-nexus-surface/50">
+            <div className="flex justify-between items-start">
+                <div>
+                    <h4 className="font-semibold text-nexus-text">{constitution.name}</h4>
+                    <p className="text-sm text-nexus-text-muted italic mt-1">"{constitution.description}"</p>
                 </div>
-            ) : (
-                <div className="flex items-center justify-center h-full text-nexus-text-muted">
-                    <p>{t('constitutionManager.selectHint')}</p>
+                {!isDefault && (
+                    <button onClick={() => onDelete(constitution.id)} className="p-1 text-red-500 hover:text-white" title={t('settings.deleteConstitution') as string}>
+                        <TrashIcon className="w-5 h-5"/>
+                    </button>
+                )}
+            </div>
+            {constitution.rules.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-nexus-surface/30">
+                    <h5 className="text-xs font-semibold text-nexus-primary uppercase tracking-wider mb-2">Rules</h5>
+                    <ul className="space-y-1 text-sm text-nexus-text-muted">
+                        {constitution.rules.map((rule, index) => (
+                            <li key={index}>- {rule.description} ({rule.type}: {JSON.stringify(rule.value)})</li>
+                        ))}
+                    </ul>
                 </div>
             )}
         </div>
-    </div>
-  );
+    );
 };
 
-export default memo(ConstitutionManager);
+const ConstitutionManager: React.FC<ConstitutionManagerProps> = ({ constitutions, onDelete }) => {
+    const { t } = useTranslation();
+
+    return (
+        <DashboardCard title={t('settings.constitutionManagement')} icon={<CogIcon />}>
+            <div className="p-4 space-y-4">
+                {constitutions.map(c => (
+                    <ConstitutionCard key={c.id} constitution={c} onDelete={onDelete} />
+                ))}
+                {constitutions.length === 0 && <p className="text-nexus-text-muted text-center">{t('settings.noConstitutions')}</p>}
+            </div>
+        </DashboardCard>
+    );
+};
+
+export default ConstitutionManager;

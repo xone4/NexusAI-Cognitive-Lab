@@ -394,6 +394,13 @@ const App: React.FC = () => {
           console.error("Failed to update world model from trace", e);
       }
   }, []);
+  
+  const handleDeleteConstitution = useCallback((constitutionId: string) => {
+    if (window.confirm(t('settings.deleteConstitutionConfirm'))) {
+// FIX: Correctly call the deleteConstitution method on nexusAIService.
+        nexusAIService.deleteConstitution(constitutionId);
+    }
+  }, [t]);
 
   const cognitivePermissions = useMemo(() => {
     const state = cognitiveProcess?.state ?? 'Idle';
@@ -532,7 +539,7 @@ const App: React.FC = () => {
                  onOptimizeTool={nexusAIService.optimizeTool}
                />;
       case 'settings':
-        return <SettingsView settings={settings} onSettingsChange={handleSettingsChange} />;
+        return <SettingsView settings={settings} onSettingsChange={handleSettingsChange} constitutions={constitutions} onDeleteConstitution={handleDeleteConstitution} />;
       case 'evolution':
         return evolutionState && <EvolutionChamber
                  evolutionState={evolutionState}

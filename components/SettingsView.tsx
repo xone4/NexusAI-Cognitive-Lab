@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { AppSettings, AnimationLevel, Language, ModelProfile, CognitiveStyle } from '../types';
+import type { AppSettings, AnimationLevel, Language, ModelProfile, CognitiveStyle, CognitiveConstitution } from '../types';
 import DashboardCard from './DashboardCard';
 import { CogIcon, TrashIcon, BrainCircuitIcon, EyeIcon } from './Icons';
 import { nexusAIService } from '../services/nexusAIService';
 import PersonalityEditor from './PersonalityEditor';
 import ConfigToggle from './ConfigToggle';
+// FIX: Correctly import the ConstitutionManager component. The error was due to an empty file which is not a module.
+import ConstitutionManager from './ConstitutionManager';
 
 interface SettingsViewProps {
   settings: AppSettings;
   onSettingsChange: (newSettings: AppSettings) => void;
+  constitutions: CognitiveConstitution[];
+  onDeleteConstitution: (id: string) => void;
 }
 
 const languageOptions: { id: Language, name: string }[] = [
@@ -47,7 +51,7 @@ const SettingsRadioGroup = <T extends string>({ label, description, options, sel
     );
 };
 
-const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSettingsChange }) => {
+const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSettingsChange, constitutions, onDeleteConstitution }) => {
   const { t, i18n } = useTranslation();
   const isRtl = i18n.dir() === 'rtl';
   const [localSettings, setLocalSettings] = useState<AppSettings>(settings);
@@ -223,6 +227,8 @@ const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSettingsChange 
         </div>
       </DashboardCard>
       
+       <ConstitutionManager constitutions={constitutions} onDelete={onDeleteConstitution} />
+
        <DashboardCard title={t('settings.dataManagement')} icon={<TrashIcon />}>
           <div className="p-4 space-y-4">
               <div className="flex items-center justify-between">
