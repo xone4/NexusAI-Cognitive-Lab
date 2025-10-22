@@ -86,15 +86,20 @@ The UI is designed to provide a clear window into the Agent 2.0 flow, with the C
 +----------------------------------------------------------------------+
 ```
 
-## The Sentience Roadmap
+## The Sentience Roadmap (Version 3.1)
 
-> For a more granular breakdown of the development strategy and future phases, please refer to the [Detailed Development Plan](./DETAILED_PLAN.md).
+> This roadmap has been updated to prioritize safety, measurement, and sustainable growth based on a comprehensive system review. For a full technical breakdown, see the [Detailed Development Plan](./DETAILED_PLAN.md).
+
+Our development strategy is guided by several core principles:
+- **Safety Before Capability:** Securing existing tools before building more powerful ones.
+- **Measurement Is the Foundation of Improvement:** We cannot improve what we cannot measure.
+- **Infrastructure First:** Addressing technical debt to ensure scalability.
+- **Iterative Evolution:** Simulating and validating new architectures before large-scale engineering investment.
 
 ---
 ### **Completed Milestones (Phases 1-13)**
 
 NexusAI has successfully completed its foundational development, establishing a fully functional Agent 2.0 platform. Key achievements include:
-
 -   **Core Cognitive Architecture:** A robust Orchestrator/Sub-Agent model with a persistent, emotionally-aware memory system (**MEMORIA**).
 -   **Advanced Cognition:** Implementation of **Recursive Delegation** to solve complex problems, a **Cognitive Navigator** for real-time self-correction, and an **Autonomous Bidding Network** for distributed problem-solving.
 -   **Multi-Modal Interaction:** Full support for real-time voice/video conversations, voice synthesis (TTS), and video generation (**Modalities Lab**).
@@ -102,40 +107,32 @@ NexusAI has successfully completed its foundational development, establishing a 
 -   **Metacognitive Capabilities:** The AI can evolve solutions in the **Evolution Chamber**, learn from its past in the **Dreaming Chamber**, and even modify its own rules by forging new **Cognitive Constitutions**.
 
 ---
-### **The Next Evolution: The AGI Blueprint (Phases 14-16)**
+### **The Next Evolution: Fortification, Measurement, and Guided Evolution**
 
-The next major leap for NexusAI is the integration of a unified architectural blueprint designed to give the AI true self-awareness and self-correction capabilities. This blueprint combines three powerful concepts:
-
-1.  **Mixture of Cognitive Reasoners (MICRO):** Re-architecting the core AI from a single monolithic model into a team of specialized "reasoners" (`Logic`, `Language`, `Social`, `World`), each expert in its domain.
-2.  **Rose-Frame Governance:** A set of principles to diagnose and correct the fundamental cognitive traps of LLMs (e.g., mistaking fluent intuition for grounded reason, or confirmation bias for correctness).
-3.  **Knowledge Flow:** A new technique to visualize and manage how information moves *between* the specialized reasoners, creating measurable and directable "patterns of thought."
-
-Our goal is to use our existing Cognitive Geometry engine as a sensor to detect these cognitive traps and then use the MICRO architecture and Knowledge Flow controls to correct them in real-time. This builds an active **System 2 (Reason)** layer to guide the AI's powerful **System 1 (Intuition)**.
+The next phase of development pivots to a more pragmatic and secure approach to achieving advanced cognition.
 
 ---
-
-### Phase 14: The Self-Aware Agent (Architectural Re-Engineering) - 💡 Planned
-*   **Objective:** Rebuild the AI's core with specialized reasoners and give it the ability to track its own internal thought processes.
+### Phase 14 (New): Fortification & Foundation - 💡 Planned
+*   **Objective:** Address critical safety, security, and scalability gaps before introducing new capabilities.
 *   **Key Initiatives:**
-    *   **Mixture of Cognitive Reasoners (MICRO):** The core engine will be transformed into a modular team of experts, enabling fine-grained control over the AI's cognitive functions.
-    *   **Knowledge Flow Tracking:** The AI will generate a "Flow Matrix" for every thought, creating a map of how information moves between its internal reasoners. This map is stored as part of its memory, allowing it to remember *how* it thought, not just *what* it thought.
+    *   **Implement Safety Controls:** Introduce a "kill-switch" for agent cloning and secure the `forge_constitution` tool with immutable versioning and user approval workflows.
+    *   **Fortify Security:** Move sensitive data away from insecure storage mechanisms.
+    *   **Upgrade Infrastructure:** Begin migrating the memory system from IndexedDB to a dedicated Vector Database (e.g., ChromaDB) to solve performance bottlenecks in semantic search.
 
 ---
-
-### Phase 15: The Self-Correcting Agent (Dynamic Governance) - 💡 Planned
-*   **Objective:** Use the AI's new self-awareness to implement automated self-correction based on Rose-Frame principles.
+### Phase 15 (New): Measurement & Monitoring - 💡 Planned
+*   **Objective:** Build a robust framework to objectively measure and understand the AI's "quality of thought."
 *   **Key Initiatives:**
-    *   **Automated "Reality Checks":** When the system detects a fast, intuitive leap (a "System 1" action), it will automatically enforce a **Knowledge Flow** that forces a check against its factual "World" reasoner, preventing it from mistaking its internal map for the territory.
-    *   **Engineered "Cognitive Conflict":** When the system detects it is stuck in a self-confirming loop (confirmation bias), it will enforce a Knowledge Flow that forces it to engage its "Social" reasoner to generate counter-arguments, ensuring a more robust and critical thought process.
+    *   **Cognitive Evaluation Framework:** Develop a new dashboard to track key performance indicators like inference accuracy, planning efficiency, and self-correction rates.
+    *   **Metric Validation:** Empirically validate the correlation between existing geometric metrics (like "cognitive curvature") and actual reasoning quality.
 
 ---
-
-### Phase 16: The Strategic Agent (Flow-Based Learning & Control) - 💡 Planned
-*   **Objective:** Enable the AI to learn from its past thought processes and allow for high-level, strategic control over its cognitive style.
+### Phase 16 (New): Guided Evolution & Simulated Architectures - 💡 Planned
+*   **Objective:** Begin implementing advanced cognitive architectures in a safe, simulated, and iterative manner.
 *   **Key Initiatives:**
-    *   **Flow-Aware Memory:** The AI's memory retrieval will become far more powerful. It will be able to find past experiences not just by topic, but by the *pattern of thought* used, allowing it to recall "tasks that required a careful shift from creative to logical reasoning."
-    *   **Cognitive Style as a Flow Profile:** An "Analytical" style will no longer be just a textual hint; it will become a direct command to prioritize knowledge flow through the `Logic` reasoner. This gives the Cognitive Architect unprecedented control over the AI's mode of thinking.
-    *   **Learning Efficient Thought:** The AI will be trained to recognize and prefer efficient Knowledge Flows, learning to solve problems with the most direct and effective cognitive steps.
+    *   **Simulated MICRO Architecture:** Instead of a risky, immediate re-architecture, we will first simulate the "Mixture of Cognitive Reasoners" (MICRO) model by using advanced prompting and tool selection to mimic a "Cognitive Router."
+    *   **Activate Reinforcement Learning Loop:** Use the data from the evaluation framework to train the simulated Cognitive Router, rewarding efficient and accurate thought patterns.
+    *   **Implement "Reality-Check" Protocols:** Enforce mandatory workflows that force the AI to validate its internal logic against its factual World Model, preventing it from operating in a purely theoretical space.
 
 ---
 ## Contributing

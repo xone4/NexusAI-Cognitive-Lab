@@ -80,44 +80,83 @@ This plan outlines the upcoming phases to enhance NexusAI's capabilities further
     *   **Constitution Forger:** The AI can now propose and create new `CognitiveConstitutions` as part of a plan using the `forge_constitution` tool. This enables it to dynamically shift its operational mode (e.g., from "Creative" to "Strictly Logical") to best suit a given task. The Settings UI has been updated to allow for the management and deletion of these AI-forged constitutions.
 
 ---
-## Part 3: The Next Evolution - The AGI Blueprint (MICRO, Rose-Frame & Knowledge Flow)
+## Part 3: The Enhanced Development Plan (V3.1)
 
-The next major leap for NexusAI is the integration of three interlocking paradigms: the **Mixture of Cognitive Reasoners (MICRO)** architecture, the **Rose-Frame** cognitive governance model, and the concept of **Knowledge Flow**. This combined approach provides not only the diagnostic tools to understand cognitive failures but also the fine-grained architectural control to correct them at the token level.
+### Diagnosis and Strategic Pivot
 
-The goal is to evolve NexusAI from an agent that simply *thinks* to one that *thinks about its own thinking*. It's about building a robust **System 2 (Reason)** layer to govern the powerful but fallible **System 1 (Intuition)** of the underlying LLM. This directly addresses the core challenges of:
-1.  **Map vs. Territory:** Distinguishing linguistic representation from grounded reality.
-2.  **Intuition vs. Reason:** Separating fast, associative pattern-matching from slow, reflective logic.
-3.  **Confirmation vs. Conflict:** Moving beyond self-confirmation to embrace critical falsification.
+A thorough diagnosis of the project reveals a highly ambitious Cognitive Operating System that successfully integrates principles from cognitive science and AI engineering. The foundational work (Phases 1-13) has established a powerful infrastructure. However, this ambition introduces significant risks related to safety, security, and scalability. The planned leap towards self-awareness (Phases 14-16) requires a solid, secure foundation and clear metrics for success, which are currently underdeveloped.
 
----
+**Key Gaps Identified:**
+1.  **Safety Gap:** Powerful tools with self-modification capabilities (`spawn_cognitive_clone`, `forge_constitution`) exist without sufficient safeguards against misuse or hazardous recursive behavior.
+2.  **Measurement Gap:** The project aims for "better thinking" objective method is needed to measure this improvement. Concepts like "cognitive velocity" are theoretical and require measurement.
+3.  **Technical Debt:** The reliance on IndexedDB for vector similarity search is not scalable and will become a major performance bottleneck as the AI's memory grows.
 
-### Phase 14: The Self-Aware Agent (Architectural Re-Engineering) - 💡 Planned
-*   **Objective:** Rebuild the AI's core with specialized reasoners and give it the ability to track its own internal thought processes.
-*   **Key Initiatives:**
-    *   **Adopt MICRO Architecture:** The core `LLM_Core` will transition from a dense model to a Mixture of Blocks (MoB) with four specialized reasoners: `Language`, `Logic`, `Social`, and `World`. Each layer will contain a `Router` to manage token distribution. This architecture is the first step towards enabling true peer-to-peer collaboration between reasoners, moving beyond the current Orchestrator bottleneck.
-    *   **Implement the `CognitiveRouter`:** A new central module that provides a high-level API to control the internal routers of the MICRO model. It will expose functions like `set_expert_weights` and `ablate_expert`.
-    *   **Implement the `FlowTracker`:** A new analysis module that processes token routing data from each cognitive step to generate a `Flow Matrix`. This matrix quantitatively represents how information flows between the different reasoners.
-    *   **Extend `CognitiveTrajectory`:** The `CognitiveStep` data type will be updated to store the `Flow Matrix`, making knowledge flow a persistent, analyzable part of the AI's memory. This links geometric metrics (velocity `v`) to the underlying flow dynamics.
+### Lessons Learned and Guiding Principles
 
----
+The next stage of development will be guided by the following core principles:
 
-### Phase 15: The Self-Correcting Agent (Dynamic Governance) - 💡 Planned
-*   **Objective:** Use the AI's new self-awareness to implement automated self-correction based on Rose-Frame principles.
-*   **Key Initiatives:**
-    *   **Implement the `FlowManager`:** A new cognitive module that receives diagnostic signals from the `Cognitive Monitor` (e.g., `INTUITION_JUMP_SIGNAL`) and translates them into `Flow Directives` for the `CognitiveRouter`.
-    *   **Implement "Reality Check" Reflector (Map vs. Territory):** When a high-velocity intuitive leap is detected, the `FlowManager` will enforce a mandatory `Logic -> World -> Logic` knowledge flow. This forces the AI to exit a purely internal logic loop and validate its reasoning against its factual `World` reasoner before concluding.
-    *   **Implement "Critical Falsification" Engine (Confirmation vs. Correctness):** When a confirmation bias signal (prolonged low curvature) is detected, the `FlowManager` will enforce a `Logic -> Social -> Language` flow. This forces the AI to consider alternative social perspectives and formulate counter-arguments, breaking the cycle of self-confirmation.
+-   **Safety Before Capability:** Secure existing tools before building new, more powerful ones. Any self-modification capability must be reversible, observable, and constrained by immutable core rules.
+-   **Measurement Is the Foundation of Improvement:** We cannot improve what we cannot measure. A framework for objective evaluation must be developed in parallel with new cognitive capabilities, not as an afterthought.
+-   **Infrastructure First:** Scalability and performance issues (e.g., the vector database) must be resolved before they become insurmountable roadblocks to advanced development.
+-   **Security is Not a Luxury:** Sensitive information must be secured, and potential vulnerabilities (like XSS) must be addressed proactively.
+-   **Iterative Evolution:** Instead of making immediate, drastic architectural changes (like implementing the MICRO architecture), we will first simulate these changes using existing techniques (Prompt Engineering, Tool Selection) to prove their effectiveness before committing to major engineering efforts.
+
+### The Revised Roadmap
+
+This plan realigns priorities to address the identified gaps, ensuring safe, measurable, and sustainable development.
 
 ---
+### Phase 1 (New): Fortification and Foundation 
+**Goal:** Address critical gaps in safety, security, and infrastructure before adding any new features.
 
-### Phase 16: The Strategic Agent (Flow-Based Learning & Control) - 💡 Planned
-*   **Objective:** Enable the AI to learn from its past thought processes and allow for high-level, strategic control over its cognitive style.
-*   **Key Initiatives:**
-    *   **Flow-Aware Memory Retrieval:** Enhance the trajectory similarity algorithm (DTW) to compare sequences of `Flow Matrices` in addition to geometric metrics. The AI will now retrieve memories based on shared *cognitive processes* (e.g., tasks that required a similar shift from `Language` to `Logic` reasoning). **Implementation Note:** This will involve migrating the current key-value memory (`IndexedDB`) to a dedicated **Vector Database** (e.g., ChromaDB, Pinecone) to enable efficient, high-dimensional similarity search on `Flow Matrices`.
-    *   **Strategic Planning with Flow Directives:** The `CognitivePlanner` will use retrieved flow patterns to generate an *initial token steering directive* for the `CognitiveRouter`, pre-configuring the AI's thought process for the task at hand.
-    *   **Cognitive Style as a Flow Profile:** Define `CognitiveStyle`s (e.g., 'Analytical', 'Creative') not just as prompts, but as preferred `Flow Matrix` profiles. The `Style Modulator` will implement a selected style by applying persistent routing rules to the `CognitiveRouter`, providing true top-down control over the AI's mode of thinking.
-    *   **Learning Efficient Thought:** Future reinforcement learning will reward the model not just for correct answers, but for arriving at them via an efficient and appropriate `Knowledge Flow`, pruning unnecessary cognitive steps. **Implementation Note:** This requires the development of an **Objective Evaluation Framework**—a suite of cognitive benchmarks to quantitatively measure performance and guide reinforcement learning.
+1.  **Implement "Kill-switch" for Agent Cloning:**
+    *   **Problem:** `spawn_cognitive_clone` could lead to uncontrolled, infinite recursion.
+    *   **Solution:** The tool can only be invoked by passing a "Capability Token" that is periodically renewed by the user. A hard limit on the maximum number of concurrent active clones will be enforced at the service level.
 
+2.  **Secure the "Constitution Forger":**
+    *   **Problem:** The system can irreversibly alter its own core rules.
+    *   **Solution:**
+        *   Constitutions will be stored as immutable, versioned objects.
+        *   Any fundamental change will require explicit user approval via a UI workflow.
+        *   A "Core Constitution" will be established, containing non-negotiable principles (e.g., "Do not deceive the user") that cannot be modified by the AI.
+
+3.  **Migrate to a Vector Database:**
+    *   **Problem:** IndexedDB is extremely inefficient for large-scale similarity searches.
+    *   **Solution:** Begin integration with a local-first vector database like ChromaDB. Develop a migration script to transfer existing embedded data from IndexedDB to the new vector store.
+
+---
+### Phase 2 (New): Measurement and Monitoring
+**Goal:** Build the tools necessary to objectively measure and understand the "quality of thought."
+
+1.  **Develop a Cognitive Evaluation Framework:**
+    *   **Problem:** There are no objective metrics to evaluate system performance.
+    *   **Solution:** Build a new "Evaluation" dashboard displaying the following metrics:
+        *   **Inference Accuracy:** The percentage of AI-generated conclusions that align with facts stored in the "World Model."
+        *   **Flow Efficiency:** The number of cognitive steps required to reach a solution.
+        *   **Self-Correction Rate:** The frequency with which the system autonomously revises its plan after detecting an error.
+        *   **Bias Resistance:** Develop a suite of unit tests with scenarios designed to trigger confirmation bias and measure the system's ability to detect and overcome it.
+
+2.  **Validate Existing Metrics:**
+    *   **Problem:** There is no empirical proof that metrics like "cognitive velocity" or "curvature" correlate with the quality of thought.
+    *   **Solution:** Suggest to conduct a study on 100 manually evaluated thought traces to establish a statistical correlation between high "curvature" and the occurrence of logical fallacies.
+
+---
+### Phase 3 (New): Guided Evolution
+**Goal:** Begin implementing the advanced concepts of Phases 14-16 from the original plan in a gradual, safe, and evidence-based manner.
+
+1.  **Simulate the MICRO Architecture:**
+    *   **Problem:** A direct implementation of the MICRO architecture is complex and risky.
+    *   **Solution:** Instead of modifying the core model architecture, we will simulate a "Cognitive Router." This will be achieved by prompting the LLM to explicitly choose the appropriate tool or "expert" for a given sub-task (e.g., "Use the `Logic Expert` tool for this mathematical problem"). This flow of choices will be tracked and analyzed.
+
+2.  **Activate a Reinforcement Learning Loop:**
+    *   **Problem:** Flow Matrices are recorded but not used for learning.
+    *   **Solution:** Once sufficient data is gathered from the Cognitive Evaluation Framework, it will be used to train the simulated "Cognitive Router" to select the most efficient thought paths for different types of problems.
+
+3.  **Implement "Reality-Check" Mechanisms:**
+    *   **Problem:** The system can become trapped in theoretical reasoning loops, detached from factual ground truth.
+    *   **Solution:** Enforce mandatory validation workflows, such as:
+        *   **Logic → World → Logic:** Any logical deduction must be cross-referenced with data from the "World Model" before it can be used in subsequent steps.
+        *   **Logic → Social → Language:** Any plan for communication or social interaction must first be evaluated by a simulated "Social Expert" to assess its appropriateness and potential impact.
 ---
 ## Part 4: Key Mental Tools & Their Development Status
 
