@@ -350,10 +350,19 @@
     "settingsSaved": "تم حفظ الإعدادات!",
     "saveChanges": "حفظ التغييرات",
     "factoryResetConfirm": "هل أنت متأكد من رغبتك في إجراء إعادة ضبط المصنع؟ سيؤدي هذا إلى مسح جميع البيانات المحلية، بما في ذلك الإعدادات، وإعادة تحميل التطبيق.",
-    "constitutionManagerTitle": "الدساتير المعرفية",
-    "constitutionManagerDesc": "إدارة مجموعات القواعد التشغيلية الأساسية للذكاء الاصطناعي. يمكن للذكاء الاصطناعي صياغة دساتير جديدة كجزء من خطة لتكييف سلوكه مع مهام محددة.",
+    "constitutionManagement": "إدارة الدستور المعرفي",
+    "noConstitutions": "لم يتم صياغة دساتير مخصصة بعد.",
     "deleteConstitution": "حذف الدستور",
-    "deleteConstitutionConfirm": "هل أنت متأكد من أنك تريد حذف هذا الدستور الذي صاغه الذكاء الاصطناعي؟ هذا الإجراء دائم."
+    "deleteConstitutionConfirm": "هل أنت متأكد من أنك تريد حذف هذا الدستور الذي صاغه الذكاء الاصطناعي؟ هذا الإجراء دائم.",
+    "archiveConstitutionConfirm": "هل أنت متأكد من رغبتك في أرشفة هذا الدستور؟ لن يكون متاحًا للتعيين بعد الآن ولكن يمكن استعادته لاحقًا.",
+    "rejectConstitutionConfirm": "هل أنت متأكد من رغبتك في رفض وحذف هذا الدستور المعلق بشكل دائم؟",
+    "approve": "موافقة",
+    "reject": "رفض",
+    "archive": "أرشفة",
+    "defaultBadge": "افتراضي",
+    "status_ACTIVE": "نشط",
+    "status_PENDING_APPROVAL": "في انتظار الموافقة",
+    "status_ARCHIVED": "مؤرشف"
   },
   "personality": {
     "energyFocus": {

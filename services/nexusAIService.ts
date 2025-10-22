@@ -353,10 +353,11 @@ const _seedInitialData = async () => {
     
     log('SYSTEM', 'Performing first-time database initialization...');
 
+    // FIX: Added missing properties 'version', 'status', and 'isDefault' to conform to the 'CognitiveConstitution' type.
     const initialConstitutions: CognitiveConstitution[] = [
-        { id: 'const-balanced', name: 'Balanced Protocol', description: 'Standard operating parameters for general-purpose cognition.', rules: [] },
-        { id: 'const-creative', name: 'Creative Expansion', description: 'Loosens constraints to allow for more novel connections and plans.', rules: [{type: 'MAX_PLAN_STEPS', value: 20, description: 'Allows for complex, multi-stage planning (up to 20 steps).'}] },
-        { id: 'const-logical', name: 'Strict Logic', description: 'Enforces rigorous, efficient processing with minimal deviation.', rules: [{type: 'MAX_REPLICAS', value: 3, description: 'Limits cognitive branching to 3 sub-replicas.'}, {type: 'FORBIDDEN_TOOLS', value: ['induce_emotion'], description: 'Disables use of subjective emotional tools.'}] },
+        { id: 'const-balanced', name: 'Balanced Protocol', description: 'Standard operating parameters for general-purpose cognition.', rules: [], version: 1, status: 'ACTIVE', isDefault: true },
+        { id: 'const-creative', name: 'Creative Expansion', description: 'Loosens constraints to allow for more novel connections and plans.', rules: [{type: 'MAX_PLAN_STEPS', value: 20, description: 'Allows for complex, multi-stage planning (up to 20 steps).'}], version: 1, status: 'ACTIVE', isDefault: false },
+        { id: 'const-logical', name: 'Strict Logic', description: 'Enforces rigorous, efficient processing with minimal deviation.', rules: [{type: 'MAX_REPLICAS', value: 3, description: 'Limits cognitive branching to 3 sub-replicas.'}, {type: 'FORBIDDEN_TOOLS', value: ['induce_emotion'], description: 'Disables use of subjective emotional tools.'}], version: 1, status: 'ACTIVE', isDefault: false },
     ];
     await Promise.all(initialConstitutions.map(c => dbService.put('constitutions', c)));
 
@@ -2354,6 +2355,7 @@ const service = {
                         const response = await ai.models.generateContent({ ...getCognitiveModelConfig({ responseMimeType: "application/json", responseSchema: constitutionSchema }), contents: prompt });
                         const constData = JSON.parse(response.text);
                         
+                        // FIX: Added missing properties 'version', 'status', and 'isDefault' to conform to the CognitiveConstitution type.
                         const newConstitution: CognitiveConstitution = {
                             id: `const-forged-${Date.now()}`,
                             name: constData.name,
@@ -2364,7 +2366,10 @@ const service = {
                                 } catch {
                                     return { ...rule, value: rule.value }; // Keep as string if parsing fails
                                 }
-                            })
+                            }),
+                            version: 1,
+                            status: 'PENDING_APPROVAL',
+                            isDefault: false,
                         };
                         
                         constitutionsState.push(newConstitution);
@@ -3596,6 +3601,42 @@ Return ONLY a valid JSON object matching the provided schema.`;
             const errorMessage = e instanceof Error ? e.message : 'Unknown AI error';
             log('ERROR', `Failed to generate simulation strategies: ${errorMessage}`);
             throw new Error(errorMessage);
+        }
+    },
+
+    // FIX: Added missing methods 'approveConstitution', 'rejectConstitution', and 'archiveConstitution' to handle constitution state changes from the UI.
+    approveConstitution: async (constitutionId: string) => {
+        const constitution = constitutionsState.find(c => c.id === constitutionId);
+        if (constitution && constitution.status === 'PENDING_APPROVAL') {
+            constitution.status = 'ACTIVE';
+            await dbService.put('constitutions', constitution);
+            log('SYSTEM', `Constitution "${constitution.name}" has been approved and is now active.`);
+            notifyConstitutions();
+        } else {
+            log('WARN', `Could not approve constitution ${constitutionId}. It may not exist or is not pending approval.`);
+        }
+    },
+
+    rejectConstitution: async (constitutionId: string) => {
+        const constitution = constitutionsState.find(c => c.id === constitutionId);
+        if (constitution && constitution.status === 'PENDING_APPROVAL') {
+            log('SYSTEM', `Rejecting and deleting pending constitution "${constitution.name}".`);
+            // Rejecting a pending constitution is equivalent to deleting it.
+            await service.deleteConstitution(constitutionId);
+        } else {
+            log('WARN', `Could not reject constitution ${constitutionId}. It may not exist or is not pending approval.`);
+        }
+    },
+
+    archiveConstitution: async (constitutionId: string) => {
+        const constitution = constitutionsState.find(c => c.id === constitutionId);
+        if (constitution && constitution.status === 'ACTIVE' && !constitution.isDefault) {
+            constitution.status = 'ARCHIVED';
+            await dbService.put('constitutions', constitution);
+            log('SYSTEM', `Constitution "${constitution.name}" has been archived.`);
+            notifyConstitutions();
+        } else {
+            log('WARN', `Could not archive constitution ${constitutionId}. It may not exist, is not active, or is a default constitution.`);
         }
     },
 

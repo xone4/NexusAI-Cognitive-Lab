@@ -106,21 +106,27 @@ The next stage of development will be guided by the following core principles:
 This plan realigns priorities to address the identified gaps, ensuring safe, measurable, and sustainable development.
 
 ---
-### Phase 1 (New): Fortification and Foundation 
+### Phase 1 (New): Fortification and Foundation - ▶️ In Progress
 **Goal:** Address critical gaps in safety, security, and infrastructure before adding any new features.
+
+#### Completed Initiatives
+
+1.  **Secure the "Constitution Forger" (✅ Implemented):**
+    *   **Problem:** The AI could previously alter its core rule sets without oversight, posing a significant safety risk.
+    *   **Implementation:** A robust safety and versioning layer has been added to the constitution forging process.
+        *   **Approval Workflow:** New constitutions created via the `forge_constitution` tool now have a default status of `PENDING_APPROVAL`. They do not become active until a user explicitly approves them in the Settings view.
+        *   **User Control:** The UI now provides controls to `Approve` or `Reject` pending constitutions.
+        *   **Safe Deletion:** Deleting a constitution now archives it (`ARCHIVED` status) instead of performing a hard delete, preserving its history.
+        *   **Default Protection:** The core, default constitutions are now marked as `isDefault` and are protected from being archived or modified, ensuring a stable baseline.
+        *   **Versioning:** The `CognitiveConstitution` type now includes a `version` field, laying the groundwork for future auditing and rollback capabilities.
+
+#### Planned Initiatives
 
 1.  **Implement "Kill-switch" for Agent Cloning:**
     *   **Problem:** `spawn_cognitive_clone` could lead to uncontrolled, infinite recursion.
     *   **Solution:** The tool can only be invoked by passing a "Capability Token" that is periodically renewed by the user. A hard limit on the maximum number of concurrent active clones will be enforced at the service level.
 
-2.  **Secure the "Constitution Forger":**
-    *   **Problem:** The system can irreversibly alter its own core rules.
-    *   **Solution:**
-        *   Constitutions will be stored as immutable, versioned objects.
-        *   Any fundamental change will require explicit user approval via a UI workflow.
-        *   A "Core Constitution" will be established, containing non-negotiable principles (e.g., "Do not deceive the user") that cannot be modified by the AI.
-
-3.  **Migrate to a Vector Database:**
+2.  **Migrate to a Vector Database:**
     *   **Problem:** IndexedDB is extremely inefficient for large-scale similarity searches.
     *   **Solution:** Begin integration with a local-first vector database like ChromaDB. Develop a migration script to transfer existing embedded data from IndexedDB to the new vector store.
 
@@ -203,9 +209,9 @@ Tools that enable the AI to think about its own thinking and improve it.
     *   **Description:** A metacognitive tool that analyzes the AI's own plans and reasoning for common logical fallacies or biases (like confirmation bias or over-optimism).
     *   **Benefit:** Enables true self-correction, leading to more objective and reliable conclusions—a critical step toward a more mature intelligence.
 
-*   **Tool Name:** `Constitution Forger` `[Status: ✅ Implemented in Phase 13]`
-    *   **Description:** A tool that allows the AI to propose modifications or create new "Cognitive Constitutions" as part of its plan, based on its analysis of a problem's requirements.
-    *   **Benefit:** Maximum architectural flexibility; the AI becomes capable of dynamically modifying its own core operating rules to adapt to different tasks (e.g., switching between "creative" and "strictly logical" modes).
+*   **Tool Name:** `Constitution Forger` `[Status: ✅ Implemented & Fortified]`
+    *   **Description:** Allows the AI to propose and create new "Cognitive Constitutions" as part of a plan. **Newly forged constitutions require user approval via the Settings view before they can be activated, ensuring a human-in-the-loop safety protocol.**
+    *   **Benefit:** Enables dynamic adaptation of the AI's core operating rules, balanced with user oversight for safety and control.
 
 ### 4. Sensory & Real-World Interaction Tools
 Connecting the AI to more than just text.

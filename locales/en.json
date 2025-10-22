@@ -354,7 +354,16 @@
     "constitutionManagement": "Cognitive Constitution Management",
     "noConstitutions": "No custom constitutions have been forged yet.",
     "deleteConstitution": "Delete Constitution",
-    "deleteConstitutionConfirm": "Are you sure you want to delete this AI-forged constitution? This action is permanent."
+    "deleteConstitutionConfirm": "Are you sure you want to delete this AI-forged constitution? This action is permanent.",
+    "archiveConstitutionConfirm": "Are you sure you want to archive this constitution? It will no longer be available for assignment but can be restored later.",
+    "rejectConstitutionConfirm": "Are you sure you want to reject and permanently delete this pending constitution?",
+    "approve": "Approve",
+    "reject": "Reject",
+    "archive": "Archive",
+    "defaultBadge": "Default",
+    "status_ACTIVE": "Active",
+    "status_PENDING_APPROVAL": "Pending Approval",
+    "status_ARCHIVED": "Archived"
   },
   "personality": {
     "energyFocus": {

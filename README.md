@@ -60,7 +60,7 @@ Observe the four pillars directly within the Cognitive Lab:
 -   **Living Memory & Metacognition (MEMORIA)**: Explore an emotionally-contextual archive of the AI's past "experiences." The AI can extract successful strategies from these memories into a **Metacognitive Behavior Handbook**, creating a library of reusable problem-solving patterns.
 -   **Evolutionary Problem Solving**: The **Evolution Chamber** uses genetic algorithms to tackle complex problems. It evolves populations of plans, visualizes their fitness over generations, and automatically converges on an optimal solution. Past memories and learned behaviors can be used as starting points for new evolutionary tasks.
 -   **Cognitive Dreaming & Self-Improvement**: A dedicated **Dreaming Chamber** where the AI analyzes its collective memory to synthesize new, high-level directives. This allows it to learn from experience, form abstract principles, and improve its core logic autonomously.
--   **Architectural Plasticity**: The AI can dynamically `forge_tool`, `spawn_replica`, and even `forge_constitution` as part of its plan, modifying its own capabilities and rule sets to meet the demands of a task.
+-   **Architectural Plasticity**: The AI can dynamically `forge_tool`, `spawn_replica`, and even `forge_constitution` as part of its plan. **Newly forged constitutions require user approval from the Settings view, ensuring the Cognitive Architect maintains ultimate control over the system's core principles.**
 -   **Video Synthesis (Modalities Lab)**: A dedicated interface for generating dynamic video content from textual prompts using Google's Veo model.
 -   **Simulation Lab**: A strategic sandbox where the user can define a scenario, and the AI can **autonomously generate competing strategies**. The simulation can be run in a "Wargaming" mode, treating each strategy as an independent agent and simulating their turn-by-turn interactions. After a simulation, the AI can analyze the results to explain outcomes.
 
@@ -112,10 +112,12 @@ NexusAI has successfully completed its foundational development, establishing a 
 The next phase of development pivots to a more pragmatic and secure approach to achieving advanced cognition.
 
 ---
-### Phase 14 (New): Fortification & Foundation - 💡 Planned
+### Phase 14 (New): Fortification & Foundation - ▶️ In Progress
 *   **Objective:** Address critical safety, security, and scalability gaps before introducing new capabilities.
 *   **Key Initiatives:**
-    *   **Implement Safety Controls:** Introduce a "kill-switch" for agent cloning and secure the `forge_constitution` tool with immutable versioning and user approval workflows.
+    *   **Implement Safety Controls:**
+        *   **Secure Constitution Forger (✅ Complete):** New AI-forged constitutions now enter a `PENDING_APPROVAL` state, requiring user validation in the Settings view. Default constitutions are now protected, and versioning has been implemented.
+        *   **Implement "Kill-switch" (💡 Planned):** Introduce a "kill-switch" for the `spawn_cognitive_clone` tool.
     *   **Fortify Security:** Move sensitive data away from insecure storage mechanisms.
     *   **Upgrade Infrastructure:** Begin migrating the memory system from IndexedDB to a dedicated Vector Database (e.g., ChromaDB) to solve performance bottlenecks in semantic search.
 

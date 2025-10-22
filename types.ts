@@ -95,6 +95,10 @@ export interface CognitiveConstitution {
     name: string;
     description: string;
     rules: ConstitutionRule[];
+    version: number;
+    status: 'ACTIVE' | 'PENDING_APPROVAL' | 'ARCHIVED';
+    isDefault: boolean;
+    parentId?: string;
 }
 
 export interface PerformanceDataPoint {

@@ -395,11 +395,20 @@ const App: React.FC = () => {
       }
   }, []);
   
-  const handleDeleteConstitution = useCallback((constitutionId: string) => {
-    if (window.confirm(t('settings.deleteConstitutionConfirm'))) {
-// FIX: Correctly call the deleteConstitution method on nexusAIService.
-        nexusAIService.deleteConstitution(constitutionId);
-    }
+  const handleApproveConstitution = useCallback((constitutionId: string) => {
+    nexusAIService.approveConstitution(constitutionId);
+  }, []);
+
+  const handleRejectConstitution = useCallback((constitutionId: string) => {
+      if (window.confirm(t('settings.rejectConstitutionConfirm'))) {
+          nexusAIService.rejectConstitution(constitutionId);
+      }
+  }, [t]);
+
+  const handleArchiveConstitution = useCallback((constitutionId: string) => {
+      if (window.confirm(t('settings.archiveConstitutionConfirm'))) {
+          nexusAIService.archiveConstitution(constitutionId);
+      }
   }, [t]);
 
   const cognitivePermissions = useMemo(() => {
@@ -539,7 +548,14 @@ const App: React.FC = () => {
                  onOptimizeTool={nexusAIService.optimizeTool}
                />;
       case 'settings':
-        return <SettingsView settings={settings} onSettingsChange={handleSettingsChange} constitutions={constitutions} onDeleteConstitution={handleDeleteConstitution} />;
+        return <SettingsView 
+                    settings={settings} 
+                    onSettingsChange={handleSettingsChange} 
+                    constitutions={constitutions} 
+                    onArchiveConstitution={handleArchiveConstitution}
+                    onApproveConstitution={handleApproveConstitution}
+                    onRejectConstitution={handleRejectConstitution}
+                />;
       case 'evolution':
         return evolutionState && <EvolutionChamber
                  evolutionState={evolutionState}
