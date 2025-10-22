@@ -160,29 +160,6 @@ The next major leap for NexusAI is the integration of the **Rose-Frame** cogniti
     *   **Cognition Quality KPI:** Develop a new key performance indicator that measures not just the correctness of an answer, but the "wisdom" of the cognitive process used to reach it (e.g., efficiency vs. number of self-corrections).
 
 ---
-## The Next Horizon: A New Strategic Roadmap
-
-The next evolution of NexusAI focuses on building a truly autonomous and scalable architecture. This roadmap replaces previous conceptual goals with concrete engineering phases.
-
-### Phase 1: Building a Flexible and Dynamic Infrastructure
-*   **Objective:** Overhaul the core architecture to move from a centralized to a distributed model.
-*   **Key Initiatives:**
-    *   **Agent Message Bus (AMB):** Implement a message bus for direct agent-to-agent communication, enabling parallel processing and reducing bottlenecks.
-    *   **Resource Governor:** Create a service to monitor and control resource consumption (cost, API calls) to ensure sustainability.
-    *   **Adaptive Goal Planner:** Enable the system to dynamically modify its plan in response to new information or failures.
-
-### Phase 2: Deepening Self-Awareness and Capabilities
-*   **Objective:** Transition the system from a "smart executor" to a "strategic thinker" that learns from its own performance.
-*   **Key Initiatives:**
-    *   **Meta-Analysis Agent:** An agent that analyzes system performance logs to discover patterns, identify inefficiencies, and suggest fundamental improvements.
-    *   **Tool Use Expansion:** Create a centralized tool registry and executor, allowing agents to reliably use external tools like `web_search` and a `python_code_interpreter`.
-
-### Phase 3: The Quantum Leap Towards Autonomy
-*   **Objective:** Grant the system the ability to self-evolve its own structure and proactively identify new goals.
-*   **Key Initiatives:**
-    *   **Self-Generating Agents:** An "Agent Architect Agent" that can design and register new agents at runtime to fill identified capability gaps.
-    *   **Emergent Goal Identification:** A proactive agent that analyzes the World Model to find knowledge gaps and propose new, meaningful tasks to the user, shifting the interaction from command-and-response to a strategic dialogue.
-
 ## Contributing
 
 Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
