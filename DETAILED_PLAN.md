@@ -42,7 +42,7 @@ The ultimate objective of this project is to transcend the "executing agent" mod
 3.  **Autonomous Bidding Network:** The inter-replica network is now fully autonomous. When a problem is broadcast, active Sub-Agents analyze the task, generate a tailored action plan and a confidence score via the Gemini API, and submit them as a competitive bid. The Orchestrator selects the winning bid, completing the evolution from simple delegation to an autonomous, distributed problem-solving ecosystem.
 
 ---
-## Part 2: Detailed Sentience Roadmap (Future Phases)
+## Part 2: Advanced Capabilities (Completed)
 
 This plan outlines the upcoming phases to enhance NexusAI's capabilities further.
 
@@ -53,9 +53,6 @@ This plan outlines the upcoming phases to enhance NexusAI's capabilities further
     *   **Voice Synthesis:** A Text-to-Speech (TTS) module is integrated using the `gemini-2.5-flash-preview-tts` model, allowing the AI to generate a spoken voice for its final synthesized answers.
     *   **Video Generation Agent (Modalities Lab):** The `ModalitiesLab` component and `generateVideo` service function are operational, integrating `veo-3.1-fast-generate-preview` to create video from text prompts. The UI correctly handles API key selection, generation state, and video playback.
     *   **Multi-modal Sensory Input (Audio & Video):** The client-side logic for real-time video frame streaming is complete. The system can capture frames from the live video feed and send them as image blobs to the Gemini Live API session, enabling true multi-modal conversations.
-*   **Future Work:**
-    1.  **Enhance Creative Generation:**
-        *   **Narrative Weaver:** Enhance the AI's storytelling capabilities to build complex, coherent narratives with character development and plot structure, which can then be used as input for the Video Generation Agent.
 
 ---
 ### Phase 11: Deep Analysis & Insight Generation - ✅ Complete
@@ -67,8 +64,6 @@ This plan outlines the upcoming phases to enhance NexusAI's capabilities further
     *   **Visualization Interface:** A dedicated `WorldModelView.tsx` component provides an interactive, graph-based visualization of entities and their relationships, along with an editor to manually curate the model.
     *   **Autonomous Knowledge Ingestion:** The `knowledge_graph_synthesizer` tool is implemented. This pivotal tool uses the Gemini API to analyze unstructured text, extract entities and relationships according to a defined schema, and automatically updates the World Model, transforming it into a self-populating knowledge base.
     *   **Causal Reasoning:** The `Causal Inference Engine` tool is implemented, enabling the AI to analyze data for cause-and-effect relationships beyond simple correlation.
-*   **Future Work:**
-    1.  **Enable Proactive Monitoring:** Create an `Anomaly Detection Sentinel` tool to proactively identify unusual patterns in system data or external feeds.
 
 ---
 ### Phase 12: Strategic Foresight & Simulation - ✅ Complete
@@ -83,52 +78,48 @@ This plan outlines the upcoming phases to enhance NexusAI's capabilities further
 *   **Objective:** Grant the AI the ability to reason about, critique, and redesign its own core architecture and cognitive processes.
 *   **Completed Implementation:**
     *   **Constitution Forger:** The AI can now propose and create new `CognitiveConstitutions` as part of a plan using the `forge_constitution` tool. This enables it to dynamically shift its operational mode (e.g., from "Creative" to "Strictly Logical") to best suit a given task. The Settings UI has been updated to allow for the management and deletion of these AI-forged constitutions.
-*   **Future Work:**
-    1.  **Constitutional Dynamics & Self-Correction:**
-        *   **Cognitive Bias Detector:** Implement a metacognitive tool that analyzes the AI's own plans and reasoning for common logical fallacies or biases, enabling true self-correction.
-    2.  **Supervised Metamorphosis:**
-        *   Enable the AI to analyze its historical performance to identify structural weaknesses and propose architectural improvements (e.g., creating a new permanent Sub-Agent) for user review.
 
-## Part 3: The Next Evolution - Engineering under Rose-Frame Governance
+---
+## Part 3: The Next Evolution - The AGI Blueprint (MICRO, Rose-Frame & Knowledge Flow)
 
-The next major leap for NexusAI is the integration of the **Rose-Frame** cognitive model, a framework for diagnosing and correcting the fundamental failure modes of Large Language Models. This plan operationalizes the Rose-Frame by using the existing Cognitive Geometry metrics (velocity $v$, curvature $C$) as sensors to detect cognitive traps and trigger automated governance mechanisms.
+The next major leap for NexusAI is the integration of three interlocking paradigms: the **Mixture of Cognitive Reasoners (MICRO)** architecture, the **Rose-Frame** cognitive governance model, and the concept of **Knowledge Flow**. This combined approach provides not only the diagnostic tools to understand cognitive failures but also the fine-grained architectural control to correct them at the token level.
 
 The goal is to evolve NexusAI from an agent that simply *thinks* to one that *thinks about its own thinking*. It's about building a robust **System 2 (Reason)** layer to govern the powerful but fallible **System 1 (Intuition)** of the underlying LLM. This directly addresses the core challenges of:
 1.  **Map vs. Territory:** Distinguishing linguistic representation from grounded reality.
 2.  **Intuition vs. Reason:** Separating fast, associative pattern-matching from slow, reflective logic.
 3.  **Confirmation vs. Conflict:** Moving beyond self-confirmation to embrace critical falsification.
 
-The following phases replace all previously planned future work.
-
 ---
 
-### Phase 14: System 2 Reflection Mechanisms - 💡 Planned
-*   **Objective:** To govern the AI's fast, intuitive "System 1" thinking by introducing automated "System 2" reflection. This directly addresses the cognitive trap of mistaking fluent intuition for grounded reason.
+### Phase 14: The Self-Aware Agent (Architectural Re-Engineering) - 💡 Planned
+*   **Objective:** Rebuild the AI's core with specialized reasoners and give it the ability to track its own internal thought processes.
 *   **Key Initiatives:**
-    *   **Intuition Signal:** Use cognitive geometry (high velocity, sharp curvature) to detect when the AI makes an intuitive leap.
-    *   **Reality Check Reflector:** When an intuition signal is detected, force the AI to validate its leap against the original input data ("Territory"), not just its internal linguistic model ("Map").
-    *   **Deceleration Rule:** Slow down the AI's processing after an intuitive leap, forcing it into a more deliberate, analytical mode of thought.
+    *   **Adopt MICRO Architecture:** The core `LLM_Core` will transition from a dense model to a Mixture of Blocks (MoB) with four specialized reasoners: `Language`, `Logic`, `Social`, and `World`. Each layer will contain a `Router` to manage token distribution. This architecture is the first step towards enabling true peer-to-peer collaboration between reasoners, moving beyond the current Orchestrator bottleneck.
+    *   **Implement the `CognitiveRouter`:** A new central module that provides a high-level API to control the internal routers of the MICRO model. It will expose functions like `set_expert_weights` and `ablate_expert`.
+    *   **Implement the `FlowTracker`:** A new analysis module that processes token routing data from each cognitive step to generate a `Flow Matrix`. This matrix quantitatively represents how information flows between the different reasoners.
+    *   **Extend `CognitiveTrajectory`:** The `CognitiveStep` data type will be updated to store the `Flow Matrix`, making knowledge flow a persistent, analyzable part of the AI's memory. This links geometric metrics (velocity `v`) to the underlying flow dynamics.
 
 ---
 
-### Phase 15: Falsifiability & Conflict Engine - 💡 Planned
-*   **Objective:** To combat confirmation bias by engineering "cognitive conflict." This addresses the cognitive trap of confusing confirmation with correctness.
+### Phase 15: The Self-Correcting Agent (Dynamic Governance) - 💡 Planned
+*   **Objective:** Use the AI's new self-awareness to implement automated self-correction based on Rose-Frame principles.
 *   **Key Initiatives:**
-    *   **Confirmation Signal:** Use cognitive geometry (prolonged low curvature) to detect when the AI is stuck in a self-confirming loop.
-    *   **Falsification Engine:** When a confirmation signal is detected, inject a prompt that forces the AI to generate the strongest possible counter-argument to its current hypothesis.
-    *   **Learning from Failure:** Tag and store trajectories that were successfully falsified, teaching the AI to avoid unproductive reasoning paths in the future.
+    *   **Implement the `FlowManager`:** A new cognitive module that receives diagnostic signals from the `Cognitive Monitor` (e.g., `INTUITION_JUMP_SIGNAL`) and translates them into `Flow Directives` for the `CognitiveRouter`.
+    *   **Implement "Reality Check" Reflector (Map vs. Territory):** When a high-velocity intuitive leap is detected, the `FlowManager` will enforce a mandatory `Logic -> World -> Logic` knowledge flow. This forces the AI to exit a purely internal logic loop and validate its reasoning against its factual `World` reasoner before concluding.
+    *   **Implement "Critical Falsification" Engine (Confirmation vs. Correctness):** When a confirmation bias signal (prolonged low curvature) is detected, the `FlowManager` will enforce a `Logic -> Social -> Language` flow. This forces the AI to consider alternative social perspectives and formulate counter-arguments, breaking the cycle of self-confirmation.
 
 ---
 
-### Phase 16: Cognitive Governance & Style Modulation - 💡 Planned
-*   **Objective:** To enable the AI to strategically select its "thinking style" based on the task, using the Rose-Frame principles as a guide. This represents a higher level of metacognitive control.
+### Phase 16: The Strategic Agent (Flow-Based Learning & Control) - 💡 Planned
+*   **Objective:** Enable the AI to learn from its past thought processes and allow for high-level, strategic control over its cognitive style.
 *   **Key Initiatives:**
-    *   **Geometric Governance Goals:** Define different cognitive tasks in terms of optimal geometric trajectories (e.g., 'Analytical' tasks require low-curvature paths; 'Creative' tasks allow for higher curvature).
-    *   **Style Modulator:** A system that adjusts the sensitivity of the Intuition and Confirmation signals based on the selected cognitive style, effectively managing the balance between System 1 and System 2 thinking.
-    *   **Cognition Quality KPI:** Develop a new key performance indicator that measures not just the correctness of an answer, but the "wisdom" of the cognitive process used to reach it (e.g., efficiency vs. number of self-corrections).
+    *   **Flow-Aware Memory Retrieval:** Enhance the trajectory similarity algorithm (DTW) to compare sequences of `Flow Matrices` in addition to geometric metrics. The AI will now retrieve memories based on shared *cognitive processes* (e.g., tasks that required a similar shift from `Language` to `Logic` reasoning). **Implementation Note:** This will involve migrating the current key-value memory (`IndexedDB`) to a dedicated **Vector Database** (e.g., ChromaDB, Pinecone) to enable efficient, high-dimensional similarity search on `Flow Matrices`.
+    *   **Strategic Planning with Flow Directives:** The `CognitivePlanner` will use retrieved flow patterns to generate an *initial token steering directive* for the `CognitiveRouter`, pre-configuring the AI's thought process for the task at hand.
+    *   **Cognitive Style as a Flow Profile:** Define `CognitiveStyle`s (e.g., 'Analytical', 'Creative') not just as prompts, but as preferred `Flow Matrix` profiles. The `Style Modulator` will implement a selected style by applying persistent routing rules to the `CognitiveRouter`, providing true top-down control over the AI's mode of thinking.
+    *   **Learning Efficient Thought:** Future reinforcement learning will reward the model not just for correct answers, but for arriving at them via an efficient and appropriate `Knowledge Flow`, pruning unnecessary cognitive steps. **Implementation Note:** This requires the development of an **Objective Evaluation Framework**—a suite of cognitive benchmarks to quantitatively measure performance and guide reinforcement learning.
 
 ---
-## Part 4: Proposed New Mental Tools
+## Part 4: Key Mental Tools & Their Development Status
 
 This list represents a starting point for future development, with each tool marking a significant leap in the system's capabilities.
 
@@ -139,7 +130,7 @@ These tools go beyond surface-level data processing to achieve a deeper understa
     *   **Description:** An tool that analyzes data to identify true cause-and-effect relationships, rather than just correlations. It uses advanced techniques like counterfactual analysis to understand "why" things happen.
     *   **Benefit:** Elevates the AI's ability from merely describing what happened to understanding the root causes, allowing it to predict future outcomes more accurately and provide more effective recommendations.
 
-*   **Tool Name:** `Anomaly Detection Sentinel`
+*   **Tool Name:** `Anomaly Detection Sentinel` `[Status: 💡 Planned]`
     *   **Description:** Continuously monitors data streams (like system logs, performance metrics, or even market data) and automatically detects any abnormal patterns or deviations from expected behavior.
     *   **Benefit:** Enables the AI to proactively identify problems before they escalate, making it a self-monitoring and self-healing system.
 
@@ -154,7 +145,7 @@ Expanding the AI's creative abilities to include multiple media.
     *   **Description:** Using advanced models like Google's `veo-3.1-fast-generate-preview`, this tool can transform text descriptions or images into short video clips.
     *   **Benefit:** A quantum leap in creative capabilities, as the AI can turn its ideas and plans into dynamic visual content, opening new horizons in storytelling and simulation.
 
-*   **Tool Name:** `Narrative Weaver`
+*   **Tool Name:** `Narrative Weaver` `[Status: 💡 Planned]`
     *   **Description:** A specialized tool for constructing coherent stories and narratives. It understands narrative structure (beginning, middle, end), character development, and dramatic plot. It can generate scenarios based on specific plot points or characters.
     *   **Benefit:** Goes beyond simple storytelling to understand and apply the arts of creative writing, making it a powerful tool for writers and creators.
 
@@ -169,7 +160,7 @@ Tools that enable the AI to think about its own thinking and improve it.
     *   **Description:** A virtual environment that allows the AI to test the potential outcomes of its plans before executing them in reality. It can run "what-if" scenarios to evaluate the effectiveness of different strategies.
     *   **Benefit:** Drastically reduces errors by allowing the AI to "practice" its strategies, making it more cautious and effective in complex decision-making. (Aligns with Phase 12 of the roadmap).
 
-*   **Tool Name:** `Cognitive Bias Detector`
+*   **Tool Name:** `Cognitive Bias Detector` `[Status: 💡 Planned]`
     *   **Description:** A metacognitive tool that analyzes the AI's own plans and reasoning for common logical fallacies or biases (like confirmation bias or over-optimism).
     *   **Benefit:** Enables true self-correction, leading to more objective and reliable conclusions—a critical step toward a more mature intelligence.
 
@@ -187,34 +178,3 @@ Connecting the AI to more than just text.
 *   **Tool Name:** `Real-time Video Stream Analyzer` `[Status: ✅ Implemented in Phase 10]`
     *   **Description:** Processes a live video stream from a camera to identify objects, track movement, and describe the scene. This can be simulated by sending image frames sequentially to the Live API.
     *   **Benefit:** Gives the AI "eyes" to perceive and interact with the physical world, making it useful in robotics and intelligent monitoring applications.
----
-## Part 5: The Next Architectural Evolution
-
-Beyond the phased feature implementation, the long-term vision requires foundational shifts in the system's architecture to achieve true autonomy and deeper intelligence.
-
-### 1. From Delegation to True Collaboration
-*   **The Challenge:** The current Orchestrator/Sub-Agent model creates a potential bottleneck. As complexity grows, the Orchestrator's cognitive load increases, limiting scalability and speed.
-*   **The Vision:** Enable horizontal communication between Sub-Agents. This allows for emergent problem-solving where, for example, a "Web Research" agent can directly pass findings to a "Data Analysis" agent, who in turn might query a "Visualization" agent. They could collectively refine a solution and present a recommendation back to the Orchestrator.
-*   **Implementation Path:**
-    *   Design and implement a shared **Message Bus** or **Blackboard System** where agents can post and subscribe to messages.
-    *   Develop a communication protocol that allows agents to request information, delegate sub-tasks to peers, and signal task completion.
-
-### 2. Advanced Memory Architecture
-*   **The Challenge:** The current IndexedDB (key-value) memory is effective for direct retrieval but lacks the ability to understand conceptual relationships.
-*   **The Vision:** A two-pronged memory upgrade to mimic human cognitive faculties.
-    *   **Vector Database (Semantic Memory):** Integrate a vector database (e.g., ChromaDB, Pinecone) to store embeddings of all cognitive traces. This enables powerful semantic search, allowing the AI to ask questions like, "What have I learned from past failures related to market analysis?" instead of just searching for keywords.
-    *   **Graph Database (Episodic/Declarative Memory):** Evolve the World Model into a true graph database (e.g., Neo4j). This will store entities as nodes and relationships as edges, allowing the AI to traverse its knowledge and understand complex systems, such as organizational charts or causal chains.
-*   **Implementation Path:**
-    *   Integrate a client-side or remote vector database for the `recall_memory` tool.
-    *   Refactor the `WorldModel` to use a graph-based structure, enhancing the `world_model` and `update_world_model` tools.
-
-### 3. Objective Evaluation Framework
-*   **The Challenge:** The "fitness" in the Evolution Chamber and the overall "improvement" of the AI are currently subjective. Without quantitative metrics, self-evolution risks being inefficient or random.
-*   **The Vision:** An automated **Cognitive Test Suite** that regularly benchmarks the AI's performance against a standardized set of problems.
-*   **Implementation Path:**
-    *   Design a diverse set of benchmark tasks that test for:
-        *   **Efficiency:** Number of steps, API calls, or time to solve a problem.
-        *   **Robustness:** Ability to handle ambiguous, contradictory, or misleading information.
-        *   **Creativity:** Ability to find novel solutions or use tools in unconventional ways.
-    *   Build a test runner that executes this suite periodically.
-    *   Feed the quantitative results from the test suite directly into the Evolution Chamber and Analysis Lab to provide an empirical basis for self-improvement.
