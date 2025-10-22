@@ -75,11 +75,9 @@ This plan outlines the upcoming phases to enhance NexusAI's capabilities further
 *   **Objective:** Evolve the AI into a strategist that can simulate future outcomes and test hypotheses in a safe, virtual environment.
 *   **Completed Implementation:**
     *   The `SimulationLab` has been enhanced to be more autonomous. In addition to running user-defined simulations, the AI can now **autonomously generate multiple competing strategies** based on a user-defined scenario and evaluation criteria.
-    *   The simulation engine can now run in a **"Wargaming" mode**. When activated, the AI is instructed to treat each competing strategy as an independent agent, simulating their turn-by-turn interactions and providing a detailed breakdown of each agent's decisions and rationale within the final trace. This provides a much richer analysis of strategic interactions.
+    *   **"Wargaming" with Live Sub-Agents:** The Wargaming mode now supports true multi-agent simulation. The UI allows assigning active Replicas to competing strategies. The simulation service orchestrates an interactive loop, polling each assigned replica for its action at each step. This replaces the previous single AI call with a distributed cognitive exercise where multiple AI agents reason independently within the simulation.
 *   **Future Work:**
-    1.  **"Wargaming" with Live Sub-Agents:**
-        *   Integrate live Sub-Agents (Replicas) into the Wargaming mode. This will involve creating an interactive simulation loop where the orchestrator assigns strategies to replicas and polls them for their next action at each step, replacing the single AI call with a truly distributed cognitive exercise.
-    2.  **Result Analysis and Prediction:**
+    1.  **Result Analysis and Prediction:**
         *   After each simulation, the AI must systematically analyze the results, identify the most effective strategies, and use this data to generate forecasts for complex, real-world scenarios.
 
 ---

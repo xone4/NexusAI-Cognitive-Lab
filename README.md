@@ -121,9 +121,9 @@ This roadmap is aligned with the maturation of our Agent 2.0 architecture.
 *   **Objective:** Evolve the AI into a strategist that can simulate future outcomes and test hypotheses in a safe, virtual environment.
 *   **Current Progress:**
     *   The `Simulation Lab` is now more dynamic. The user can define a scenario, and the AI can **autonomously generate multiple competing strategies**.
-    *   The simulation engine can run in a **"Wargaming" mode**, where it treats each competing strategy as an independent agent, simulating their interactions and providing a detailed, turn-by-turn breakdown of each agent's decisions.
+    *   The "Wargaming" mode has been evolved into a true multi-agent simulation. Live Sub-Agents (Replicas) can now be assigned specific strategies. The system then runs a turn-based loop, polling each agent for its action and using a referee to determine the outcome, creating a truly distributed cognitive exercise.
 *   **Future Work:**
-    *   **"Wargaming" with Sub-Agents:** Integrate live Sub-Agents (Replicas) into the Wargaming mode, allowing them to execute their assigned strategies dynamically instead of being simulated by the core AI.
+    *   **Result Analysis and Prediction:** After each simulation, the AI must systematically analyze the results, identify the most effective strategies, and use this data to generate forecasts for complex, real-world scenarios.
 
 ---
 ### **Phase 13: Metacognitive Self-Assembly - 💡 Planned**

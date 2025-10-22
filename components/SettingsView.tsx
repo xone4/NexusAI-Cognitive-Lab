@@ -5,6 +5,7 @@ import DashboardCard from './DashboardCard';
 import { CogIcon, TrashIcon, BrainCircuitIcon, EyeIcon } from './Icons';
 import { nexusAIService } from '../services/nexusAIService';
 import PersonalityEditor from './PersonalityEditor';
+import ConfigToggle from './ConfigToggle';
 
 interface SettingsViewProps {
   settings: AppSettings;
@@ -20,17 +21,18 @@ const languageOptions: { id: Language, name: string }[] = [
     { id: 'zh', name: '中文 (Mandarin)' },
 ];
 
-const SettingsRadioGroup = <T extends string>({ label, description, options, selected, onChange }: { label: string, description: string, options: {value: T, label: string}[], selected: T, onChange: (value: T) => void }) => {
+const SettingsRadioGroup = <T extends string>({ label, description, options, selected, onChange, disabled = false }: { label: string, description: string, options: {value: T, label: string}[], selected: T, onChange: (value: T) => void, disabled?: boolean }) => {
     const { i18n } = useTranslation();
     const isRtl = i18n.dir() === 'rtl';
     return (
-    <div>
+    <div className={disabled ? 'opacity-50 pointer-events-none' : ''}>
         <label className={`block text-sm font-medium text-nexus-text-muted ${isRtl ? 'font-tahoma' : ''}`}>{label}</label>
         <div className="mt-2 flex rounded-full shadow-sm">
             {options.map((option, idx) => (
                 <button
                     key={option.value}
                     onClick={() => onChange(option.value)}
+                    disabled={disabled}
                     className={`relative inline-flex items-center justify-center px-4 py-2 text-sm font-semibold ring-1 ring-inset ring-nexus-surface focus:z-10
                     ${isRtl ? 'font-tahoma' : ''}
                     ${selected === option.value ? 'bg-nexus-primary text-nexus-dark' : 'bg-nexus-bg text-nexus-text-muted hover:bg-nexus-surface'}
@@ -76,6 +78,24 @@ const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSettingsChange 
     setLocalSettings(p => ({ ...p, modelProfile: v, model: modelMap[v] }));
   };
 
+  const handleThinkingModeChange = (enabled: boolean) => {
+    if (enabled) {
+        setLocalSettings(p => ({
+            ...p,
+            enableThinkingMode: true,
+            modelProfile: 'pro',
+            model: 'gemini-2.5-pro'
+        }));
+    } else {
+        setLocalSettings(p => ({
+            ...p,
+            enableThinkingMode: false,
+            modelProfile: 'flash',
+            model: 'gemini-flash-latest'
+        }));
+    }
+  };
+
   const hasChanges = JSON.stringify(localSettings) !== JSON.stringify(settings);
   
   const verbosityOptions: { value: AppSettings['logVerbosity']; label: string; }[] = [
@@ -114,13 +134,28 @@ const SettingsView: React.FC<SettingsViewProps> = ({ settings, onSettingsChange 
                 onChange={(p) => setLocalSettings(s => ({...s, coreAgentPersonality: p}))}
               />
             </div>
-             <SettingsRadioGroup
-                label={t('settings.cognitiveProfile')}
-                description={t('settings.cognitiveProfileDesc')}
-                options={modelProfileOptions}
-                selected={localSettings.modelProfile}
-                onChange={handleModelProfileChange}
-            />
+            
+            <div>
+                <label className={`block text-sm font-medium text-nexus-text-muted mb-2 ${isRtl ? 'font-tahoma' : ''}`}>{t('settings.reasoningMode')}</label>
+                <div className="bg-nexus-dark/30 p-4 rounded-xl space-y-4">
+                    <ConfigToggle
+                        label={t('settings.thinkingMode')}
+                        description={t('settings.thinkingModeDesc')}
+                        checked={!!localSettings.enableThinkingMode}
+                        onChange={handleThinkingModeChange}
+                        disabled={false}
+                    />
+                    <SettingsRadioGroup
+                        label={t('settings.cognitiveProfile')}
+                        description={t('settings.cognitiveProfileDesc')}
+                        options={modelProfileOptions}
+                        selected={localSettings.modelProfile}
+                        onChange={handleModelProfileChange}
+                        disabled={!!localSettings.enableThinkingMode}
+                    />
+                </div>
+            </div>
+
             <SettingsRadioGroup
                 label={t('settings.cognitiveStyle')}
                 description={t('settings.cognitiveStyleDesc')}

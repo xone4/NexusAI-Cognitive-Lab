@@ -1,6 +1,6 @@
-import React, { useState, memo } from 'react';
+import React, { useState, memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { SimulationState, SimulationConfig } from '../types';
+import type { SimulationState, SimulationConfig, Replica } from '../types';
 import { nexusAIService } from '../services/nexusAIService';
 import DashboardCard from './DashboardCard';
 import { FlaskConicalIcon, PlayIcon, BrainCircuitIcon, CheckCircleIcon, XCircleIcon, SparklesIcon } from './Icons';
@@ -8,10 +8,11 @@ import ConfigToggle from './ConfigToggle';
 
 interface SimulationLabProps {
     simulationState: SimulationState;
+    replicas: Replica | null;
     isGloballyBusy: boolean;
 }
 
-const SimulationLab: React.FC<SimulationLabProps> = ({ simulationState, isGloballyBusy }) => {
+const SimulationLab: React.FC<SimulationLabProps> = ({ simulationState, replicas, isGloballyBusy }) => {
     const { t } = useTranslation();
     const [config, setConfig] = useState<Omit<SimulationConfig, 'strategies'>>({
         name: 'Economic Downturn Scenario',
@@ -20,16 +21,34 @@ const SimulationLab: React.FC<SimulationLabProps> = ({ simulationState, isGlobal
         evaluationCriteria: 'The strategy that maintains the highest cash reserve after 6 months wins.',
     });
     const [strategies, setStrategies] = useState([
-        { name: 'Aggressive Expansion', description: 'Double down on marketing and release a new feature to capture market share, funded by a small loan.' },
-        { name: 'Defensive Downsizing', description: 'Cut all non-essential costs, reduce marketing spend by 80%, and focus only on retaining existing customers.' },
+        { name: 'Aggressive Expansion', description: 'Double down on marketing and release a new feature to capture market share, funded by a small loan.', assignedReplicaId: '' },
+        { name: 'Defensive Downsizing', description: 'Cut all non-essential costs, reduce marketing spend by 80%, and focus only on retaining existing customers.', assignedReplicaId: '' },
     ]);
     const [isGeneratingStrategies, setIsGeneratingStrategies] = useState(false);
     const [isWargamingMode, setIsWargamingMode] = useState(false);
 
     const { isRunning, statusMessage, result, error } = simulationState;
     const isBusy = isRunning || isGloballyBusy || isGeneratingStrategies;
+    
+    const activeReplicas = useMemo(() => {
+        const all: Replica[] = [];
+        const traverse = (node: Replica | null) => {
+            if (!node) return;
+            if (node.status === 'Active') {
+                all.push(node);
+            }
+            node.children.forEach(traverse);
+        };
+        traverse(replicas);
+        return all;
+    }, [replicas]);
+
 
     const handleRunSimulation = () => {
+        if (isWargamingMode && strategies.some(s => !s.assignedReplicaId)) {
+            alert("In Wargaming Mode, you must assign an active replica to each strategy.");
+            return;
+        }
         const fullConfig: SimulationConfig = {
             ...config,
             strategies,
@@ -37,8 +56,9 @@ const SimulationLab: React.FC<SimulationLabProps> = ({ simulationState, isGlobal
         nexusAIService.runSimulation(fullConfig, isWargamingMode);
     };
 
-    const handleStrategyChange = (index: number, field: 'name' | 'description', value: string) => {
+    const handleStrategyChange = (index: number, field: 'name' | 'description' | 'assignedReplicaId', value: string) => {
         const newStrategies = [...strategies];
+        // @ts-ignore
         newStrategies[index][field] = value;
         setStrategies(newStrategies);
     };
@@ -48,7 +68,7 @@ const SimulationLab: React.FC<SimulationLabProps> = ({ simulationState, isGlobal
         try {
             const newStrategies = await nexusAIService.generateSimulationStrategies(config.scenario, config.evaluationCriteria);
             if (newStrategies && newStrategies.length > 0) {
-                setStrategies(newStrategies);
+                setStrategies(newStrategies.map(s => ({ ...s, assignedReplicaId: '' })));
             }
         } catch (e) {
             console.error("Failed to generate strategies", e);
@@ -119,6 +139,17 @@ const SimulationLab: React.FC<SimulationLabProps> = ({ simulationState, isGlobal
                                     rows={3}
                                     className="w-full mt-2 p-2 bg-nexus-dark/70 border border-nexus-surface rounded-xl focus:outline-none focus:ring-2 focus:ring-nexus-primary text-nexus-text resize-y"
                                 />
+                                <select
+                                    value={strategy.assignedReplicaId}
+                                    onChange={e => handleStrategyChange(index, 'assignedReplicaId', e.target.value)}
+                                    disabled={isBusy || !isWargamingMode}
+                                    className="w-full mt-2 p-2 bg-nexus-dark/70 border border-nexus-surface rounded-xl focus:outline-none focus:ring-2 focus:ring-nexus-primary disabled:opacity-50"
+                                >
+                                    <option value="">{isWargamingMode ? "Assign Replica..." : "Replica N/A"}</option>
+                                    {activeReplicas.map(r => (
+                                        <option key={r.id} value={r.id}>{r.name}</option>
+                                    ))}
+                                </select>
                             </div>
                         ))}
                     </div>
@@ -186,9 +217,9 @@ const SimulationLab: React.FC<SimulationLabProps> = ({ simulationState, isGlobal
                                         return (
                                             <div key={step.step} className="p-2 border-b border-nexus-surface/50">
                                                 <p className="font-bold text-nexus-primary">Step {step.step} - <span className="text-nexus-text">{step.strategy}</span></p>
-                                                <div className="text-xs text-nexus-text-muted prose prose-invert prose-p:my-1 prose-strong:text-nexus-text-muted">
+                                                <div className="text-xs text-nexus-text-muted prose prose-invert prose-p:my-1 prose-strong:text-nexus-text-muted whitespace-pre-wrap">
                                                     <strong>Action:</strong>
-                                                    <div dangerouslySetInnerHTML={{ __html: step.action.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
+                                                    <div dangerouslySetInnerHTML={{ __html: step.action.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br />') }} />
                                                 </div>
                                                 <p className="text-xs text-nexus-secondary"><strong>Outcome:</strong> {step.outcome}</p>
                                                 {step.state && (

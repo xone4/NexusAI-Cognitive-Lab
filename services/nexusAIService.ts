@@ -1,6 +1,6 @@
 // FIX: Aliased `Blob` to `GenAIBlob` to resolve name collision with the native browser Blob type.
 import { GoogleGenAI, Type, Modality, Blob as GenAIBlob, LiveServerMessage } from "@google/genai";
-import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails, UserKeyword, Personality, PlaybookItem, RawInsight, PlaybookItemCategory, WorldModel, WorldModelEntity, CognitiveTrajectory, WorldModelRelationship, LiveTranscriptionState, VideoGenerationState, SimulationState, SimulationConfig, SimulationResult } from '../types';
+import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails, UserKeyword, Personality, PlaybookItem, RawInsight, PlaybookItemCategory, WorldModel, WorldModelEntity, CognitiveTrajectory, WorldModelRelationship, LiveTranscriptionState, VideoGenerationState, SimulationState, SimulationConfig, SimulationResult, SimulationStep } from '../types';
 import { dbService, STORES } from './dbService';
 import * as geometryService from './geometryService';
 import { calculateTrajectorySimilarity } from './geometryService';
@@ -21,7 +21,6 @@ let toolchainsState: Toolchain[];
 let playbookState: PlaybookItem[];
 let constitutionsState: CognitiveConstitution[];
 let evolutionState: EvolutionState;
-// FIX: Added simulationState to hold the state for the Simulation Lab.
 let simulationState: SimulationState;
 let worldModelState: WorldModel | null = null;
 let cognitiveProcess: CognitiveProcess;
@@ -34,6 +33,7 @@ let isTtsEnabled = false;
 let appSettings: AppSettings = {
     model: 'gemini-flash-latest',
     modelProfile: 'flash',
+    enableThinkingMode: false,
     cognitiveStepDelay: 1000,
     coreAgentPersonality: { energyFocus: 'EXTROVERSION', informationProcessing: 'INTUITION', decisionMaking: 'THINKING', worldApproach: 'PERCEIVING' },
     logVerbosity: 'STANDARD',
@@ -66,7 +66,6 @@ let toolchainSubscribers: ((toolchains: Toolchain[]) => void)[] = [];
 let playbookSubscribers: ((playbook: PlaybookItem[]) => void)[] = [];
 let constitutionSubscribers: ((constitutions: CognitiveConstitution[]) => void)[] = [];
 let evolutionSubscribers: ((evolutionState: EvolutionState) => void)[] = [];
-// FIX: Added subscribers list for simulation state updates.
 let simulationSubscribers: ((state: SimulationState) => void)[] = [];
 let archiveSubscribers: ((archives: ChatMessage[]) => void)[] = [];
 let dreamProcessSubscribers: ((update: DreamProcessUpdate) => void)[] = [];
@@ -81,6 +80,25 @@ let globalSyncTempo = 1.0;
 // ---------------------------------------------
 
 let traceDetailsCache = new Map<string, TraceDetails>();
+
+// Helper to apply Thinking Mode settings to a model call
+const getCognitiveModelConfig = (existingConfig?: any) => {
+    if (appSettings.enableThinkingMode) {
+        // When thinking mode is on, we force the pro model and add the thinking budget.
+        return {
+            model: 'gemini-2.5-pro',
+            config: {
+                ...(existingConfig || {}),
+                thinkingConfig: { thinkingBudget: 32768 }
+            }
+        };
+    }
+    // Default behavior: use the model from settings (lite, flash, or pro)
+    return {
+        model: appSettings.model,
+        config: existingConfig
+    };
+};
 
 function encode(bytes: Uint8Array) {
   let binary = '';
@@ -211,7 +229,6 @@ const notifyToolchains = () => toolchainSubscribers.forEach(cb => cb(JSON.parse(
 const notifyPlaybook = () => playbookSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(playbookState))));
 const notifyConstitutions = () => constitutionSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(constitutionsState))));
 const notifyEvolution = () => evolutionSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(evolutionState))));
-// FIX: Added a notifier function for simulation state.
 const notifySimulation = () => simulationSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(simulationState))));
 const notifyArchives = () => archiveSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(archivedTracesState))));
 const notifyDreamProcess = (update: DreamProcessUpdate) => dreamProcessSubscribers.forEach(cb => cb(update));
@@ -415,7 +432,6 @@ const initialize = async () => {
         statusMessage: '',
         finalEnsembleResult: null,
     };
-    // FIX: Initialized simulationState.
     simulationState = {
         isRunning: false,
         statusMessage: '',
@@ -431,7 +447,6 @@ const initialize = async () => {
         initialPlaybook: JSON.parse(JSON.stringify(playbookState)),
         initialConstitutions: JSON.parse(JSON.stringify(constitutionsState)),
         initialEvolutionState: JSON.parse(JSON.stringify(evolutionState)),
-        // FIX: Added initialSimulationState to the returned object.
         initialSimulationState: JSON.parse(JSON.stringify(simulationState)),
         initialArchives: JSON.parse(JSON.stringify(archivedTracesState)),
         initialCognitiveProcess: JSON.parse(JSON.stringify(cognitiveProcess)),
@@ -675,8 +690,8 @@ const _executeRecursiveCognitiveCycle = async (parentStep: PlanStep, subProblemQ
     const planningPrompt = `You have been given the following sub-problem: "${subProblemQuery}".\nThe following data context is provided for your task:\n\n--- CONTEXT DATA ---\n${contextData}\n--- END CONTEXT ---\n\nCreate a step-by-step plan to solve ONLY this sub-problem.`;
 
     const planResponse = await ai.models.generateContent({
-        model: appSettings.model, contents: planningPrompt,
-        config: { systemInstruction: subAgentSystemInstruction, responseMimeType: 'application/json', responseSchema: planSchema }
+        ...getCognitiveModelConfig({ systemInstruction: subAgentSystemInstruction, responseMimeType: 'application/json', responseSchema: planSchema }),
+        contents: planningPrompt,
     });
     
     const parsedPlan = JSON.parse(planResponse.text);
@@ -778,7 +793,7 @@ const _executeRecursiveCognitiveCycle = async (parentStep: PlanStep, subProblemQ
 
                 Based strictly on the context, provide a concise answer. If the information is not in the context, state that clearly.`;
                 try {
-                    const response = await ai.models.generateContent({ model: appSettings.model, contents: prompt });
+                    const response = await ai.models.generateContent({ ...getCognitiveModelConfig(), contents: prompt });
                     step.result = response.text;
                     log('REPLICA', `Clone queried World Model with: "${step.query}".`);
                 } catch(e) {
@@ -813,7 +828,7 @@ const _executeRecursiveCognitiveCycle = async (parentStep: PlanStep, subProblemQ
     
     Based ONLY on the execution context, provide a final, direct answer to the sub-problem. Do not add any conversational fluff.`;
 
-    const finalResponse = await ai.models.generateContent({ model: appSettings.model, contents: synthesisPrompt });
+    const finalResponse = await ai.models.generateContent({ ...getCognitiveModelConfig(), contents: synthesisPrompt });
 
     childProcess.state = 'Done';
     modelMessage.state = 'done';
@@ -854,9 +869,8 @@ const _regeneratePlan = async (messageId: string, modificationType: 'expand' | '
 
     try {
         const response = await ai.models.generateContent({
-            model: appSettings.model,
+            ...getCognitiveModelConfig({ systemInstruction: getSystemInstruction(), responseMimeType: 'application/json', responseSchema: planSchema }),
             contents: regenerationPrompt,
-            config: { systemInstruction: getSystemInstruction(), responseMimeType: 'application/json', responseSchema: planSchema }
         });
 
         const newPlanData = JSON.parse(response.text);
@@ -968,7 +982,7 @@ const service = {
         const languageChanged = appSettings.language !== newSettings.language;
         appSettings = newSettings;
         localStorage.setItem('nexusai-settings', JSON.stringify(appSettings));
-        log('SYSTEM', `Settings updated. Language: ${appSettings.language}, Style: ${appSettings.cognitiveStyle}`);
+        log('SYSTEM', `Settings updated. Language: ${appSettings.language}, Style: ${appSettings.cognitiveStyle}, Thinking Mode: ${appSettings.enableThinkingMode}`);
         if (cognitiveProcess && cognitiveProcess.history.length > 0 && languageChanged) {
             log('SYSTEM', 'System language changed. Starting a new chat session for changes to take effect.');
             service.startNewChat(false);
@@ -1031,7 +1045,7 @@ const service = {
                 },
             });
 
-            const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+            const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData.data;
             if (base64Audio) {
                 const outputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
                 const outputNode = outputAudioContext.createGain();
@@ -1283,9 +1297,8 @@ const service = {
 
                 try {
                     const response = await ai.models.generateContent({
-                        model: appSettings.model,
+                        ...getCognitiveModelConfig({ responseMimeType: 'application/json', responseSchema: { type: Type.OBJECT, properties: { directives: { type: Type.ARRAY, items: { type: Type.STRING } } }, required: ['directives'] } }),
                         contents: prompt,
-                        config: { responseMimeType: 'application/json', responseSchema: { type: Type.OBJECT, properties: { directives: { type: Type.ARRAY, items: { type: Type.STRING } } }, required: ['directives'] } }
                     });
                     const result = JSON.parse(response.text);
                     return result.directives || [];
@@ -1657,12 +1670,11 @@ const service = {
 
         try {
             const response = await ai.models.generateContent({
-                model: appSettings.model,
-                contents: prompt,
-                config: {
+                ...getCognitiveModelConfig({
                     responseMimeType: "application/json",
                     responseSchema: schema,
-                }
+                }),
+                contents: prompt,
             });
 
             const toolDetails = JSON.parse(response.text);
@@ -1939,7 +1951,10 @@ const service = {
         const suggestionSchema = { type: Type.OBJECT, properties: { summary: { type: Type.STRING }, suggestions: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { type: { type: Type.STRING, enum: ['query', 'action'] }, description: { type: Type.STRING }, reason: { type: Type.STRING }, command: { type: Type.STRING }, targetId: { type: Type.STRING }, queryString: { type: Type.STRING } }, required: ['type', 'description', 'reason'] } } }, required: ['summary', 'suggestions'] };
         try {
             log('AI', `Analyzing system with depth: ${config.depth}...`);
-            const response = await ai.models.generateContent({ model: appSettings.model, contents: prompt, config: { responseMimeType: "application/json", responseSchema: suggestionSchema } });
+            const response = await ai.models.generateContent({ 
+                ...getCognitiveModelConfig({ responseMimeType: "application/json", responseSchema: suggestionSchema }), 
+                contents: prompt 
+            });
             const result = JSON.parse(response.text);
             log('AI', 'Generated context-aware analysis and suggestions.');
             return result as SystemAnalysisResult;
@@ -2290,7 +2305,7 @@ const service = {
                         const textPart = { text: step.query || "Describe this image." };
                         
                         const analysisResponse = await ai.models.generateContent({
-                            model: appSettings.model,
+                            ...getCognitiveModelConfig(),
                             contents: { parts: [imagePart, textPart] }
                         });
                         step.result = analysisResponse.text;
@@ -2357,7 +2372,7 @@ const service = {
                         Based strictly on the context, provide a concise answer. If the information is not in the context, state that clearly.`;
     
                         try {
-                            const response = await ai.models.generateContent({ model: appSettings.model, contents: prompt });
+                            const response = await ai.models.generateContent({ ...getCognitiveModelConfig(), contents: prompt });
                             step.result = response.text;
                             log('AI', `World Model queried with: "${step.query}". Result obtained.`);
                         } catch(e) {
@@ -2458,8 +2473,8 @@ const service = {
                         const prompt = `You are a knowledge extraction engine. Analyze the following text and extract all relevant entities and their relationships. Create unique IDs for each entity and relationship. Ensure that the 'sourceId' and 'targetId' in relationships correctly reference the IDs of the entities you've extracted.\n\nText to analyze:\n---\n${textToAnalyze}\n---\n\nReturn ONLY the JSON object matching the schema.`;
                         try {
                             const response = await ai.models.generateContent({
-                                model: appSettings.model, contents: prompt,
-                                config: { responseMimeType: "application/json", responseSchema: knowledgeGraphSchema }
+                                ...getCognitiveModelConfig({ responseMimeType: "application/json", responseSchema: knowledgeGraphSchema }),
+                                contents: prompt,
                             });
                             const { entities: extractedEntities, relationships: extractedRelationships } = JSON.parse(response.text);
 
@@ -2531,7 +2546,7 @@ ${textToAnalyze}
 
 Provide your analysis in well-formatted markdown.`;
                         try {
-                            const response = await ai.models.generateContent({ model: appSettings.model, contents: prompt });
+                            const response = await ai.models.generateContent({ ...getCognitiveModelConfig(), contents: prompt });
                             step.result = response.text;
                             log('AI', `Causal Inference Engine analyzed the provided data.`);
                         } catch (e) {
@@ -2596,9 +2611,8 @@ Provide your analysis in well-formatted markdown.`;
             if(activeTracker) activeTracker.addStep('Synthesis Phase', synthesisPrompt);
 
             const stream = await ai.models.generateContentStream({
-                model: appSettings.model,
+                ...getCognitiveModelConfig({ systemInstruction: getSystemInstruction() }),
                 contents: synthesisPrompt,
-                config: { systemInstruction: getSystemInstruction() }
             });
 
             for await (const chunk of stream) {
@@ -2722,8 +2736,8 @@ Provide your analysis in well-formatted markdown.`;
             if (activeTracker) activeTracker.addStep('Planning Phase', planningPrompt);
 
             const planningResponse = await ai.models.generateContent({
-                model: appSettings.model, contents: planningPrompt,
-                config: { systemInstruction: getSystemInstruction(), responseMimeType: 'application/json', responseSchema: planSchema }
+                ...getCognitiveModelConfig({ systemInstruction: getSystemInstruction(), responseMimeType: 'application/json', responseSchema: planSchema }),
+                contents: planningPrompt,
             });
 
             if (isCancelled) return;
@@ -2925,7 +2939,7 @@ Provide your analysis in well-formatted markdown.`;
         
         try {
             log('AI', 'Generating self-reflection on archived trace...');
-            const response = await ai.models.generateContent({ model: appSettings.model, contents: prompt });
+            const response = await ai.models.generateContent({ ...getCognitiveModelConfig(), contents: prompt });
             log('AI', 'Self-reflection generated and cached.');
             
             const details = traceDetailsCache.get(trace.id) || {};
@@ -2975,7 +2989,7 @@ Provide your analysis in well-formatted markdown.`;
 
         try {
             log('AI', `Generating discussion response for trace: ${trace.id}`);
-            const response = await ai.models.generateContent({ model: appSettings.model, contents: prompt });
+            const response = await ai.models.generateContent({ ...getCognitiveModelConfig(), contents: prompt });
             log('AI', 'Discussion response generated.');
 
             const finalHistory = [...newHistory, { role: 'model' as const, text: response.text }];
@@ -3130,7 +3144,7 @@ Provide your analysis in well-formatted markdown.`;
         The final answer should be a comprehensive response in well-formatted markdown.`;
 
         try {
-            const response = await ai.models.generateContent({ model: appSettings.model, contents: prompt });
+            const response = await ai.models.generateContent({ ...getCognitiveModelConfig(), contents: prompt });
             evolutionState.finalEnsembleResult = {
                 id: `final-${Date.now()}`,
                 role: 'model',
@@ -3211,12 +3225,11 @@ Provide your analysis in well-formatted markdown.`;
         
         try {
             const response = await ai.models.generateContent({
-                model: appSettings.model,
-                contents: prompt,
-                config: {
+                ...getCognitiveModelConfig({
                     responseMimeType: "application/json",
                     responseSchema: insightExtractionSchema,
-                }
+                }),
+                contents: prompt,
             });
 
             const insight: RawInsight = JSON.parse(response.text);
@@ -3341,8 +3354,8 @@ Provide your analysis in well-formatted markdown.`;
         
         try {
             const response = await ai.models.generateContent({
-                model: appSettings.model, contents: prompt,
-                config: { responseMimeType: "application/json", responseSchema: knowledgeGraphSchema }
+                ...getCognitiveModelConfig({ responseMimeType: "application/json", responseSchema: knowledgeGraphSchema }),
+                contents: prompt,
             });
             const { entities: extractedEntities, relationships: extractedRelationships } = JSON.parse(response.text);
 
@@ -3468,7 +3481,7 @@ Provide your analysis in well-formatted markdown.`;
         }
     },
 
-    runSimulation: async (config: SimulationConfig) => {
+    runSimulation: async (config: SimulationConfig, isWargamingMode: boolean = false) => {
         if (simulationState.isRunning) {
             log('WARN', 'A simulation is already in progress.');
             return;
@@ -3483,7 +3496,7 @@ Provide your analysis in well-formatted markdown.`;
         log('SYSTEM', `Starting new AI-driven simulation: "${config.name}"`);
         simulationState = {
             isRunning: true,
-            statusMessage: 'Constructing simulation prompt for AI...',
+            statusMessage: 'Initializing simulation...',
             config,
             result: null,
             error: null,
@@ -3491,50 +3504,11 @@ Provide your analysis in well-formatted markdown.`;
         notifySimulation();
 
         try {
-            const strategyDescriptions = config.strategies.map((s, i) => `Strategy ${i + 1}: "${s.name}"\nLogic: ${s.description}`).join('\n\n');
-
-            const prompt = `You are a world-class simulation engine. Your task is to run a turn-based simulation based on the provided scenario and strategies.
-
-**Simulation Scenario:**
-${config.scenario}
-
-**Competing Strategies:**
-${strategyDescriptions}
-
-**Simulation Parameters:**
-- Maximum Steps: ${config.maxSteps}
-- Evaluation Criteria (How to determine the winner): ${config.evaluationCriteria}
-
-**Execution Instructions:**
-1.  Initialize a starting state based on the scenario.
-2.  For each step, up to the maximum:
-    a. Determine the action each strategy would take.
-    b. Describe the outcome of those actions.
-    c. Update the simulation state. The 'state' field should be a JSON string reflecting key metrics (e.g., '{"cash_reserves": 10000, "market_share": 0.1}').
-3.  After the final step, evaluate the outcome based on the criteria.
-4.  Provide a final summary, declare the winning strategy, and return the complete step-by-step trace.
-
-Return ONLY a valid JSON object matching the provided schema.`;
-
-            simulationState.statusMessage = 'AI is running the simulation...';
-            notifySimulation();
-            
-            const response = await ai.models.generateContent({
-                model: appSettings.model,
-                contents: prompt,
-                config: {
-                    responseMimeType: "application/json",
-                    responseSchema: simulationResultSchema
-                }
-            });
-
-            const simulationResult: SimulationResult = JSON.parse(response.text);
-
-            simulationState.result = simulationResult;
-            simulationState.isRunning = false;
-            simulationState.statusMessage = 'Simulation complete.';
-            log('SYSTEM', 'AI simulation complete. Results received.');
-
+            if (isWargamingMode) {
+                await _runWargameSimulation(config);
+            } else {
+                await _runStandardSimulation(config);
+            }
         } catch (e) {
             const errorMessage = e instanceof Error ? e.message : 'Unknown AI error';
             log('ERROR', `AI simulation failed: ${errorMessage}`);
@@ -3569,12 +3543,11 @@ Return ONLY a valid JSON object matching the provided schema.`;
 
         try {
             const response = await ai.models.generateContent({
-                model: appSettings.model,
-                contents: prompt,
-                config: {
+                ...getCognitiveModelConfig({
                     responseMimeType: "application/json",
                     responseSchema: simulationStrategiesSchema
-                }
+                }),
+                contents: prompt,
             });
             
             const result = JSON.parse(response.text);
@@ -3597,7 +3570,6 @@ Return ONLY a valid JSON object matching the provided schema.`;
     subscribeToPlaybook: (callback: (playbook: PlaybookItem[]) => void) => { playbookSubscribers.push(callback); },
     subscribeToConstitutions: (callback: (constitutions: CognitiveConstitution[]) => void) => { constitutionSubscribers.push(callback); },
     subscribeToEvolution: (callback: (evolutionState: EvolutionState) => void) => { evolutionSubscribers.push(callback); },
-    // FIX: Added subscribeToSimulation method.
     subscribeToSimulation: (callback: (state: SimulationState) => void) => { simulationSubscribers.push(callback); },
     subscribeToArchives: (callback: (archives: ChatMessage[]) => void) => { archiveSubscribers.push(callback); },
     subscribeToDreamProcess: (callback: (update: DreamProcessUpdate) => void) => { dreamProcessSubscribers.push(callback); },
@@ -3626,7 +3598,6 @@ Return ONLY a valid JSON object matching the provided schema.`;
         playbookSubscribers = [];
         constitutionSubscribers = [];
         evolutionSubscribers = [];
-        // FIX: Added simulationSubscribers to the cleanup.
         simulationSubscribers = [];
         archiveSubscribers = [];
         dreamProcessSubscribers = [];
@@ -3635,6 +3606,169 @@ Return ONLY a valid JSON object matching the provided schema.`;
         liveTranscriptionSubscribers = [];
         videoGenerationSubscribers = [];
     }
+};
+
+const _runStandardSimulation = async (config: SimulationConfig) => {
+    simulationState.statusMessage = 'Constructing simulation prompt for AI...';
+    notifySimulation();
+
+    const strategyDescriptions = config.strategies.map((s, i) => `Strategy ${i + 1}: "${s.name}"\nLogic: ${s.description}`).join('\n\n');
+
+    const prompt = `You are a world-class simulation engine. Your task is to run a turn-based simulation based on the provided scenario and strategies.
+
+**Simulation Scenario:**
+${config.scenario}
+
+**Competing Strategies:**
+${strategyDescriptions}
+
+**Simulation Parameters:**
+- Maximum Steps: ${config.maxSteps}
+- Evaluation Criteria (How to determine the winner): ${config.evaluationCriteria}
+
+**Execution Instructions:**
+1.  Initialize a starting state based on the scenario.
+2.  For each step, up to the maximum:
+    a. Determine the action each strategy would take.
+    b. Describe the outcome of those actions.
+    c. Update the simulation state. The 'state' field should be a JSON string reflecting key metrics (e.g., '{"cash_reserves": 10000, "market_share": 0.1}').
+3.  After the final step, evaluate the outcome based on the criteria.
+4.  Provide a final summary, declare the winning strategy, and return the complete step-by-step trace.
+
+Return ONLY a valid JSON object matching the provided schema.`;
+
+    simulationState.statusMessage = 'AI is running the simulation...';
+    notifySimulation();
+    
+    const response = await ai.models.generateContent({
+        ...getCognitiveModelConfig({
+            responseMimeType: "application/json",
+            responseSchema: simulationResultSchema
+        }),
+        contents: prompt,
+    });
+
+    const simulationResult: SimulationResult = JSON.parse(response.text);
+
+    simulationState.result = simulationResult;
+    simulationState.isRunning = false;
+    simulationState.statusMessage = 'Simulation complete.';
+    log('SYSTEM', 'AI simulation complete. Results received.');
+};
+
+const _runWargameSimulation = async (config: SimulationConfig) => {
+    const turnResultSchema = {
+        type: Type.OBJECT,
+        properties: {
+            outcome: { type: Type.STRING, description: "A narrative description of what happened this turn as a result of all actions." },
+            newState: { type: Type.STRING, description: "A JSON string representing the updated key metrics of the simulation state." }
+        },
+        required: ['outcome', 'newState']
+    };
+
+    const getPersonalityCode = (p: Personality | undefined): string => {
+        if (!p) return '----';
+        return `${p.energyFocus[0]}${p.informationProcessing[0]}${p.decisionMaking[0]}${p.worldApproach[0]}`;
+    }
+
+    let currentState = `{"turn": 0, "status": "Initial state based on scenario."}`;
+    const stepByStepTrace: SimulationStep[] = [];
+    const agents = config.strategies
+        .map(strat => {
+            const replica = findReplica(strat.assignedReplicaId!, replicaState);
+            return replica ? { ...strat, replica: replica.node } : null;
+        })
+        .filter((a): a is (typeof strategies[0] & { replica: Replica }) => !!a);
+
+    for (let i = 1; i <= config.maxSteps; i++) {
+        simulationState.statusMessage = `Wargaming: Simulating Turn ${i}/${config.maxSteps}...`;
+        notifySimulation();
+
+        // 1. Get actions from all agents in parallel
+        const actionPromises = agents.map(agent => {
+            const systemInstruction = `You are an autonomous agent in a simulation. Your name is ${agent.replica.name} and your personality is ${getPersonalityCode(agent.replica.personality)}. Your assigned strategy is "${agent.name}: ${agent.description}".`;
+            const prompt = `**Simulation Scenario:**\n${config.scenario}\n\n**Current State:**\n${currentState}\n\nBased on your assigned strategy, what is your single, specific action for this turn? Be concise.`;
+            
+            return ai.models.generateContent({
+                ...getCognitiveModelConfig({ systemInstruction }),
+                contents: prompt,
+            }).then(response => ({
+                name: agent.name,
+                action: response.text
+            }));
+        });
+
+        const actions = await Promise.all(actionPromises);
+        const combinedActions = actions.map(a => `**${a.name}:** ${a.action}`).join('\n');
+        log('AI', `Turn ${i} actions gathered:\n${combinedActions}`);
+
+        // 2. Referee determines outcome
+        const refereePrompt = `You are the impartial referee of a simulation.
+**Scenario:** ${config.scenario}
+**Current State:** ${currentState}
+**Actions Taken This Turn:**
+${combinedActions}
+
+Based on the actions and the current state, determine the outcome for this turn and the new state. Return ONLY a JSON object.`;
+        
+        const refereeResponse = await ai.models.generateContent({
+            ...getCognitiveModelConfig({
+                responseMimeType: "application/json",
+                responseSchema: turnResultSchema,
+            }),
+            contents: refereePrompt,
+        });
+        
+        const turnResult = JSON.parse(refereeResponse.text);
+        
+        stepByStepTrace.push({
+            step: i,
+            strategy: 'Multiple (Wargame)',
+            action: combinedActions,
+            outcome: turnResult.outcome,
+            state: turnResult.newState,
+        });
+        
+        currentState = turnResult.newState;
+    }
+
+    // 3. Final summary
+    simulationState.statusMessage = 'Wargaming complete. Generating final summary...';
+    notifySimulation();
+
+    const finalSummaryPrompt = `You are the final analyst for a simulation. The simulation is complete.
+**Scenario:** ${config.scenario}
+**Evaluation Criteria:** ${config.evaluationCriteria}
+**Full Trace:**
+${JSON.stringify(stepByStepTrace, null, 2)}
+
+Based on the full trace and evaluation criteria, provide a final summary and declare the winning strategy.`;
+
+    const finalResultResponse = await ai.models.generateContent({
+        ...getCognitiveModelConfig({
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                    summary: { type: Type.STRING },
+                    winningStrategy: { type: Type.STRING }
+                },
+                required: ['summary', 'winningStrategy']
+            }
+        }),
+        contents: finalSummaryPrompt,
+    });
+
+    const finalResult = JSON.parse(finalResultResponse.text);
+
+    simulationState.result = {
+        summary: finalResult.summary,
+        winningStrategy: finalResult.winningStrategy,
+        stepByStepTrace,
+    };
+    simulationState.isRunning = false;
+    simulationState.statusMessage = 'Simulation complete.';
+    log('SYSTEM', 'AI Wargame simulation complete. Results received.');
 };
 
 export const nexusAIService = service;

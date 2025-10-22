@@ -132,6 +132,7 @@ export type CognitiveStyle = 'balanced' | 'analytical' | 'creative';
 export interface AppSettings {
   model: string;
   modelProfile: ModelProfile;
+  enableThinkingMode?: boolean;
   cognitiveStepDelay: number; // in milliseconds
   coreAgentPersonality: Personality;
   logVerbosity: LogVerbosity;
@@ -447,17 +448,17 @@ export interface VideoGenerationState {
 export interface SimulationConfig {
     name: string;
     scenario: string;
-    strategies: { name: string; description: string }[];
+    strategies: { name: string; description: string; assignedReplicaId?: string; }[];
     maxSteps: number;
     evaluationCriteria: string;
 }
 
 export interface SimulationStep {
     step: number;
-    strategy: string;
+    strategy: string; // Can be a composite of strategies in wargaming
     action: string;
     outcome: string;
-    state: Record<string, any>;
+    state: Record<string, any> | string;
 }
 
 export interface SimulationResult {

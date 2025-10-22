@@ -56,6 +56,7 @@ const App: React.FC = () => {
     const defaultSettings: AppSettings = {
       model: 'gemini-flash-latest',
       modelProfile: 'flash',
+      enableThinkingMode: false,
       cognitiveStepDelay: 1000,
       coreAgentPersonality: { energyFocus: 'EXTROVERSION', informationProcessing: 'INTUITION', decisionMaking: 'THINKING', worldApproach: 'PERCEIVING' }, // ENTP Default
       logVerbosity: 'STANDARD',
@@ -561,6 +562,7 @@ const App: React.FC = () => {
       case 'simulation_lab':
         return simulationState && <SimulationLab
                   simulationState={simulationState}
+                  replicas={replicas}
                   isGloballyBusy={cognitivePermissions.isGloballyBusy}
                 />;
       case 'dashboard':
