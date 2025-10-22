@@ -434,6 +434,8 @@ const initialize = async () => {
     };
     simulationState = {
         isRunning: false,
+// FIX: Added missing property 'isAnalyzing' to match the SimulationState type.
+        isAnalyzing: false,
         statusMessage: '',
         config: null,
         result: null,
@@ -3496,6 +3498,8 @@ Provide your analysis in well-formatted markdown.`;
         log('SYSTEM', `Starting new AI-driven simulation: "${config.name}"`);
         simulationState = {
             isRunning: true,
+// FIX: Added missing property 'isAnalyzing' to match the SimulationState type.
+            isAnalyzing: false,
             statusMessage: 'Initializing simulation...',
             config,
             result: null,
@@ -3678,7 +3682,8 @@ const _runWargameSimulation = async (config: SimulationConfig) => {
             const replica = findReplica(strat.assignedReplicaId!, replicaState);
             return replica ? { ...strat, replica: replica.node } : null;
         })
-        .filter((a): a is (typeof strategies[0] & { replica: Replica }) => !!a);
+// FIX: The type guard was referencing 'strategies', which is not in scope. Changed to use 'config.strategies' to correctly infer the type of the strategy object.
+        .filter((a): a is (typeof config.strategies[0] & { replica: Replica }) => !!a);
 
     for (let i = 1; i <= config.maxSteps; i++) {
         simulationState.statusMessage = `Wargaming: Simulating Turn ${i}/${config.maxSteps}...`;
@@ -3765,6 +3770,8 @@ Based on the full trace and evaluation criteria, provide a final summary and dec
         summary: finalResult.summary,
         winningStrategy: finalResult.winningStrategy,
         stepByStepTrace,
+// FIX: Added missing 'analysis' property to conform to the SimulationResult type.
+        analysis: null,
     };
     simulationState.isRunning = false;
     simulationState.statusMessage = 'Simulation complete.';

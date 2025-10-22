@@ -465,10 +465,12 @@ export interface SimulationResult {
     summary: string;
     winningStrategy: string;
     stepByStepTrace: SimulationStep[];
+    analysis: string | null;
 }
 
 export interface SimulationState {
     isRunning: boolean;
+    isAnalyzing: boolean;
     statusMessage: string;
     config: SimulationConfig | null;
     result: SimulationResult | null;
@@ -477,12 +479,13 @@ export interface SimulationState {
 
 
 // FIX: To resolve type collision errors, defined the AIStudio interface locally and used it to augment the global Window object, ensuring a consistent type signature.
-interface AIStudio {
-  hasSelectedApiKey: () => Promise<boolean>;
-  openSelectKey: () => Promise<void>;
-}
-
+// FIX: Moved AIStudio interface into declare global to resolve declaration conflicts across modules.
 declare global {
+  interface AIStudio {
+    hasSelectedApiKey: () => Promise<boolean>;
+    openSelectKey: () => Promise<void>;
+  }
+  
   interface Window {
     aistudio: AIStudio;
   }

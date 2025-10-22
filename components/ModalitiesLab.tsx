@@ -4,7 +4,7 @@ import { nexusAIService, VideoGenerationState } from '../services/nexusAIService
 import DashboardCard from './DashboardCard';
 import { FilmIcon, DownloadIcon, CheckCircleIcon, XCircleIcon } from './Icons';
 // FIX: Removed unused import to prevent global type collision.
-// import type { AIStudio } from '../types';
+
 
 const ModalitiesLab: React.FC = () => {
     const { t } = useTranslation();

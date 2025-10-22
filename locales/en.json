@@ -608,6 +608,9 @@
     "aiGenerateStrategies": "AI Generate Strategies",
     "generatingStrategies": "Generating Strategies...",
     "wargamingMode": "Wargaming Mode",
-    "wargamingDesc": "Simulate each strategy as an independent agent competing against the others."
+    "wargamingDesc": "Simulate each strategy as an independent agent competing against the others.",
+    "analysisSummary": "AI Analysis Summary",
+    "analyzeResults": "Analyze Results",
+    "analyzing": "Analyzing..."
   }
 }

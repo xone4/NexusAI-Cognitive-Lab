@@ -400,16 +400,17 @@ const App: React.FC = () => {
     const isProcessing = state === 'Receiving' || state === 'Executing' || state === 'Synthesizing' || state === 'Planning';
     const isLive = liveTranscription.isLive;
     const isSimulating = simulationState?.isRunning || false;
+    const isAnalyzingSimulation = simulationState?.isAnalyzing || false;
 
     return {
-        canSubmitQuery: (state === 'Idle' || state === 'Done' || state === 'Error' || state === 'Cancelled') && !isLive && !isSimulating,
-        canEditPlan: state === 'AwaitingExecution' && !isLive && !isSimulating,
-        canExecutePlan: state === 'AwaitingExecution' && !isLive && !isSimulating,
+        canSubmitQuery: (state === 'Idle' || state === 'Done' || state === 'Error' || state === 'Cancelled') && !isLive && !isSimulating && !isAnalyzingSimulation,
+        canEditPlan: state === 'AwaitingExecution' && !isLive && !isSimulating && !isAnalyzingSimulation,
+        canExecutePlan: state === 'AwaitingExecution' && !isLive && !isSimulating && !isAnalyzingSimulation,
         canCancelProcess: isProcessing && !isLive,
-        canUseManualControls: (state === 'Idle' || state === 'Done' || state === 'Error' || state === 'Cancelled') && !isLive && !isSimulating,
-        isGloballyBusy: isProcessing || state === 'AwaitingExecution' || isLive || isSimulating,
+        canUseManualControls: (state === 'Idle' || state === 'Done' || state === 'Error' || state === 'Cancelled') && !isLive && !isSimulating && !isAnalyzingSimulation,
+        isGloballyBusy: isProcessing || state === 'AwaitingExecution' || isLive || isSimulating || isAnalyzingSimulation,
     };
-  }, [cognitiveProcess?.state, liveTranscription.isLive, simulationState?.isRunning]);
+  }, [cognitiveProcess?.state, liveTranscription.isLive, simulationState?.isRunning, simulationState?.isAnalyzing]);
 
 
   const replicaCount = useMemo(() => {
