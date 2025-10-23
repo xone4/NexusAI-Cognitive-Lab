@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { EvaluationState } from '../types';
 import DashboardCard from './DashboardCard';
-import { ChartPieIcon, BrainCircuitIcon, SparklesIcon, RefreshIcon } from './Icons';
+import { ChartPieIcon, BrainCircuitIcon, SparklesIcon, RefreshIcon, CheckCircleIcon } from './Icons';
 
 interface EvaluationDashboardProps {
     evaluationState: EvaluationState;
@@ -54,19 +54,19 @@ const EvaluationDashboard: React.FC<EvaluationDashboardProps> = ({ evaluationSta
                         </p>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <MetricDisplay
-                                icon={<CheckCircleIcon />}
+                                icon={<CheckCircleIcon className="w-12 h-12 text-green-400"/>}
                                 label={t('evaluation.inferenceAccuracy')}
                                 value={`${metrics.inferenceAccuracy.toFixed(1)}%`}
                                 description={t('evaluation.inferenceAccuracyDesc')}
                             />
                             <MetricDisplay
-                                icon={<SparklesIcon />}
+                                icon={<SparklesIcon className="w-12 h-12 text-yellow-400"/>}
                                 label={t('evaluation.flowEfficiency')}
                                 value={metrics.flowEfficiency.toFixed(2)}
                                 description={t('evaluation.flowEfficiencyDesc')}
                             />
                             <MetricDisplay
-                                icon={<RefreshIcon />}
+                                icon={<RefreshIcon className="w-12 h-12 text-blue-400"/>}
                                 label={t('evaluation.selfCorrection')}
                                 value={`${metrics.selfCorrectionRate.toFixed(1)}%`}
                                 description={t('evaluation.selfCorrectionDesc')}
@@ -82,13 +82,5 @@ const EvaluationDashboard: React.FC<EvaluationDashboardProps> = ({ evaluationSta
         </div>
     );
 };
-
-// A temp icon while I update the Icons file
-const CheckCircleIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-12 h-12 text-green-400">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-    </svg>
-);
-
 
 export default EvaluationDashboard;

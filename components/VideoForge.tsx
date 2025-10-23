@@ -3,8 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { nexusAIService, VideoGenerationState } from '../services/nexusAIService';
 import DashboardCard from './DashboardCard';
 import { FilmIcon, DownloadIcon, CheckCircleIcon, XCircleIcon } from './Icons';
-// FIX: Removed unused import to prevent global type collision.
-
 
 const VideoForge: React.FC = () => {
     const { t } = useTranslation();
