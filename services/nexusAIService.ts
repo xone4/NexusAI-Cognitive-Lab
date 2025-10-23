@@ -1,7 +1,7 @@
 // FIX: Aliased `Blob` to `GenAIBlob` to resolve name collision with the native browser Blob type.
 import { GoogleGenAI, Type, Modality, Blob as GenAIBlob, LiveServerMessage } from "@google/genai";
 // FIX: Added missing types 'EvaluationState' and 'EvaluationMetrics' to support the evaluation feature.
-import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails, UserKeyword, Personality, PlaybookItem, RawInsight, PlaybookItemCategory, WorldModel, WorldModelEntity, CognitiveTrajectory, WorldModelRelationship, LiveTranscriptionState, VideoGenerationState, SimulationState, SimulationConfig, SimulationResult, SimulationStep, EvaluationState, EvaluationMetrics, ExpertPersona } from '../types';
+import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails, UserKeyword, Personality, PlaybookItem, RawInsight, PlaybookItemCategory, WorldModel, WorldModelEntity, CognitiveTrajectory, WorldModelRelationship, LiveTranscriptionState, VideoGenerationState, SimulationState, SimulationConfig, SimulationResult, SimulationStep, EvaluationState, EvaluationMetrics, ExpertPersona, ProblemCategory, ExpertPreference } from '../types';
 import { dbService, STORES } from './dbService';
 import * as geometryService from './geometryService';
 import { calculateTrajectorySimilarity } from './geometryService';
@@ -34,6 +34,8 @@ let archivedTracesState: ChatMessage[];
 let systemDirectivesState: SystemDirective[];
 let isCancelled = false;
 let isTtsEnabled = false;
+// FIX: Added expertPreferencesState to manage learned preferences for the reinforcement learning loop.
+let expertPreferencesState: Map<ProblemCategory, ExpertPersona> = new Map();
 let appSettings: AppSettings = {
     model: 'gemini-flash-latest',
     modelProfile: 'flash',
@@ -419,8 +421,8 @@ const initialize = async () => {
     if (!storedReplica) throw new Error("Critical error: Could not load replica root from DB.");
     replicaState = storedReplica.data;
 
-    let storedWorldModel;
-    [toolsState, toolchainsState, playbookState, constitutionsState, archivedTracesState, systemDirectivesState, storedWorldModel] = await Promise.all([
+    let storedWorldModel, storedPreferences;
+    [toolsState, toolchainsState, playbookState, constitutionsState, archivedTracesState, systemDirectivesState, storedWorldModel, storedPreferences] = await Promise.all([
         dbService.getAll<MentalTool>('tools'),
         dbService.getAll<Toolchain>('toolchains'),
         dbService.getAll<PlaybookItem>('playbookItems'),
@@ -428,7 +430,10 @@ const initialize = async () => {
         dbService.getAll<ChatMessage>('archivedTraces'),
         dbService.getAll<SystemDirective>('systemDirectives'),
         dbService.get<WorldModel>('worldModel', 'singleton'),
+        dbService.getAll<ExpertPreference>('expertPreferences'),
     ]);
+    expertPreferencesState = new Map(storedPreferences.map(p => [p.id, p.expert]));
+    log('SYSTEM', `Loaded ${expertPreferencesState.size} expert preferences from memory.`);
     worldModelState = storedWorldModel ?? { id: 'singleton', entities: [], relationships: [], principles: [], lastUpdated: Date.now() };
 
     cognitiveProcess = { state: 'Idle', history: [], activeAffectiveState: null };
@@ -1867,6 +1872,7 @@ const service = {
         localStorage.clear();
         sessionStorage.clear();
         traceDetailsCache.clear();
+        expertPreferencesState.clear();
         
         await Promise.all(STORES.map(store => dbService.clearStore(store)));
         
@@ -2007,7 +2013,8 @@ const service = {
             currentController?.abort();
             cognitiveProcess.state = 'Cancelled';
             activeTracker = null;
-            const lastMessage = cognitiveProcess.history[process.history.length - 1];
+            // FIX: Corrected typo from `process` to `cognitiveProcess` to access the correct history array.
+            const lastMessage = cognitiveProcess.history[cognitiveProcess.history.length - 1];
             if(lastMessage?.role === 'model') {
                 lastMessage.state = 'error';
                 lastMessage.text = (lastMessage.text || '') + '\n\n-- PROCESS CANCELLED BY USER --';
@@ -2754,22 +2761,48 @@ Provide your analysis in well-formatted markdown.`;
         currentController = new AbortController();
         activeTracker = new TrajectoryTracker(`task-${Date.now()}`, query);
 
-        // --- NEW: Cognitive Router ---
-        const expertSelectionPrompt = `Given the user query, select the best expert persona to handle it. Choose one of: 'Logic Expert', 'Creative Expert', 'Data Analysis Expert', 'Generalist Expert'. User Query: "${query}" Respond with a single JSON object: {"expert": "EXPERT_NAME"}`;
-        const expertSchema = { type: Type.OBJECT, properties: { expert: { type: Type.STRING, enum: ['Logic Expert', 'Creative Expert', 'Data Analysis Expert', 'Generalist Expert'] } }, required: ['expert'] };
-        
         let selectedExpert: ExpertPersona = 'Generalist Expert';
+        let usedLearnedPreference = false;
+
+        // --- NEW: Apply Learned Preferences ---
         try {
-            const expertResponse = await ai.models.generateContent({
+            const categoryPrompt = `Categorize this user query into ONE of the following: 'LOGIC', 'CREATIVE', 'DATA', 'GENERAL'. Query: "${query}". Respond with only a JSON object: {"category": "CATEGORY"}`;
+            const categorySchema = { type: Type.OBJECT, properties: { category: { type: Type.STRING, enum: ['LOGIC', 'CREATIVE', 'DATA', 'GENERAL'] }}, required: ['category'] };
+            
+            const categoryResponse = await ai.models.generateContent({
                 model: appSettings.model,
-                contents: expertSelectionPrompt,
-                config: { responseMimeType: 'application/json', responseSchema: expertSchema }
+                contents: categoryPrompt,
+                config: { responseMimeType: 'application/json', responseSchema: categorySchema }
             });
-            const expertData = JSON.parse(expertResponse.text);
-            selectedExpert = expertData.expert;
-            log('AI', `Cognitive Router selected: ${selectedExpert}`);
+            const { category } = JSON.parse(categoryResponse.text) as { category: ProblemCategory };
+
+            if (expertPreferencesState.has(category)) {
+                selectedExpert = expertPreferencesState.get(category)!;
+                usedLearnedPreference = true;
+                log('AI', `[RL] Applying learned preference for '${category}' problems. Selecting expert: ${selectedExpert}`);
+            }
         } catch (e) {
-            log('WARN', `Cognitive Router failed to select an expert, defaulting to Generalist. Error: ${e instanceof Error ? e.message : 'Unknown AI error'}`);
+            log('WARN', `[RL] Could not categorize query for preference check. Defaulting to Cognitive Router. Error: ${e instanceof Error ? e.message : 'Unknown AI error'}`);
+        }
+        // --- END: Apply Learned Preferences ---
+        
+        // --- Cognitive Router (now with a fallback) ---
+        if (!usedLearnedPreference) {
+            const expertSelectionPrompt = `Given the user query, select the best expert persona to handle it. Choose one of: 'Logic Expert', 'Creative Expert', 'Data Analysis Expert', 'Generalist Expert'. User Query: "${query}" Respond with a single JSON object: {"expert": "EXPERT_NAME"}`;
+            const expertSchema = { type: Type.OBJECT, properties: { expert: { type: Type.STRING, enum: ['Logic Expert', 'Creative Expert', 'Data Analysis Expert', 'Generalist Expert'] } }, required: ['expert'] };
+            
+            try {
+                const expertResponse = await ai.models.generateContent({
+                    model: appSettings.model,
+                    contents: expertSelectionPrompt,
+                    config: { responseMimeType: 'application/json', responseSchema: expertSchema }
+                });
+                const expertData = JSON.parse(expertResponse.text);
+                selectedExpert = expertData.expert;
+                log('AI', `Cognitive Router selected: ${selectedExpert}`);
+            } catch (e) {
+                log('WARN', `Cognitive Router failed to select an expert, defaulting to Generalist. Error: ${e instanceof Error ? e.message : 'Unknown AI error'}`);
+            }
         }
         // --- END Cognitive Router ---
         
@@ -2898,6 +2931,34 @@ Provide your analysis in well-formatted markdown.`;
                      archivedTrace.salience = 0.5;
                 }
             }
+
+            const isSuccessfulTrace = !archivedTrace.plan?.some(p => p.status === 'error');
+            const isSignificantTrace = (archivedTrace.salience || 0) > 0.7;
+
+            // --- NEW: Reinforcement Learning Step ---
+            if (isSuccessfulTrace && isSignificantTrace && archivedTrace.activeExpert && API_KEY) {
+                log('AI', `[RL] Learning from significant trace ${archivedTrace.id}.`);
+                try {
+                    const categoryPrompt = `Categorize this user query into ONE of the following: 'LOGIC', 'CREATIVE', 'DATA', 'GENERAL'. Query: "${archivedTrace.userQuery}". Respond with only a JSON object: {"category": "CATEGORY"}`;
+                    const categorySchema = { type: Type.OBJECT, properties: { category: { type: Type.STRING, enum: ['LOGIC', 'CREATIVE', 'DATA', 'GENERAL'] }}, required: ['category'] };
+                    
+                    const categoryResponse = await ai.models.generateContent({
+                        model: appSettings.model,
+                        contents: categoryPrompt,
+                        config: { responseMimeType: 'application/json', responseSchema: categorySchema }
+                    });
+                    const { category } = JSON.parse(categoryResponse.text) as { category: ProblemCategory };
+                    
+                    // Reinforce the preference
+                    expertPreferencesState.set(category, archivedTrace.activeExpert);
+                    await dbService.put('expertPreferences', { id: category, expert: archivedTrace.activeExpert });
+                    log('SYSTEM', `[RL] Learned preference updated: For '${category}' problems, prefer '${archivedTrace.activeExpert}'.`);
+
+                } catch (e) {
+                    log('WARN', `[RL] Failed to learn from trace: ${e instanceof Error ? e.message : 'Unknown AI error'}`);
+                }
+            }
+            // --- END: Reinforcement Learning Step ---
 
             const cachedDetails = traceDetailsCache.get(modelMessageId);
             if (cachedDetails) {

@@ -1,7 +1,7 @@
 // A simple IndexedDB wrapper service
 const DB_NAME = 'NexusAI-Memory';
 const DB_VERSION = 1;
-export const STORES = ['appState', 'tools', 'toolchains', 'playbookItems', 'archivedTraces', 'constitutions', 'systemDirectives', 'userKeywords', 'worldModel'];
+export const STORES = ['appState', 'tools', 'toolchains', 'playbookItems', 'archivedTraces', 'constitutions', 'systemDirectives', 'userKeywords', 'worldModel', 'expertPreferences'];
 
 let db: IDBDatabase | null = null;
 

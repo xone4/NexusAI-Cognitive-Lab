@@ -149,6 +149,13 @@ export interface AppSettings {
 // Types for Autonomous Cognitive Processing
 export type ThinkingState = 'Idle' | 'Receiving' | 'Planning' | 'AwaitingExecution' | 'Executing' | 'Synthesizing' | 'Done' | 'Cancelled' | 'Error';
 export type ExpertPersona = 'Logic Expert' | 'Creative Expert' | 'Data Analysis Expert' | 'Generalist Expert';
+// FIX: Added ProblemCategory and ExpertPreference types to support the reinforcement learning loop.
+export type ProblemCategory = 'LOGIC' | 'CREATIVE' | 'DATA' | 'GENERAL';
+
+export interface ExpertPreference {
+    id: ProblemCategory;
+    expert: ExpertPersona;
+}
 
 export interface PlanStep {
     step: number;
