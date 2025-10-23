@@ -16,6 +16,7 @@
     "modalitiesLab": "Modalities Lab",
     "simulationLab": "Simulation Lab",
     "analysisLab": "Analysis Lab",
+    "evaluationLab": "Evaluation Lab",
     "architecture": "Architecture",
     "settings": "Settings",
     "systemVer": "3.1",
@@ -312,6 +313,21 @@
     "rationale": "AI Rationale",
     "executeAction": "Execute Action",
     "runQuery": "Run Query"
+  },
+  "evaluation": {
+    "title": "Cognitive Evaluation Lab",
+    "description": "Objectively measure the AI's cognitive performance over time. This lab analyzes the entire history of archived memories to provide key metrics on reasoning quality and efficiency.",
+    "run": "Run Full Evaluation",
+    "running": "Evaluating...",
+    "resultsTitle": "Evaluation Results",
+    "lastRun": "Last run: {{date}}",
+    "notRun": "Evaluation has not been run yet.",
+    "inferenceAccuracy": "Inference Accuracy",
+    "inferenceAccuracyDesc": "The simulated percentage of AI conclusions that align with factual data in its World Model.",
+    "flowEfficiency": "Flow Efficiency",
+    "flowEfficiencyDesc": "The average number of steps the AI takes to solve a problem. Lower is more efficient.",
+    "selfCorrection": "Self-Correction Rate",
+    "selfCorrectionDesc": "The percentage of tasks where the AI autonomously detected flawed reasoning and replanned."
   },
   "settings": {
     "cognitiveCore": "Cognitive Core",

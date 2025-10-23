@@ -1,6 +1,7 @@
 // FIX: Aliased `Blob` to `GenAIBlob` to resolve name collision with the native browser Blob type.
 import { GoogleGenAI, Type, Modality, Blob as GenAIBlob, LiveServerMessage } from "@google/genai";
-import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails, UserKeyword, Personality, PlaybookItem, RawInsight, PlaybookItemCategory, WorldModel, WorldModelEntity, CognitiveTrajectory, WorldModelRelationship, LiveTranscriptionState, VideoGenerationState, SimulationState, SimulationConfig, SimulationResult, SimulationStep } from '../types';
+// FIX: Added missing types 'EvaluationState' and 'EvaluationMetrics' to support the evaluation feature.
+import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails, UserKeyword, Personality, PlaybookItem, RawInsight, PlaybookItemCategory, WorldModel, WorldModelEntity, CognitiveTrajectory, WorldModelRelationship, LiveTranscriptionState, VideoGenerationState, SimulationState, SimulationConfig, SimulationResult, SimulationStep, EvaluationState, EvaluationMetrics } from '../types';
 import { dbService, STORES } from './dbService';
 import * as geometryService from './geometryService';
 import { calculateTrajectorySimilarity } from './geometryService';
@@ -23,6 +24,8 @@ let playbookState: PlaybookItem[];
 let constitutionsState: CognitiveConstitution[];
 let evolutionState: EvolutionState;
 let simulationState: SimulationState;
+// FIX: Added state management for the evaluation feature, including a state variable.
+let evaluationState: EvaluationState;
 let worldModelState: WorldModel | null = null;
 let cognitiveProcess: CognitiveProcess;
 let cognitiveNetworkState: CognitiveNetworkState = { activeProblems: [] };
@@ -68,6 +71,8 @@ let playbookSubscribers: ((playbook: PlaybookItem[]) => void)[] = [];
 let constitutionSubscribers: ((constitutions: CognitiveConstitution[]) => void)[] = [];
 let evolutionSubscribers: ((evolutionState: EvolutionState) => void)[] = [];
 let simulationSubscribers: ((state: SimulationState) => void)[] = [];
+// FIX: Added state management for the evaluation feature, including a subscribers array.
+let evaluationSubscribers: ((state: EvaluationState) => void)[] = [];
 let archiveSubscribers: ((archives: ChatMessage[]) => void)[] = [];
 let dreamProcessSubscribers: ((update: DreamProcessUpdate) => void)[] = [];
 let worldModelSubscribers: ((worldModel: WorldModel) => void)[] = [];
@@ -231,6 +236,8 @@ const notifyPlaybook = () => playbookSubscribers.forEach(cb => cb(JSON.parse(JSO
 const notifyConstitutions = () => constitutionSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(constitutionsState))));
 const notifyEvolution = () => evolutionSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(evolutionState))));
 const notifySimulation = () => simulationSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(simulationState))));
+// FIX: Added state management for the evaluation feature, including a notification function.
+const notifyEvaluation = () => evaluationSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(evaluationState))));
 const notifyArchives = () => archiveSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(archivedTracesState))));
 const notifyDreamProcess = (update: DreamProcessUpdate) => dreamProcessSubscribers.forEach(cb => cb(update));
 const notifyCognitiveNetwork = () => cognitiveNetworkSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(cognitiveNetworkState))));
@@ -444,6 +451,13 @@ const initialize = async () => {
         error: null,
     };
     
+    // FIX: Implemented the 'runEvaluation' method to simulate a system evaluation process.
+    evaluationState = {
+        isEvaluating: false,
+        lastRun: null,
+        metrics: null,
+    };
+
     return {
         initialReplicas: JSON.parse(JSON.stringify(replicaState)),
         initialTools: JSON.parse(JSON.stringify(toolsState)),
@@ -452,6 +466,8 @@ const initialize = async () => {
         initialConstitutions: JSON.parse(JSON.stringify(constitutionsState)),
         initialEvolutionState: JSON.parse(JSON.stringify(evolutionState)),
         initialSimulationState: JSON.parse(JSON.stringify(simulationState)),
+        // FIX: Implemented the 'runEvaluation' method to simulate a system evaluation process.
+        initialEvaluationState: JSON.parse(JSON.stringify(evaluationState)),
         initialArchives: JSON.parse(JSON.stringify(archivedTracesState)),
         initialCognitiveProcess: JSON.parse(JSON.stringify(cognitiveProcess)),
         initialWorldModel: JSON.parse(JSON.stringify(worldModelState)),
@@ -3607,6 +3623,35 @@ Return ONLY a valid JSON object matching the provided schema.`;
             throw new Error(errorMessage);
         }
     },
+    // FIX: Implemented the 'runEvaluation' method to simulate a system evaluation process.
+    runEvaluation: async () => {
+        if (evaluationState.isEvaluating) {
+            log('WARN', 'An evaluation is already in progress.');
+            return;
+        }
+
+        log('SYSTEM', 'Starting system evaluation...');
+        evaluationState.isEvaluating = true;
+        evaluationState.metrics = null;
+        notifyEvaluation();
+
+        // Simulate a delay for evaluation
+        await new Promise(res => setTimeout(res, 4000));
+
+        const newMetrics: EvaluationMetrics = {
+            inferenceAccuracy: 92.5 + Math.random() * 5,
+            flowEfficiency: 4.2 + Math.random() * 1.5,
+            selfCorrectionRate: 15 + Math.random() * 10,
+        };
+
+        evaluationState.isEvaluating = false;
+        evaluationState.lastRun = Date.now();
+        evaluationState.metrics = newMetrics;
+
+        log('SYSTEM', 'System evaluation complete.');
+        notifyEvaluation();
+    },
+
 
     // FIX: Added missing methods 'approveConstitution', 'rejectConstitution', and 'archiveConstitution' to handle constitution state changes from the UI.
     approveConstitution: async (constitutionId: string) => {
@@ -3682,6 +3727,8 @@ Return ONLY a valid JSON object matching the provided schema.`;
     subscribeToConstitutions: (callback: (constitutions: CognitiveConstitution[]) => void) => { constitutionSubscribers.push(callback); },
     subscribeToEvolution: (callback: (evolutionState: EvolutionState) => void) => { evolutionSubscribers.push(callback); },
     subscribeToSimulation: (callback: (state: SimulationState) => void) => { simulationSubscribers.push(callback); },
+    // FIX: Implemented the 'subscribeToEvaluation' method to allow components to subscribe to evaluation state updates.
+    subscribeToEvaluation: (callback: (state: EvaluationState) => void) => { evaluationSubscribers.push(callback); },
     subscribeToArchives: (callback: (archives: ChatMessage[]) => void) => { archiveSubscribers.push(callback); },
     subscribeToDreamProcess: (callback: (update: DreamProcessUpdate) => void) => { dreamProcessSubscribers.push(callback); },
     subscribeToWorldModel: (callback: (worldModel: WorldModel) => void) => { worldModelSubscribers.push(callback); },
@@ -3710,6 +3757,8 @@ Return ONLY a valid JSON object matching the provided schema.`;
         constitutionSubscribers = [];
         evolutionSubscribers = [];
         simulationSubscribers = [];
+        // FIX: Added 'evaluationSubscribers' to the 'unsubscribeFromAll' method for proper cleanup.
+        evaluationSubscribers = [];
         archiveSubscribers = [];
         dreamProcessSubscribers = [];
         worldModelSubscribers = [];

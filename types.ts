@@ -124,7 +124,7 @@ export interface LogEntry {
   source?: string; // Optional Replica ID
 }
 
-export type ActiveView = 'dashboard' | 'replicas' | 'tools' | 'architecture' | 'analysis' | 'settings' | 'evolution' | 'memory' | 'dreaming' | 'world_model' | 'modalities_lab' | 'simulation_lab';
+export type ActiveView = 'dashboard' | 'replicas' | 'tools' | 'architecture' | 'analysis' | 'settings' | 'evolution' | 'memory' | 'dreaming' | 'world_model' | 'modalities_lab' | 'simulation_lab' | 'evaluation';
 
 export type LogVerbosity = 'STANDARD' | 'VERBOSE';
 export type AnimationLevel = 'FULL' | 'MINIMAL' | 'NONE';
@@ -479,6 +479,19 @@ export interface SimulationState {
     config: SimulationConfig | null;
     result: SimulationResult | null;
     error: string | null;
+}
+
+// --- Evaluation Lab Types ---
+export interface EvaluationMetrics {
+    inferenceAccuracy: number; // 0-100%
+    flowEfficiency: number; // average steps per plan
+    selfCorrectionRate: number; // 0-100%
+}
+
+export interface EvaluationState {
+    isEvaluating: boolean;
+    lastRun: number | null;
+    metrics: EvaluationMetrics | null;
 }
 
 
