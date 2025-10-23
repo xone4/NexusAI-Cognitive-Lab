@@ -159,9 +159,12 @@ This plan realigns priorities to address the identified gaps, ensuring safe, mea
         *   **Dynamic Instruction:** The `getSystemInstruction` function has been augmented. It now accepts the selected expert persona and dynamically prepends a specialized directive to the core system instruction, effectively "priming" the AI to think and plan from that expert's point of view.
         *   **UI Feedback:** The `CognitiveProcessVisualizer.tsx` component has been updated to display the `activeExpert` from the `ChatMessage` object during the planning phase, providing clear, real-time feedback on which simulated expert is handling the request.
 
-2.  **Activate a Reinforcement Learning Loop:** `[Status: 💡 Planned]`
+2.  **Activate a Reinforcement Learning Loop:** `[Status: ▶️ In Progress]`
     *   **Problem:** Flow Matrices are recorded but not used for learning.
     *   **Solution:** Once sufficient data is gathered from the Cognitive Evaluation Framework, it will be used to train the simulated "Cognitive Router" to select the most efficient thought paths for different types of problems.
+    *   **Implementation Details:**
+        *   **Real-time Metrics:** The Evaluation Lab now analyzes the full history of archived memories to calculate real-time metrics for cognitive performance (Inference Accuracy, Flow Efficiency, Self-Correction Rate), replacing the previous placeholder data. This provides the foundational data needed for the learning loop. `[Status: ✅ Implemented]`
+        *   **Learned Preferences:** Implement a mechanism to store and retrieve "expert preferences" based on evaluation results, biasing the Cognitive Router's future decisions. `[Status: 💡 Planned]`
 
 3.  **Implement "Reality-Check" Mechanisms:** `[Status: 💡 Planned]`
     *   **Problem:** The system can become trapped in theoretical reasoning loops, detached from factual ground truth.

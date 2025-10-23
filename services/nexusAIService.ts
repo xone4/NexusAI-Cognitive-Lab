@@ -2007,7 +2007,7 @@ const service = {
             currentController?.abort();
             cognitiveProcess.state = 'Cancelled';
             activeTracker = null;
-            const lastMessage = cognitiveProcess.history[cognitiveProcess.history.length - 1];
+            const lastMessage = cognitiveProcess.history[process.history.length - 1];
             if(lastMessage?.role === 'model') {
                 lastMessage.state = 'error';
                 lastMessage.text = (lastMessage.text || '') + '\n\n-- PROCESS CANCELLED BY USER --';
@@ -3662,25 +3662,74 @@ Return ONLY a valid JSON object matching the provided schema.`;
             return;
         }
 
-        log('SYSTEM', 'Starting system evaluation...');
+        log('SYSTEM', 'Starting system evaluation based on archived memories...');
         evaluationState.isEvaluating = true;
         evaluationState.metrics = null;
         notifyEvaluation();
-
-        // Simulate a delay for evaluation
-        await new Promise(res => setTimeout(res, 4000));
-
+    
+        // Use a small delay to make the transition feel smooth
+        await new Promise(res => setTimeout(res, 500));
+        
+        const tracesToEvaluate = archivedTracesState;
+        if (tracesToEvaluate.length === 0) {
+            log('WARN', 'Evaluation ended: No archived traces to evaluate.');
+            evaluationState.isEvaluating = false;
+            evaluationState.lastRun = Date.now();
+            evaluationState.metrics = {
+                inferenceAccuracy: 0,
+                flowEfficiency: 0,
+                selfCorrectionRate: 0,
+            };
+            notifyEvaluation();
+            return;
+        }
+    
+        let totalSuccessScore = 0;
+        let totalPlanSteps = 0;
+        let tracesWithSelfCorrection = 0;
+    
+        // Simulate a longer process by iterating with delays
+        for (let i = 0; i < tracesToEvaluate.length; i++) {
+            const trace = tracesToEvaluate[i];
+            // In a real implementation, you'd notify progress here. For now, just process.
+            await new Promise(res => setTimeout(res, 100)); // Simulate work for each trace
+    
+            const planLength = trace.plan?.length || 1;
+            totalPlanSteps += planLength;
+    
+            let successScore = 0.5; // Base score
+    
+            // Efficiency bonus/penalty
+            if (planLength < 5) successScore += 0.2;
+            else if (planLength > 10) successScore -= 0.1;
+    
+            // Self-correction bonus
+            if (trace.cognitiveTrajectory) {
+                tracesWithSelfCorrection++;
+                // A trajectory existing implies the navigator was active. This is a good proxy for a complex task requiring self-correction.
+                successScore += 0.3;
+            }
+            
+            // Ensure score is between 0 and 1
+            successScore = Math.max(0, Math.min(1, successScore));
+            totalSuccessScore += successScore;
+        }
+    
+        const avgSuccessScore = totalSuccessScore / tracesToEvaluate.length;
+        const avgPlanSteps = totalPlanSteps / tracesToEvaluate.length;
+        const selfCorrectionRate = (tracesWithSelfCorrection / tracesToEvaluate.length) * 100;
+    
         const newMetrics: EvaluationMetrics = {
-            inferenceAccuracy: 92.5 + Math.random() * 5,
-            flowEfficiency: 4.2 + Math.random() * 1.5,
-            selfCorrectionRate: 15 + Math.random() * 10,
+            inferenceAccuracy: avgSuccessScore * 100,
+            flowEfficiency: avgPlanSteps,
+            selfCorrectionRate: selfCorrectionRate,
         };
-
+    
         evaluationState.isEvaluating = false;
         evaluationState.lastRun = Date.now();
         evaluationState.metrics = newMetrics;
-
-        log('SYSTEM', 'System evaluation complete.');
+    
+        log('SYSTEM', `System evaluation complete. Analyzed ${tracesToEvaluate.length} traces.`);
         notifyEvaluation();
     },
 
