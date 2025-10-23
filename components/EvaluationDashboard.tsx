@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { EvaluationState } from '../types';
 import DashboardCard from './DashboardCard';
+// FIX: Replaced local icon definition with standardized import from Icons.tsx to ensure consistency.
 import { ChartPieIcon, BrainCircuitIcon, SparklesIcon, RefreshIcon, CheckCircleIcon } from './Icons';
 
 interface EvaluationDashboardProps {

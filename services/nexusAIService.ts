@@ -1,7 +1,7 @@
 // FIX: Aliased `Blob` to `GenAIBlob` to resolve name collision with the native browser Blob type.
 import { GoogleGenAI, Type, Modality, Blob as GenAIBlob, LiveServerMessage } from "@google/genai";
 // FIX: Added missing types 'EvaluationState' and 'EvaluationMetrics' to support the evaluation feature.
-import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails, UserKeyword, Personality, PlaybookItem, RawInsight, PlaybookItemCategory, WorldModel, WorldModelEntity, CognitiveTrajectory, WorldModelRelationship, LiveTranscriptionState, VideoGenerationState, SimulationState, SimulationConfig, SimulationResult, SimulationStep, EvaluationState, EvaluationMetrics } from '../types';
+import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails, UserKeyword, Personality, PlaybookItem, RawInsight, PlaybookItemCategory, WorldModel, WorldModelEntity, CognitiveTrajectory, WorldModelRelationship, LiveTranscriptionState, VideoGenerationState, SimulationState, SimulationConfig, SimulationResult, SimulationStep, EvaluationState, EvaluationMetrics, ExpertPersona } from '../types';
 import { dbService, STORES } from './dbService';
 import * as geometryService from './geometryService';
 import { calculateTrajectorySimilarity } from './geometryService';
@@ -512,7 +512,7 @@ const languageMap: Record<Language, string> = {
     'zh': 'Mandarin Chinese',
 };
 
-const getSystemInstruction = () => {
+const getSystemInstruction = (activeExpert?: ExpertPersona) => {
     const getPersonalityTypeString = (p: Personality | undefined): 'CREATIVE' | 'LOGICAL' | 'BALANCED' => {
         if (!p) return 'BALANCED';
         if (p.energyFocus === 'EXTROVERSION' && p.informationProcessing === 'INTUITION' && p.decisionMaking === 'FEELING' && p.worldApproach === 'PERCEIVING') {
@@ -530,6 +530,17 @@ const getSystemInstruction = () => {
         BALANCED: `You are NexusAI, an advanced, balanced AI. You provide clear, insightful, and well-reasoned responses.`
     }[getPersonalityTypeString(appSettings.coreAgentPersonality)];
     
+    let expertInstruction = '';
+    if (activeExpert) {
+        const expertPrompts: Record<ExpertPersona, string> = {
+            'Logic Expert': 'You are now operating as a Logic Expert. Prioritize step-by-step, verifiable reasoning. Deconstruct the problem into its smallest logical components.',
+            'Creative Expert': 'You are now operating as a Creative Expert. Prioritize divergent thinking, brainstorming, and novel connections. Explore unconventional solutions.',
+            'Data Analysis Expert': 'You are now operating as a Data Analysis Expert. Prioritize quantitative analysis, data interpretation, and statistical reasoning. Use `code_interpreter` for calculations.',
+            'Generalist Expert': 'You are operating in your default Generalist Expert mode, balancing all cognitive styles.'
+        };
+        expertInstruction = `\n**ACTIVE EXPERT PERSONA: ${activeExpert}**\n${expertPrompts[activeExpert]}\n`;
+    }
+
     const styleInstruction = {
         balanced: `You are to maintain a balanced approach, weighing logic and creativity equally.`,
         analytical: `You must adopt a strictly analytical, logical, and linear cognitive style. Prioritize direct paths to the solution, breaking down problems methodically. Avoid creative leaps or speculative reasoning unless absolutely necessary. Your reasoning should be transparent and easy to follow.`,
@@ -576,7 +587,7 @@ const getSystemInstruction = () => {
         ? `\n**ACE Playbook: Key Learnings & Strategies**\n${relevantPlaybookItems}\n`
         : '';
 
-    return `${personalityInstruction}
+    return `${expertInstruction}${personalityInstruction}
     ${styleInstruction}
     You are an Agent 2.0 Orchestrator. Your function is to solve problems by creating explicit plans, delegating tasks to specialized Sub-Agents, and managing persistent memory.
     ${playbookText}
@@ -866,6 +877,7 @@ const _executeRecursiveCognitiveCycle = async (parentStep: PlanStep, subProblemQ
 const _regeneratePlan = async (messageId: string, modificationType: 'expand' | 'optimize' | 'revise', isAutomatic: boolean = false) => {
     const modelMessage = cognitiveProcess.history.find(m => m.id === messageId);
     if (!modelMessage || !modelMessage.plan || !API_KEY) return;
+    const activeExpert = modelMessage.activeExpert;
 
     const userMessage = cognitiveProcess.history.find(m => m.id === modelMessage.userQuery);
     const query = userMessage?.text || '';
@@ -893,7 +905,7 @@ const _regeneratePlan = async (messageId: string, modificationType: 'expand' | '
 
     try {
         const response = await ai.models.generateContent({
-            ...getCognitiveModelConfig({ systemInstruction: getSystemInstruction(), responseMimeType: 'application/json', responseSchema: planSchema }),
+            ...getCognitiveModelConfig({ systemInstruction: getSystemInstruction(activeExpert), responseMimeType: 'application/json', responseSchema: planSchema }),
             contents: regenerationPrompt,
         });
 
@@ -2071,6 +2083,7 @@ const service = {
     executePlan: async (messageId: string) => {
         const modelMessage = cognitiveProcess.history.find(m => m.id === messageId);
         if (!modelMessage || !modelMessage.plan || modelMessage.isPlanFinalized || !activeTracker) return;
+        const activeExpert = modelMessage.activeExpert;
 
         modelMessage.isPlanFinalized = true;
         cognitiveProcess.state = 'Executing';
@@ -2672,7 +2685,7 @@ Provide your analysis in well-formatted markdown.`;
             if(activeTracker) activeTracker.addStep('Synthesis Phase', synthesisPrompt);
 
             const stream = await ai.models.generateContentStream({
-                ...getCognitiveModelConfig({ systemInstruction: getSystemInstruction() }),
+                ...getCognitiveModelConfig({ systemInstruction: getSystemInstruction(activeExpert) }),
                 contents: synthesisPrompt,
             });
 
@@ -2741,6 +2754,25 @@ Provide your analysis in well-formatted markdown.`;
         currentController = new AbortController();
         activeTracker = new TrajectoryTracker(`task-${Date.now()}`, query);
 
+        // --- NEW: Cognitive Router ---
+        const expertSelectionPrompt = `Given the user query, select the best expert persona to handle it. Choose one of: 'Logic Expert', 'Creative Expert', 'Data Analysis Expert', 'Generalist Expert'. User Query: "${query}" Respond with a single JSON object: {"expert": "EXPERT_NAME"}`;
+        const expertSchema = { type: Type.OBJECT, properties: { expert: { type: Type.STRING, enum: ['Logic Expert', 'Creative Expert', 'Data Analysis Expert', 'Generalist Expert'] } }, required: ['expert'] };
+        
+        let selectedExpert: ExpertPersona = 'Generalist Expert';
+        try {
+            const expertResponse = await ai.models.generateContent({
+                model: appSettings.model,
+                contents: expertSelectionPrompt,
+                config: { responseMimeType: 'application/json', responseSchema: expertSchema }
+            });
+            const expertData = JSON.parse(expertResponse.text);
+            selectedExpert = expertData.expert;
+            log('AI', `Cognitive Router selected: ${selectedExpert}`);
+        } catch (e) {
+            log('WARN', `Cognitive Router failed to select an expert, defaulting to Generalist. Error: ${e instanceof Error ? e.message : 'Unknown AI error'}`);
+        }
+        // --- END Cognitive Router ---
+        
         if (cognitiveProcess.state === 'Done' || cognitiveProcess.state === 'Idle') {
             cognitiveProcess.activeAffectiveState = null; 
         }
@@ -2751,7 +2783,7 @@ Provide your analysis in well-formatted markdown.`;
         log('AI', `New cognitive task received: "${query}" ${image ? ' with an image.' : ''}`);
         notifyCognitiveProcess();
 
-        const modelMessage: ChatMessage = { id: `msg-${Date.now()}-model`, role: 'model', text: '', state: 'planning', isPlanFinalized: false, userQuery: userMessage.id };
+        const modelMessage: ChatMessage = { id: `msg-${Date.now()}-model`, role: 'model', text: '', state: 'planning', isPlanFinalized: false, userQuery: userMessage.id, activeExpert: selectedExpert };
         const activeReplica = findReplica('nexus-core', replicaState);
         if (activeReplica) {
             modelMessage.constitutionId = activeReplica.node.activeConstitutionId;
@@ -2797,7 +2829,7 @@ Provide your analysis in well-formatted markdown.`;
             if (activeTracker) activeTracker.addStep('Planning Phase', planningPrompt);
 
             const planningResponse = await ai.models.generateContent({
-                ...getCognitiveModelConfig({ systemInstruction: getSystemInstruction(), responseMimeType: 'application/json', responseSchema: planSchema }),
+                ...getCognitiveModelConfig({ systemInstruction: getSystemInstruction(selectedExpert), responseMimeType: 'application/json', responseSchema: planSchema }),
                 contents: planningPrompt,
             });
 

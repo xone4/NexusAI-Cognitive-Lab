@@ -1,3 +1,4 @@
+// FIX: Added EvaluationState and EvaluationMetrics types to support the new evaluation lab feature.
 export interface Interaction {
   targetId: string;
   type: 'data_flow'; // Future: 'collaboration' | 'conflict'

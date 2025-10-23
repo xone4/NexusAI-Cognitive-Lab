@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+// FIX: Removed unused AIStudio type import to prevent global type collisions.
 import { nexusAIService, VideoGenerationState } from '../services/nexusAIService';
 import DashboardCard from './DashboardCard';
 import { FilmIcon, DownloadIcon, CheckCircleIcon, XCircleIcon } from './Icons';
