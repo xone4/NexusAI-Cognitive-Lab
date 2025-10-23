@@ -106,7 +106,7 @@ The next stage of development will be guided by the following core principles:
 This plan realigns priorities to address the identified gaps, ensuring safe, measurable, and sustainable development.
 
 ---
-### Phase 14 (New): Fortification & Foundation - ✅ Complete
+### Phase 14: Fortification & Foundation - ✅ Complete
 **Goal:** Address critical gaps in safety, security, and infrastructure before adding any new features.
 
 #### Completed Initiatives
@@ -131,7 +131,7 @@ This plan realigns priorities to address the identified gaps, ensuring safe, mea
     *   **Solution:** Begin integration with a local-first vector database like ChromaDB. Develop a migration script to transfer existing embedded data from IndexedDB to the new vector store.
 
 ---
-### Phase 15 (New): Measurement & Monitoring - ✅ Complete
+### Phase 15: Measurement & Monitoring - ✅ Complete
 **Goal:** Build the tools necessary to objectively measure and understand the "quality of thought."
 
 #### Completed Implementation
@@ -148,23 +148,27 @@ This plan realigns priorities to address the identified gaps, ensuring safe, mea
     *   **Solution:** Suggest to conduct a study on 100 manually evaluated thought traces to establish a statistical correlation between high "curvature" and the occurrence of logical fallacies.
 
 ---
-### Phase 16 (New): Guided Evolution & Simulated Architectures - ▶️ In Progress
-**Goal:** Begin implementing the advanced concepts of Phases 14-16 from the original plan in a gradual, safe, and evidence-based manner.
+### Phase 16: Guided Evolution & Self-Optimization - ▶️ In Progress
+
+**Goal:** Begin implementing advanced cognitive concepts in a gradual, safe, and evidence-based manner.
 
 1.  **Simulate the MICRO Architecture:** `[Status: ✅ Implemented]`
     *   **Problem:** A direct implementation of the MICRO architecture is complex and risky.
-    *   **Solution:** Instead of modifying the core model architecture, we will simulate a "Cognitive Router." This will be achieved by prompting the LLM to explicitly choose the appropriate tool or "expert" for a given sub-task (e.g., "Use the `Logic Expert` tool for this mathematical problem"). This flow of choices will be tracked and analyzed.
+    *   **Solution:** Instead of modifying the core model architecture, we simulate a "Cognitive Router." This is achieved by prompting the LLM to explicitly choose the appropriate "expert persona" for a given task (e.g., "Use the `Logic Expert` tool for this mathematical problem"). This flow of choices is tracked and analyzed.
     *   **Implementation Details:**
         *   **Cognitive Router:** The `submitQuery` workflow in `nexusAIService.ts` now includes a preliminary step. Before generating a plan, a call is made to the Gemini model to select the most suitable `ExpertPersona` ('Logic Expert', 'Creative Expert', 'Data Analysis Expert', 'Generalist Expert') for the user's query.
         *   **Dynamic Instruction:** The `getSystemInstruction` function has been augmented. It now accepts the selected expert persona and dynamically prepends a specialized directive to the core system instruction, effectively "priming" the AI to think and plan from that expert's point of view.
         *   **UI Feedback:** The `CognitiveProcessVisualizer.tsx` component has been updated to display the `activeExpert` from the `ChatMessage` object during the planning phase, providing clear, real-time feedback on which simulated expert is handling the request.
 
-2.  **Activate a Reinforcement Learning Loop:** `[Status: ▶️ In Progress]`
-    *   **Problem:** Flow Matrices are recorded but not used for learning.
-    *   **Solution:** Once sufficient data is gathered from the Cognitive Evaluation Framework, it will be used to train the simulated "Cognitive Router" to select the most efficient thought paths for different types of problems.
+2.  **Activate a Reinforcement Learning Loop:** `[Status: ✅ Implemented]`
+    *   **Problem:** The Cognitive Router makes decisions but doesn't learn from their outcomes.
+    *   **Solution:** Use the outcome of cognitive tasks to train the "Cognitive Router" to select the most efficient thought paths for different types of problems, creating a self-improving system.
     *   **Implementation Details:**
-        *   **Real-time Metrics:** The Evaluation Lab now analyzes the full history of archived memories to calculate real-time metrics for cognitive performance (Inference Accuracy, Flow Efficiency, Self-Correction Rate), replacing the previous placeholder data. This provides the foundational data needed for the learning loop. `[Status: ✅ Implemented]`
-        *   **Learned Preferences:** Implement a mechanism to store and retrieve "expert preferences" based on evaluation results, biasing the Cognitive Router's future decisions. `[Status: 💡 Planned]`
+        *   **Learning Trigger:** The `archiveTrace` function in `nexusAIService.ts` now acts as the learning trigger. When a "significant" trace (successful execution and high salience score) is archived, a learning event is initiated.
+        *   **Problem Categorization:** During the learning event, a call to the Gemini API categorizes the original user query into one of four types: `LOGIC`, `CREATIVE`, `DATA`, or `GENERAL`.
+        *   **Reinforcement:** The `ExpertPersona` that was used for the successful trace is then stored as the preferred expert for that problem category.
+        *   **Persistent Memory:** These learned preferences are persisted in the `expertPreferences` store in IndexedDB.
+        *   **Application:** The `submitQuery` function has been enhanced. It now first attempts to categorize the incoming query and check for a learned preference. If a preference exists, it bypasses the standard Cognitive Router and directly applies the learned expert, making the system faster and more efficient at solving similar problems over time.
 
 3.  **Implement "Reality-Check" Mechanisms:** `[Status: 💡 Planned]`
     *   **Problem:** The system can become trapped in theoretical reasoning loops, detached from factual ground truth.
