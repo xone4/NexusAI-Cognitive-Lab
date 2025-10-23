@@ -129,12 +129,12 @@ The next phase of development pivots to a more pragmatic and secure approach to 
     *   **Metric Validation:** Empirically validate the correlation between existing geometric metrics (like "cognitive curvature") and actual reasoning quality.
 
 ---
-### Phase 16 (New): Guided Evolution & Simulated Architectures - 💡 Planned
+### Phase 16 (New): Guided Evolution & Simulated Architectures - ▶️ In Progress
 *   **Objective:** Begin implementing advanced cognitive architectures in a safe, simulated, and iterative manner.
 *   **Key Initiatives:**
-    *   **Simulated MICRO Architecture:** Instead of a risky, immediate re-architecture, we will first simulate the "Mixture of Cognitive Reasoners" (MICRO) model by using advanced prompting and tool selection to mimic a "Cognitive Router."
-    *   **Activate Reinforcement Learning Loop:** Use the data from the evaluation framework to train the simulated Cognitive Router, rewarding efficient and accurate thought patterns.
-    *   **Implement "Reality-Check" Protocols:** Enforce mandatory workflows that force the AI to validate its internal logic against its factual World Model, preventing it from operating in a purely theoretical space.
+    *   **Simulated MICRO Architecture (✅ Implemented):** The initial simulation of the "Mixture of Cognitive Reasoners" (MICRO) model is complete. The system now features a **Cognitive Router** that, as a pre-planning step, selects the most appropriate "expert persona" for a given task. This allows the AI to tailor its reasoning and planning process, with the selected expert made visible in the UI for enhanced transparency.
+    *   **Activate Reinforcement Learning Loop (💡 Planned):** Use the data from the evaluation framework to train the simulated Cognitive Router, rewarding efficient and accurate thought patterns.
+    *   **Implement "Reality-Check" Protocols (💡 Planned):** Enforce mandatory workflows that force the AI to validate its internal logic against its factual World Model, preventing it from operating in a purely theoretical space.
 
 ---
 ## Contributing

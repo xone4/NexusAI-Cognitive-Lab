@@ -148,18 +148,22 @@ This plan realigns priorities to address the identified gaps, ensuring safe, mea
     *   **Solution:** Suggest to conduct a study on 100 manually evaluated thought traces to establish a statistical correlation between high "curvature" and the occurrence of logical fallacies.
 
 ---
-### Phase 16 (New): Guided Evolution & Simulated Architectures - 💡 Planned
+### Phase 16 (New): Guided Evolution & Simulated Architectures - ▶️ In Progress
 **Goal:** Begin implementing the advanced concepts of Phases 14-16 from the original plan in a gradual, safe, and evidence-based manner.
 
-1.  **Simulate the MICRO Architecture:**
+1.  **Simulate the MICRO Architecture:** `[Status: ✅ Implemented]`
     *   **Problem:** A direct implementation of the MICRO architecture is complex and risky.
     *   **Solution:** Instead of modifying the core model architecture, we will simulate a "Cognitive Router." This will be achieved by prompting the LLM to explicitly choose the appropriate tool or "expert" for a given sub-task (e.g., "Use the `Logic Expert` tool for this mathematical problem"). This flow of choices will be tracked and analyzed.
+    *   **Implementation Details:**
+        *   **Cognitive Router:** The `submitQuery` workflow in `nexusAIService.ts` now includes a preliminary step. Before generating a plan, a call is made to the Gemini model to select the most suitable `ExpertPersona` ('Logic Expert', 'Creative Expert', 'Data Analysis Expert', 'Generalist Expert') for the user's query.
+        *   **Dynamic Instruction:** The `getSystemInstruction` function has been augmented. It now accepts the selected expert persona and dynamically prepends a specialized directive to the core system instruction, effectively "priming" the AI to think and plan from that expert's point of view.
+        *   **UI Feedback:** The `CognitiveProcessVisualizer.tsx` component has been updated to display the `activeExpert` from the `ChatMessage` object during the planning phase, providing clear, real-time feedback on which simulated expert is handling the request.
 
-2.  **Activate a Reinforcement Learning Loop:**
+2.  **Activate a Reinforcement Learning Loop:** `[Status: 💡 Planned]`
     *   **Problem:** Flow Matrices are recorded but not used for learning.
     *   **Solution:** Once sufficient data is gathered from the Cognitive Evaluation Framework, it will be used to train the simulated "Cognitive Router" to select the most efficient thought paths for different types of problems.
 
-3.  **Implement "Reality-Check" Mechanisms:**
+3.  **Implement "Reality-Check" Mechanisms:** `[Status: 💡 Planned]`
     *   **Problem:** The system can become trapped in theoretical reasoning loops, detached from factual ground truth.
     *   **Solution:** Enforce mandatory validation workflows, such as:
         *   **Logic → World → Logic:** Any logical deduction must be cross-referenced with data from the "World Model" before it can be used in subsequent steps.

@@ -147,6 +147,7 @@ export interface AppSettings {
 
 // Types for Autonomous Cognitive Processing
 export type ThinkingState = 'Idle' | 'Receiving' | 'Planning' | 'AwaitingExecution' | 'Executing' | 'Synthesizing' | 'Done' | 'Cancelled' | 'Error';
+export type ExpertPersona = 'Logic Expert' | 'Creative Expert' | 'Data Analysis Expert' | 'Generalist Expert';
 
 export interface PlanStep {
     step: number;
@@ -238,6 +239,9 @@ export interface ChatMessage {
 
     // For Cognitive Geometry
     cognitiveTrajectory?: CognitiveTrajectory;
+
+    // For MICRO Architecture Simulation
+    activeExpert?: ExpertPersona;
 }
 
 export interface CognitiveProcess {

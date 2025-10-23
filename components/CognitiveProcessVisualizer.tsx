@@ -1,7 +1,7 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
-import type { CognitiveProcess, ChatMessage, PlanStep, CognitiveConstitution, GeneratedImage, Language } from '../types';
+import type { CognitiveProcess, ChatMessage, PlanStep, CognitiveConstitution, GeneratedImage, Language, ExpertPersona } from '../types';
 import { useTranslation } from 'react-i18next';
-import { BrainCircuitIcon, UserIcon, BookOpenIcon, CogIcon, CheckCircleIcon, CubeTransparentIcon, PlayIcon, PencilIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, PlusCircleIcon, CodeBracketIcon, LightBulbIcon, LinkIcon, ArrowRightIcon, PhotographIcon, SparklesIcon, ArchiveBoxArrowDownIcon, RefreshIcon, GlobeAltIcon, DocumentTextIcon, ShareIcon, ReplicaIcon, DicesIcon, ArrowsRightLeftIcon, XCircleIcon, SaveIcon, TrajectoryIcon } from './Icons';
+import { BrainCircuitIcon, UserIcon, BookOpenIcon, CogIcon, CheckCircleIcon, CubeTransparentIcon, PlayIcon, PencilIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, PlusCircleIcon, CodeBracketIcon, LightBulbIcon, LinkIcon, ArrowRightIcon, PhotographIcon, SparklesIcon, ArchiveBoxArrowDownIcon, RefreshIcon, GlobeAltIcon, DocumentTextIcon, ShareIcon, ReplicaIcon, DicesIcon, ArrowsRightLeftIcon, XCircleIcon, SaveIcon, TrajectoryIcon, ChartPieIcon } from './Icons';
 import TextActionOverlay from './TextActionOverlay';
 
 interface CognitiveProcessVisualizerProps {
@@ -277,6 +277,22 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
     );
 };
 
+const ExpertBadge: React.FC<{ expert: ExpertPersona }> = ({ expert }) => {
+    const expertMeta: Record<ExpertPersona, { icon: React.ReactNode, color: string }> = {
+        'Logic Expert': { icon: <CodeBracketIcon className="w-4 h-4"/>, color: 'border-purple-400 text-purple-300 bg-purple-500/10' },
+        'Creative Expert': { icon: <SparklesIcon className="w-4 h-4"/>, color: 'border-yellow-400 text-yellow-300 bg-yellow-500/10' },
+        'Data Analysis Expert': { icon: <ChartPieIcon className="w-4 h-4"/>, color: 'border-cyan-400 text-cyan-300 bg-cyan-500/10' },
+        'Generalist Expert': { icon: <BrainCircuitIcon className="w-4 h-4"/>, color: 'border-gray-400 text-gray-300 bg-gray-500/10' },
+    };
+    const meta = expertMeta[expert] || expertMeta['Generalist Expert'];
+    return (
+        <div className={`flex items-center gap-2 text-xs font-semibold px-2 py-1 rounded-full border ${meta.color}`}>
+            {meta.icon}
+            <span>{expert}</span>
+        </div>
+    );
+};
+
 const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMessage }> = memo((props) => {
     const { message, process, constitutions, onExecutePlan, onUpdatePlanStep, onReorderPlan, onAddPlanStep, onDeletePlanStep, onSavePlanAsToolchain, onArchiveTrace, onExtractBehavior, onRerunTrace, onUpdateWorldModel, onExpandPlan, onOptimizePlan, onRevisePlan, onDiscardPlan } = props;
     const { t } = useTranslation();
@@ -334,7 +350,13 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
             return (
                 <div className="flex items-center text-nexus-text-muted italic">
                     <div className="w-5 h-5 me-2 relative"><div className="nexus-loader"></div></div>
-                    NexusAI is formulating a cognitive plan...
+                    {message.activeExpert ? (
+                        <div className="flex items-center gap-2">
+                           <span>Routing to</span> <ExpertBadge expert={message.activeExpert} />
+                        </div>
+                    ) : (
+                        <span>NexusAI is formulating a cognitive plan...</span>
+                    )}
                 </div>
             );
         }
