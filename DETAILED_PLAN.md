@@ -106,7 +106,7 @@ The next stage of development will be guided by the following core principles:
 This plan realigns priorities to address the identified gaps, ensuring safe, measurable, and sustainable development.
 
 ---
-### Phase 1 (New): Fortification and Foundation - ▶️ In Progress
+### Phase 14 (New): Fortification & Foundation - ▶️ In Progress
 **Goal:** Address critical gaps in safety, security, and infrastructure before adding any new features.
 
 #### Completed Initiatives
@@ -120,18 +120,18 @@ This plan realigns priorities to address the identified gaps, ensuring safe, mea
         *   **Default Protection:** The core, default constitutions are now marked as `isDefault` and are protected from being archived or modified, ensuring a stable baseline.
         *   **Versioning:** The `CognitiveConstitution` type now includes a `version` field, laying the groundwork for future auditing and rollback capabilities.
 
+2.  **Implement "Kill-switch" for Agent Cloning (✅ Implemented):**
+    *   **Problem:** The `spawn_cognitive_clone` tool could lead to uncontrolled, infinite recursion, creating a stability and resource-consumption risk.
+    *   **Solution:** The `_executeRecursiveCognitiveCycle` function now enforces a hard limit on the recursion depth via a `MAX_RECURSION_DEPTH` constant. This acts as a direct and effective "kill-switch," preventing dangerous loops and ensuring system stability without the complexity of a token-based system.
+
 #### Planned Initiatives
 
-1.  **Implement "Kill-switch" for Agent Cloning:**
-    *   **Problem:** `spawn_cognitive_clone` could lead to uncontrolled, infinite recursion.
-    *   **Solution:** The tool can only be invoked by passing a "Capability Token" that is periodically renewed by the user. A hard limit on the maximum number of concurrent active clones will be enforced at the service level.
-
-2.  **Migrate to a Vector Database:**
+1.  **Migrate to a Vector Database:**
     *   **Problem:** IndexedDB is extremely inefficient for large-scale similarity searches.
     *   **Solution:** Begin integration with a local-first vector database like ChromaDB. Develop a migration script to transfer existing embedded data from IndexedDB to the new vector store.
 
 ---
-### Phase 2 (New): Measurement and Monitoring
+### Phase 15 (New): Measurement & Monitoring - 💡 Planned
 **Goal:** Build the tools necessary to objectively measure and understand the "quality of thought."
 
 1.  **Develop a Cognitive Evaluation Framework:**
@@ -147,7 +147,7 @@ This plan realigns priorities to address the identified gaps, ensuring safe, mea
     *   **Solution:** Suggest to conduct a study on 100 manually evaluated thought traces to establish a statistical correlation between high "curvature" and the occurrence of logical fallacies.
 
 ---
-### Phase 3 (New): Guided Evolution
+### Phase 16 (New): Guided Evolution & Simulated Architectures - 💡 Planned
 **Goal:** Begin implementing the advanced concepts of Phases 14-16 from the original plan in a gradual, safe, and evidence-based manner.
 
 1.  **Simulate the MICRO Architecture:**

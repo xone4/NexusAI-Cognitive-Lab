@@ -115,11 +115,10 @@ The next phase of development pivots to a more pragmatic and secure approach to 
 ### Phase 14 (New): Fortification & Foundation - ▶️ In Progress
 *   **Objective:** Address critical safety, security, and scalability gaps before introducing new capabilities.
 *   **Key Initiatives:**
-    *   **Implement Safety Controls:**
-        *   **Secure Constitution Forger (✅ Complete):** New AI-forged constitutions now enter a `PENDING_APPROVAL` state, requiring user validation in the Settings view. Default constitutions are now protected, and versioning has been implemented.
-        *   **Implement "Kill-switch" (💡 Planned):** Introduce a "kill-switch" for the `spawn_cognitive_clone` tool.
-    *   **Fortify Security:** Move sensitive data away from insecure storage mechanisms.
-    *   **Upgrade Infrastructure:** Begin migrating the memory system from IndexedDB to a dedicated Vector Database (e.g., ChromaDB) to solve performance bottlenecks in semantic search.
+    *   **Secure Constitution Forger (✅ Complete):** New AI-forged constitutions now enter a `PENDING_APPROVAL` state, requiring user validation in the Settings view. Default constitutions are now protected, and versioning has been implemented.
+    *   **Implement "Kill-switch" (✅ Complete):** A recursion depth limit has been implemented for the `spawn_cognitive_clone` tool to prevent uncontrolled recursion and ensure system stability.
+    *   **Fortify Security (💡 Planned):** Move sensitive data away from insecure storage mechanisms.
+    *   **Upgrade Infrastructure (💡 Planned):** Begin migrating the memory system from IndexedDB to a dedicated Vector Database (e.g., ChromaDB) to solve performance bottlenecks in semantic search.
 
 ---
 ### Phase 15 (New): Measurement & Monitoring - 💡 Planned

@@ -14,6 +14,7 @@ if (!API_KEY) {
 }
 const ai = new GoogleGenAI({ apiKey: API_KEY });
 
+const MAX_RECURSION_DEPTH = 3;
 
 let replicaState: Replica;
 let toolsState: MentalTool[];
@@ -677,14 +678,17 @@ const insightExtractionSchema = {
 };
 
 
-const _executeRecursiveCognitiveCycle = async (parentStep: PlanStep, subProblemQuery: string, contextData: string): Promise<string> => {
+const _executeRecursiveCognitiveCycle = async (parentStep: PlanStep, subProblemQuery: string, contextData: string, recursionDepth: number): Promise<string> => {
+    if (recursionDepth > MAX_RECURSION_DEPTH) {
+        throw new Error(`Recursion depth limit of ${MAX_RECURSION_DEPTH} exceeded. Halting to prevent infinite loop.`);
+    }
     if (!parentStep.childProcess) return "Error: childProcess not initialized";
     
     const childProcess = parentStep.childProcess;
 
     // 1. Planning
     childProcess.state = 'Planning';
-    log('REPLICA', `Clone is planning for sub-problem: "${subProblemQuery.substring(0, 50)}..."`);
+    log('REPLICA', `Clone (Depth ${recursionDepth}) is planning for sub-problem: "${subProblemQuery.substring(0, 50)}..."`);
     notifyCognitiveProcess();
 
     const subAgentSystemInstruction = getSystemInstruction().replace(
@@ -707,7 +711,7 @@ const _executeRecursiveCognitiveCycle = async (parentStep: PlanStep, subProblemQ
     // 2. Execution
     childProcess.state = 'Executing';
     modelMessage.state = 'executing';
-    log('REPLICA', `Clone begins executing a ${subPlan.length}-step plan.`);
+    log('REPLICA', `Clone (Depth ${recursionDepth}) begins executing a ${subPlan.length}-step plan.`);
     notifyCognitiveProcess();
     
     const subExecutionContext: string[] = [];
@@ -716,14 +720,14 @@ const _executeRecursiveCognitiveCycle = async (parentStep: PlanStep, subProblemQ
         const step = subPlan[i];
         modelMessage.currentStep = i;
         step.status = 'executing';
-        log('REPLICA', `Clone executing step ${i+1}: ${step.description}`);
+        log('REPLICA', `Clone (Depth ${recursionDepth}) executing step ${i+1}: ${step.description}`);
         notifyCognitiveProcess();
         
         // --- Tool Execution Logic (mirrored from main executePlan) ---
         if (step.tool === 'spawn_cognitive_clone') { // Recursive Call
             step.childProcess = { state: 'Idle', history: [], activeAffectiveState: null };
             notifyCognitiveProcess();
-            const result = await _executeRecursiveCognitiveCycle(step, step.query || '', step.code || '');
+            const result = await _executeRecursiveCognitiveCycle(step, step.query || '', step.code || '', recursionDepth + 1);
             step.result = result;
         } else if (step.tool === 'code_interpreter') {
             try {
@@ -823,7 +827,7 @@ const _executeRecursiveCognitiveCycle = async (parentStep: PlanStep, subProblemQ
     modelMessage.currentStep = undefined;
     childProcess.state = 'Synthesizing';
     modelMessage.state = 'synthesizing';
-    log('REPLICA', `Clone is synthesizing its final answer.`);
+    log('REPLICA', `Clone (Depth ${recursionDepth}) is synthesizing its final answer.`);
     notifyCognitiveProcess();
 
     const synthesisPrompt = `You are a Cognitive Clone that has just finished executing a plan for the sub-problem: "${subProblemQuery}".
@@ -837,7 +841,7 @@ const _executeRecursiveCognitiveCycle = async (parentStep: PlanStep, subProblemQ
     childProcess.state = 'Done';
     modelMessage.state = 'done';
     modelMessage.text = finalResponse.text;
-    log('REPLICA', `Clone has completed its task.`);
+    log('REPLICA', `Clone (Depth ${recursionDepth}) has completed its task.`);
     notifyCognitiveProcess();
 
     return finalResponse.text;
@@ -2194,7 +2198,7 @@ const service = {
                     log('AI', `Spawning recursive cognitive clone for task: "${task.substring(0, 70)}..."`);
                     notifyCognitiveProcess();
                     try {
-                        const result = await _executeRecursiveCognitiveCycle(step, task, subContext);
+                        const result = await _executeRecursiveCognitiveCycle(step, task, subContext, 1);
                         step.result = result;
                     } catch (e) {
                         step.status = 'error';
