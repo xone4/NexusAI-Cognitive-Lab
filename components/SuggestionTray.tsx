@@ -29,10 +29,10 @@ const SuggestionTray: React.FC<SuggestionTrayProps> = ({ process, permissions, o
   }, []);
 
   const handleSuggestionProfileChange = (profile: SuggestionProfile) => {
-    if (suggestionProfile !== profile) {
-      setSuggestionProfile(profile);
-      fetchSuggestions(profile, keywords);
-    }
+    // FIX: Removed the conditional check. This allows refetching suggestions
+    // by clicking the currently active profile button again.
+    setSuggestionProfile(profile);
+    fetchSuggestions(profile, keywords);
   };
 
   const handleGenerateRandomKeywords = async () => {

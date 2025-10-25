@@ -170,11 +170,13 @@ This plan realigns priorities to address the identified gaps, ensuring safe, mea
         *   **Persistent Memory:** These learned preferences are persisted in the `expertPreferences` store in IndexedDB.
         *   **Application:** The `submitQuery` function has been enhanced. It now first attempts to categorize the incoming query and check for a learned preference. If a preference exists, it bypasses the standard Cognitive Router and directly applies the learned expert, making the system faster and more efficient at solving similar problems over time.
 
-3.  **Implement "Reality-Check" Mechanisms:** `[Status: 💡 Planned]`
+3.  **Implement "Reality-Check" Mechanisms:** `[Status: ▶️ In Progress]`
     *   **Problem:** The system can become trapped in theoretical reasoning loops, detached from factual ground truth.
-    *   **Solution:** Enforce mandatory validation workflows, such as:
-        *   **Logic → World → Logic:** Any logical deduction must be cross-referenced with data from the "World Model" before it can be used in subsequent steps.
-        *   **Logic → Social → Language:** Any plan for communication or social interaction must first be evaluated by a simulated "Social Expert" to assess its appropriateness and potential impact.
+    *   **Solution:** Enforce mandatory validation workflows that force the AI to validate its internal logic against its factual World Model.
+    *   **Implementation Details:**
+        *   **Tool Implementation (✅ Complete):** The `validate_against_world_model` tool is now fully implemented. It takes a factual claim as input (`query`) and uses the Gemini API to compare this claim against a context summary of the internal World Model. It returns a verdict of CONFIRMED, CONTRADICTED, or UNKNOWN, along with a brief explanation. This functionality is integrated into the `executePlan` loop.
+        *   **Mandatory Workflow (💡 Planned):** Future work will involve modifying the core planning logic to automatically inject a `validate_against_world_model` step after any step that produces a new, high-confidence factual claim, ensuring deductions are grounded in the AI's known reality before being used in subsequent reasoning.
+
 ---
 ## Part 4: Key Mental Tools & Their Development Status
 
@@ -224,6 +226,10 @@ Tools that enable the AI to think about its own thinking and improve it.
 *   **Tool Name:** `Constitution Forger` `[Status: ✅ Implemented & Fortified]`
     *   **Description:** Allows the AI to propose and create new "Cognitive Constitutions" as part of a plan. **Newly forged constitutions require user approval via the Settings view before they can be activated, ensuring a human-in-the-loop safety protocol.**
     *   **Benefit:** Enables dynamic adaptation of the AI's core operating rules, balanced with user oversight for safety and control.
+
+*   **Tool Name:** `validate_against_world_model` `[Status: ✅ Implemented in Phase 16]`
+    *   **Description:** A crucial metacognitive tool that takes a factual claim or deduction generated during a reasoning process and cross-references it against the AI's internal World Model. It acts as an internal fact-checker.
+    *   **Benefit:** Grounds the AI's reasoning in established knowledge, significantly reducing the risk of logical hallucination and ensuring that complex plans are built upon a foundation of verified facts. (Aligns with Phase 16 of the roadmap).
 
 ### 4. Sensory & Real-World Interaction Tools
 Connecting the AI to more than just text.

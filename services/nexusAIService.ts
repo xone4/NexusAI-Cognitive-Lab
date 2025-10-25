@@ -2,7 +2,7 @@
 import { GoogleGenAI, Type, Modality, Blob as GenAIBlob, LiveServerMessage } from "@google/genai";
 // FIX: Added missing types 'EvaluationState' and 'EvaluationMetrics' to support the evaluation feature.
 import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails, UserKeyword, Personality, PlaybookItem, RawInsight, PlaybookItemCategory, WorldModel, WorldModelEntity, CognitiveTrajectory, WorldModelRelationship, LiveTranscriptionState, VideoGenerationState, SimulationState, SimulationConfig, SimulationResult, SimulationStep, EvaluationState, EvaluationMetrics, ExpertPersona, ProblemCategory, ExpertPreference } from '../types';
-import { dbService, STORES } from './dbService';
+import { dbService, STORES } from '../dbService';
 import * as geometryService from './geometryService';
 import { calculateTrajectorySimilarity } from './geometryService';
 
@@ -506,7 +506,7 @@ const initialize = async () => {
 };
 
 
-const planSchema = { type: Type.OBJECT, properties: { plan: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { step: { type: Type.INTEGER }, description: { type: Type.STRING }, tool: { type: Type.STRING, enum: ['google_search', 'synthesize_answer', 'code_interpreter', 'code_sandbox', 'recall_memory', 'generate_image', 'analyze_image_input', 'forge_tool', 'spawn_replica', 'induce_emotion', 'replan', 'summarize_text', 'translate_text', 'analyze_sentiment', 'execute_toolchain', 'apply_behavior', 'delegate_task_to_replica', 'spawn_cognitive_clone', 'peek_context', 'search_context', 'world_model', 'update_world_model', 'knowledge_graph_synthesizer', 'causal_inference_engine', 'run_simulation', 'forge_constitution'] }, query: { type: Type.STRING }, code: { type: Type.STRING }, concept: { type: Type.STRING }, inputRef: { type: Type.INTEGER }, replicaId: { type: Type.STRING }, task: { type: Type.STRING } }, required: ['step', 'description', 'tool'] } } }, required: ['plan'] };
+const planSchema = { type: Type.OBJECT, properties: { plan: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { step: { type: Type.INTEGER }, description: { type: Type.STRING }, tool: { type: Type.STRING, enum: ['google_search', 'synthesize_answer', 'code_interpreter', 'code_sandbox', 'recall_memory', 'generate_image', 'analyze_image_input', 'forge_tool', 'spawn_replica', 'induce_emotion', 'replan', 'summarize_text', 'translate_text', 'analyze_sentiment', 'execute_toolchain', 'apply_behavior', 'delegate_task_to_replica', 'spawn_cognitive_clone', 'peek_context', 'search_context', 'world_model', 'update_world_model', 'knowledge_graph_synthesizer', 'causal_inference_engine', 'run_simulation', 'forge_constitution', 'validate_against_world_model'] }, query: { type: Type.STRING }, code: { type: Type.STRING }, concept: { type: Type.STRING }, inputRef: { type: Type.INTEGER }, replicaId: { type: Type.STRING }, task: { type: Type.STRING } }, required: ['step', 'description', 'tool'] } } }, required: ['plan'] };
 
 const languageMap: Record<Language, string> = {
     'en': 'English',
@@ -646,6 +646,7 @@ const getSystemInstruction = (activeExpert?: ExpertPersona) => {
     - \`update_world_model\`: Persists new factual knowledge to your internal World Model. Use 'code' to provide a JSON object: \`{ "entities": [...], "relationships": [...] }\`. Use this for adding specific, pre-formatted facts.
     - \`run_simulation\`: Runs a turn-based simulation based on a defined scenario and competing strategies to predict an outcome.
     - \`forge_constitution\`: Creates a new Cognitive Constitution with specific rules to govern behavior for a task.
+    - \`validate_against_world_model\`: Checks a factual claim against your internal World Model. Returns CONFIRMED, CONTRADICTED, or UNKNOWN.
     - \`synthesize_answer\`: This must be the final step. It compiles the final answer based on results from your Sub-Agents and other tools.`;
 }
 
@@ -2634,6 +2635,50 @@ Provide your analysis in well-formatted markdown.`;
                             step.status = 'error';
                             step.result = e instanceof Error ? e.message : 'Unknown error during causal inference.';
                             log('ERROR', `Causal Inference Engine failed: ${step.result}`);
+                        }
+                    }
+                    executionContext.push(`Step ${stepIndex + 1} (${step.description}) Result: ${step.result}`);
+                } else if (step.tool === 'validate_against_world_model') {
+                    if (!step.query) {
+                        step.status = 'error';
+                        step.result = 'Error: The validate_against_world_model tool requires a query (the claim to validate).';
+                        log('ERROR', step.result);
+                    } else if (!worldModelState) {
+                        step.status = 'error';
+                        step.result = 'Error: World model is not initialized for validation.';
+                        log('ERROR', step.result);
+                    } else {
+                        const worldModelContext = `
+                            Entities: ${JSON.stringify(worldModelState.entities.slice(0, 20), null, 2)}
+                            Relationships: ${JSON.stringify(worldModelState.relationships.slice(0, 20), null, 2)}
+                            Principles: ${JSON.stringify(worldModelState.principles, null, 2)}
+                        `;
+                        const prompt = `You are a fact-checker sub-routine. Your ONLY knowledge source is the provided World Model Context.
+                        
+                        World Model Context:
+                        ---
+                        ${worldModelContext}
+                        ---
+                
+                        Claim to validate: "${step.query}"
+                
+                        Based strictly on the context, respond with your validation. Your response must be in Markdown format and include one of the following verdicts, followed by a brief explanation:
+                        - **Verdict: CONFIRMED**
+                        - **Verdict: CONTRADICTED**
+                        - **Verdict: UNKNOWN**
+                        
+                        For example:
+                        **Verdict: CONFIRMED**
+                        The World Model contains the entity 'Market Volatility' which is linked to 'Political Events' by a CAUSES relationship.
+                        `;
+                        try {
+                            const response = await ai.models.generateContent({ ...getCognitiveModelConfig(), contents: prompt });
+                            step.result = response.text;
+                            log('AI', `Reality Check performed for: "${step.query}".`);
+                        } catch(e) {
+                            step.status = 'error';
+                            step.result = `Error validating against World Model: ${e instanceof Error ? e.message : 'Unknown AI error'}`;
+                            log('ERROR', step.result);
                         }
                     }
                     executionContext.push(`Step ${stepIndex + 1} (${step.description}) Result: ${step.result}`);

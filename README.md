@@ -57,6 +57,7 @@ Observe the four pillars directly within the Cognitive Lab:
 -   **The Cognitive Canvas**: A fluid interface centered on the AI's transparent thought process—from planning and delegation to execution and synthesis.
 -   **Orchestrator-Sub-Agent Model**: Witness the core AI delegate tasks to its Cognitive Replicas, and watch their status change in real-time in the Replicas view.
 -   **Interactive Co-Cognitive Authoring**: Review, edit, and approve the AI's explicit plan before it's executed, making you a direct collaborator in its reasoning process.
+-   **Self-Optimizing Cognitive Router**: The AI uses a simulated **MICRO architecture** to select the best "expert persona" for a given task. A **reinforcement learning loop** allows it to learn from successful outcomes, automatically preferring the most effective experts for different problem types, making it smarter and faster over time.
 -   **Living Memory & Metacognition (MEMORIA)**: Explore an emotionally-contextual archive of the AI's past "experiences." The AI can extract successful strategies from these memories into a **Metacognitive Behavior Handbook**, creating a library of reusable problem-solving patterns.
 -   **Evolutionary Problem Solving**: The **Evolution Chamber** uses genetic algorithms to tackle complex problems. It evolves populations of plans, visualizes their fitness over generations, and automatically converges on an optimal solution. Past memories and learned behaviors can be used as starting points for new evolutionary tasks.
 -   **Cognitive Dreaming & Self-Improvement**: A dedicated **Dreaming Chamber** where the AI analyzes its collective memory to synthesize new, high-level directives. This allows it to learn from experience, form abstract principles, and improve its core logic autonomously.
@@ -134,7 +135,7 @@ The next phase of development pivots to a more pragmatic and secure approach to 
 *   **Key Initiatives:**
     *   **Simulated MICRO Architecture (✅ Implemented):** The system now features a **Cognitive Router** that, as a pre-planning step, selects the most appropriate "expert persona" for a given task. This allows the AI to tailor its reasoning and planning process, with the selected expert made visible in the UI for enhanced transparency.
     *   **Activate Reinforcement Learning Loop (✅ Implemented):** The AI now learns from its successes. The Cognitive Router is enhanced with a reinforcement learning loop, allowing it to automatically prefer the "expert personas" that have proven most effective for specific types of problems, making it smarter and faster over time.
-    *   **Implement "Reality-Check" Protocols (💡 Planned):** Enforce mandatory workflows that force the AI to validate its internal logic against its factual World Model, preventing it from operating in a purely theoretical space.
+    *   **Implement "Reality-Check" Protocols (▶️ In Progress):** Enforce mandatory workflows that force the AI to validate its internal logic against its factual World Model, preventing it from operating in a purely theoretical space. **The core `validate_against_world_model` tool is now fully functional, enabling the AI to perform these checks as part of its plan.**
 
 ---
 ## Contributing

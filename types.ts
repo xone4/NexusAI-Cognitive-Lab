@@ -160,7 +160,7 @@ export interface ExpertPreference {
 export interface PlanStep {
     step: number;
     description: string;
-    tool: 'google_search' | 'synthesize_answer' | 'code_interpreter' | 'code_sandbox' | 'recall_memory' | 'generate_image' | 'analyze_image_input' | 'forge_tool' | 'spawn_replica' | 'induce_emotion' | 'replan' | 'summarize_text' | 'translate_text' | 'analyze_sentiment' | 'execute_toolchain' | 'apply_behavior' | 'delegate_task_to_replica' | 'spawn_cognitive_clone' | 'peek_context' | 'search_context' | 'world_model' | 'update_world_model' | 'knowledge_graph_synthesizer' | 'causal_inference_engine' | 'run_simulation' | 'forge_constitution';
+    tool: 'google_search' | 'synthesize_answer' | 'code_interpreter' | 'code_sandbox' | 'recall_memory' | 'generate_image' | 'analyze_image_input' | 'forge_tool' | 'spawn_replica' | 'induce_emotion' | 'replan' | 'summarize_text' | 'translate_text' | 'analyze_sentiment' | 'execute_toolchain' | 'apply_behavior' | 'delegate_task_to_replica' | 'spawn_cognitive_clone' | 'peek_context' | 'search_context' | 'world_model' | 'update_world_model' | 'knowledge_graph_synthesizer' | 'causal_inference_engine' | 'run_simulation' | 'forge_constitution' | 'validate_against_world_model';
     query?: string;
     code?: string;
     concept?: string; // For induce_emotion & generate_image
