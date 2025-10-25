@@ -136,7 +136,9 @@ The next phase of development pivots to a more pragmatic and secure approach to 
 *   **Key Initiatives:**
     *   **Simulated MICRO Architecture (✅ Implemented):** The system now features a **Cognitive Router** that, as a pre-planning step, selects the most appropriate "expert persona" for a given task. This allows the AI to tailor its reasoning and planning process, with the selected expert made visible in the UI for enhanced transparency.
     *   **Activate Reinforcement Learning Loop (✅ Implemented):** The AI now learns from its successes. The Cognitive Router is enhanced with a reinforcement learning loop, allowing it to automatically prefer the "expert personas" that have proven most effective for specific types of problems, making it smarter and faster over time.
-    *   **Implement "Reality-Check" Protocols (▶️ In Progress):** Enforce mandatory workflows that force the AI to validate its internal logic against its factual World Model, preventing it from operating in a purely theoretical space. **The core `validate_against_world_model` tool is now fully functional, enabling the AI to perform these checks as part of its plan.**
+    *   **Implement "Reality-Check" Protocols (✅ Complete):** The system now operates under a directive for **Continuous Environmental Monitoring (CEM)** and **Adaptive Planning (AP)**. This paradigm ensures resilience against unexpected changes.
+        *   **CEM:** The AI is mandated to continuously validate critical data against its internal World Model and real-time external sources before using it in its reasoning.
+        *   **AP:** If a deviation is detected (e.g., an outdated fact or unexpected input format), the AI automatically halts and triggers a `replan` to course-correct, preventing task failure and ensuring its conclusions are grounded in verified, up-to-date information.
 
 ---
 ## Contributing

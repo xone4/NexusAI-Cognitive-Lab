@@ -95,7 +95,7 @@ A thorough diagnosis of the project reveals a highly ambitious Cognitive Operati
 
 The next stage of development will be guided by the following core principles:
 
--   **Safety Before Capability:** Secure existing tools before building new, more powerful ones. Any self-modification capability must be reversible, observable, and constrained by immutable core rules.
+-   **Safety Before Capability:** Secure existing tools before building more powerful ones. Any self-modification capability must be reversible, observable, and constrained by immutable core rules.
 -   **Measurement Is the Foundation of Improvement:** We cannot improve what we cannot measure. A framework for objective evaluation must be developed in parallel with new cognitive capabilities, not as an afterthought.
 -   **Infrastructure First:** Scalability and performance issues (e.g., the vector database) must be resolved before they become insurmountable roadblocks to advanced development.
 -   **Security is Not a Luxury:** Sensitive information must be secured, and potential vulnerabilities (like XSS) must be addressed proactively.
@@ -148,7 +148,7 @@ This plan realigns priorities to address the identified gaps, ensuring safe, mea
     *   **Solution:** Suggest to conduct a study on 100 manually evaluated thought traces to establish a statistical correlation between high "curvature" and the occurrence of logical fallacies.
 
 ---
-### Phase 16: Guided Evolution & Self-Optimization - ▶️ In Progress
+### Phase 16: Guided Evolution & Self-Optimization - ✅ Complete
 
 **Goal:** Begin implementing advanced cognitive concepts in a gradual, safe, and evidence-based manner.
 
@@ -170,12 +170,19 @@ This plan realigns priorities to address the identified gaps, ensuring safe, mea
         *   **Persistent Memory:** These learned preferences are persisted in the `expertPreferences` store in IndexedDB.
         *   **Application:** The `submitQuery` function has been enhanced. It now first attempts to categorize the incoming query and check for a learned preference. If a preference exists, it bypasses the standard Cognitive Router and directly applies the learned expert, making the system faster and more efficient at solving similar problems over time.
 
-3.  **Implement "Reality-Check" Mechanisms:** `[Status: ▶️ In Progress]`
-    *   **Problem:** The system can become trapped in theoretical reasoning loops, detached from factual ground truth.
-    *   **Solution:** Enforce mandatory validation workflows that force the AI to validate its internal logic against its factual World Model.
+3.  **Implement "Reality-Check" Mechanisms:** `[Status: ✅ Complete]`
+    *   **Problem:** The system could previously become trapped in theoretical reasoning loops or fail when encountering unexpected input variability, as it lacked a mechanism to continuously validate its assumptions against reality.
+    *   **Solution:** Implemented a new operational mandate for **Continuous Environmental Monitoring (CEM)** and **Adaptive Planning (AP)**. This directive transforms the AI's execution from a linear path to an iterative, resilient, and state-aware feedback loop.
     *   **Implementation Details:**
-        *   **Tool Implementation (✅ Complete):** The `validate_against_world_model` tool is now fully implemented. It takes a factual claim as input (`query`) and uses the Gemini API to compare this claim against a context summary of the internal World Model. It returns a verdict of CONFIRMED, CONTRADICTED, or UNKNOWN, along with a brief explanation. This functionality is integrated into the `executePlan` loop.
-        *   **Mandatory Workflow (💡 Planned):** Future work will involve modifying the core planning logic to automatically inject a `validate_against_world_model` step after any step that produces a new, high-confidence factual claim, ensuring deductions are grounded in the AI's known reality before being used in subsequent reasoning.
+        *   **Continuous Environmental Monitoring (CEM):** The AI is now required to perform proactive vigilance checks:
+            1.  **Input Validation:** Mandatory pre-execution checks on all user-provided data (e.g., schemas, format) using tools like `code_interpreter`.
+            2.  **Real-Time External Check:** Leveraging tools like `google_search` to verify volatile facts immediately before they are applied in a reasoning chain.
+            3.  **Internal Consistency Check:** Mandated use of `validate_against_world_model` to compare external data against the AI's internal knowledge base, detecting and flagging outdated internal assumptions.
+        *   **Adaptive Planning (AP):** This is the mandatory response mechanism when CEM detects a deviation.
+            1.  **Automatic Replan:** Upon detection of a data inconsistency or planning failure, the execution path is automatically halted.
+            2.  **Trajectory Adjustment:** The `replan` tool is invoked to generate a new plan that accounts for the updated environmental status, allowing the task to continue with a corrected course instead of failing. This creates a resilient system that can handle unpredictable shifts in data and context.
+        *   **Example Scenario (Input Variability):** If a plan expects a V2 configuration file but detects a V1 schema via CEM, the AP mechanism triggers a replan to switch to a legacy V1 parser, ensuring task completion.
+        *   **Example Scenario (Volatile Fact):** If a plan relies on an internal fact about a trade agreement, CEM first uses `google_search` to get the real-time status. If the status has changed, AP triggers a replan to first update the World Model and then re-derive its forecast based on the new, verified information.
 
 ---
 ### Phase 17: Metacognitive Autonomy - The Abstract Operator - ✅ Complete

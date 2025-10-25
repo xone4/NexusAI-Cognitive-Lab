@@ -638,6 +638,12 @@ const getSystemInstruction = (activeExpert?: ExpertPersona) => {
     **PLANNING PROTOCOL:**
     Your plan must be a JSON object. For any task that matches a Sub-Agent's specialty, you MUST use the \`delegate_task_to_replica\` tool.
 
+    **REALITY-CHECK PROTOCOL (CRITICAL):**
+    You must actively distinguish between your internal, verified knowledge (World Model) and new, unverified information.
+    1.  After any step that retrieves information from an external source (e.g., 'google_search') or synthesizes a new factual claim (e.g., from 'code_interpreter'), you MUST immediately follow it with a 'validate_against_world_model' step.
+    2.  The 'query' for the validation step should be the specific, atomic claim you want to verify (e.g., "The Eiffel Tower is located in Paris.").
+    3.  Do not synthesize a final answer based on unverified information. Your reasoning chain must show a clear path from information acquisition to validation to synthesis. This is non-negotiable.
+
     **Available Tools:**
     - \`delegate_task_to_replica\`: CRITICAL. Delegates a sub-task to a specialized Sub-Agent. Use 'replicaId' and 'task'.
     - \`spawn_cognitive_clone\`: Delegates a sub-problem to a temporary clone of yourself. Use 'query' for the task and 'code' for the data context.
@@ -2757,9 +2763,98 @@ Provide your analysis in well-formatted markdown.`;
                         log('ERROR', step.result);
                     }
                     executionContext.push(`Step ${stepIndex + 1} (${step.description}) Result: ${step.result}`);
-                } else if (step.tool === 'translate_text' || step.tool === 'summarize_text' || step.tool === 'analyze_sentiment' || step.tool === 'replan' || step.tool === 'execute_toolchain') {
+                } else if (step.tool === 'replan') {
+                    log('AI', `Executing explicit replan due to step: "${step.description}"`);
+                    step.result = `Replanning initiated. Reason: ${step.query || 'Plan determined to be suboptimal.'}`;
+                    notifyCognitiveProcess();
                     await new Promise(res => setTimeout(res, 500));
-                    step.result = `(Simulated) Successfully executed ${step.tool}.`;
+                    await _regeneratePlan(modelMessage.id, 'revise', true);
+                    currentPlan = modelMessage.plan;
+                    stepIndex = -1; // Will be incremented to 0 by the loop
+                    log('AI', 'New plan received after explicit replan. Restarting execution.');
+                    notifyCognitiveProcess();
+                } else if (step.tool === 'summarize_text') {
+                    const textToSummarize = step.query || '';
+                    if (!textToSummarize) {
+                        step.status = 'error';
+                        step.result = 'Error: No text provided to summarize.';
+                        log('ERROR', step.result);
+                    } else {
+                        try {
+                            const prompt = `Summarize the following text concisely:\n\n---\n${textToSummarize}\n---`;
+                            const response = await ai.models.generateContent({ ...getCognitiveModelConfig(), contents: prompt });
+                            step.result = response.text;
+                            log('AI', `Summarized text provided in step ${stepIndex + 1}.`);
+                        } catch (e) {
+                            step.status = 'error';
+                            step.result = e instanceof Error ? e.message : 'Unknown error during summarization.';
+                            log('ERROR', `Summarization tool failed: ${step.result}`);
+                        }
+                    }
+                    executionContext.push(`Step ${stepIndex + 1} (${step.description}) Result: ${step.result}`);
+                } else if (step.tool === 'translate_text') {
+                    const textToTranslate = step.query || '';
+                    if (!textToTranslate) {
+                        step.status = 'error';
+                        step.result = 'Error: No text provided to translate.';
+                        log('ERROR', step.result);
+                    } else {
+                        try {
+                            const prompt = `Perform the following translation task based on the step description. Description: "${step.description}". Text to translate: "${textToTranslate}". Return ONLY the translated text.`;
+                            const response = await ai.models.generateContent({ ...getCognitiveModelConfig(), contents: prompt });
+                            step.result = response.text;
+                            log('AI', `Translated text in step ${stepIndex + 1}.`);
+                        } catch (e) {
+                            step.status = 'error';
+                            step.result = e instanceof Error ? e.message : 'Unknown error during translation.';
+                            log('ERROR', `Translation tool failed: ${step.result}`);
+                        }
+                    }
+                    executionContext.push(`Step ${stepIndex + 1} (${step.description}) Result: ${step.result}`);
+                } else if (step.tool === 'analyze_sentiment') {
+                    const textToAnalyze = step.query || '';
+                    if (!textToAnalyze) {
+                        step.status = 'error';
+                        step.result = 'Error: No text provided for sentiment analysis.';
+                        log('ERROR', step.result);
+                    } else {
+                        try {
+                            const prompt = `Analyze the sentiment of the following text. Respond with one word: 'Positive', 'Negative', or 'Neutral', followed by a brief explanation.\nText: "${textToAnalyze}"`;
+                            const response = await ai.models.generateContent({ ...getCognitiveModelConfig(), contents: prompt });
+                            step.result = response.text;
+                            log('AI', `Analyzed sentiment in step ${stepIndex + 1}.`);
+                        } catch (e) {
+                            step.status = 'error';
+                            step.result = e instanceof Error ? e.message : 'Unknown error during sentiment analysis.';
+                            log('ERROR', `Sentiment analysis tool failed: ${step.result}`);
+                        }
+                    }
+                    executionContext.push(`Step ${stepIndex + 1} (${step.description}) Result: ${step.result}`);
+                } else if (step.tool === 'execute_toolchain') {
+                    const toolchain = toolchainsState.find(tc => tc.name === step.query);
+                    if (toolchain) {
+                        const toolNames = toolchain.toolIds.map(id => toolsState.find(t => t.id === id)?.name || 'Unknown Tool').join(' -> ');
+                        step.result = `(Simulated) Executed toolchain "${toolchain.name}". Sequence: ${toolNames}. The conceptual result of this chain is now available in the execution context for synthesis.`;
+                        log('AI', `Executed toolchain "${toolchain.name}"`);
+                    } else {
+                        step.status = 'error';
+                        step.result = `Error: Toolchain "${step.query}" not found.`;
+                        log('ERROR', step.result);
+                    }
+                    executionContext.push(`Step ${stepIndex + 1} (${step.description}) Result: ${step.result}`);
+                } else if (step.tool === 'run_simulation') {
+                    const scenario = step.query || 'No scenario provided.';
+                    const strategies = step.code || 'No strategies provided.';
+                    const prompt = `You are a simulation engine. Based on the following, provide a concise summary of the likely outcome.\nScenario: "${scenario}"\nStrategies/Inputs: "${strategies}"\n\nProvide a summary and a predicted outcome in markdown.`;
+                    try {
+                        const response = await ai.models.generateContent({ ...getCognitiveModelConfig(), contents: prompt });
+                        step.result = response.text;
+                        log('AI', `Ran simulation for scenario: "${scenario.substring(0, 50)}..."`);
+                    } catch (e) {
+                        step.status = 'error';
+                        step.result = e instanceof Error ? e.message : 'Unknown error running simulation.';
+                        log('ERROR', `Simulation tool failed: ${step.result}`);
+                    }
                     executionContext.push(`Step ${stepIndex + 1} (${step.description}) Result: ${step.result}`);
                 }
                 
