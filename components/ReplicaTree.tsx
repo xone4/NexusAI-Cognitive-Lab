@@ -1,7 +1,7 @@
 import React, { memo, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Replica, CognitiveConstitution, Personality, CognitiveNetworkState, CognitiveProblem } from '../types';
-import { ReplicaIcon, CogIcon, TrashIcon, PencilIcon, BrainCircuitIcon, ShareIcon, UserIcon, ClockIcon, ArchIcon } from './Icons';
+import { ReplicaIcon, CogIcon, TrashIcon, PencilIcon, BrainCircuitIcon, ShareIcon, UserIcon, ClockIcon, ArchIcon, SparklesIcon } from './Icons';
 import DashboardCard from './DashboardCard';
 import ReplicaNetwork from './ReplicaNetwork';
 import PersonalityEditor from './PersonalityEditor';
@@ -18,6 +18,7 @@ interface ReplicasViewProps {
     onSetConstitution: (replicaId: string, constitutionId: string) => void;
     onBroadcastProblem: (replicaId: string, problem: string) => void;
     onSetPersonality: (replicaId: string, personality: Personality) => void;
+    onApplyPersonalityBoost: (replicaId: string, boostType: 'CREATIVITY' | 'LOGIC' | 'FOCUS') => void;
     onTriggerGlobalSync: () => void;
 }
 
@@ -119,17 +120,37 @@ const BroadcastModal: React.FC<{ onBroadcast: (problem: string) => void; onClose
     );
 };
 
+const BoostModal: React.FC<{ onBoost: (boostType: 'CREATIVITY' | 'LOGIC' | 'FOCUS') => void; onClose: () => void; }> = ({ onBoost, onClose }) => {
+    const { t } = useTranslation();
+    return (
+        <div className="fixed inset-0 bg-nexus-dark/80 backdrop-blur-sm flex items-center justify-center z-50 animate-spawn-in">
+            <div className="bg-nexus-surface p-6 rounded-xl shadow-2xl w-full max-w-sm border border-nexus-primary/50">
+                <h3 className="text-lg font-bold text-nexus-text mb-4">{t('replicas.applyBoost')}</h3>
+                <div className="space-y-3">
+                    <button onClick={() => onBoost('CREATIVITY')} className="w-full replica-btn bg-purple-500/10 text-purple-400 border-purple-500/50 hover:bg-purple-500/20">{t('replicas.creativityBoost')}</button>
+                    <button onClick={() => onBoost('LOGIC')} className="w-full replica-btn bg-blue-500/10 text-blue-400 border-blue-500/50 hover:bg-blue-500/20">{t('replicas.logicBoost')}</button>
+                    <button onClick={() => onBoost('FOCUS')} className="w-full replica-btn bg-green-500/10 text-green-400 border-green-500/50 hover:bg-green-500/20">{t('replicas.focusBoost')}</button>
+                </div>
+                <div className="flex justify-end mt-4">
+                    <button type="button" onClick={onClose} className="py-2 px-4 rounded-full text-nexus-text-muted hover:bg-nexus-dark">{t('common.cancel')}</button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const getPersonalityCode = (p: Personality): string => {
     if (!p) return '----';
     return `${p.energyFocus[0]}${p.informationProcessing[0]}${p.decisionMaking[0]}${p.worldApproach[0]}`;
 }
 
 
-const ReplicaCard: React.FC<Omit<ReplicasViewProps, 'rootReplica' | 'onTriggerGlobalSync' | 'cognitiveNetwork'> & { replica: Replica; path: string; }> = memo(({ replica, path, isInteractionDisabled, onSpawnReplica, onPruneReplica, onRecalibrate, onAssignPurpose, constitutions, onSetConstitution, onBroadcastProblem, onSetPersonality }) => {
+const ReplicaCard: React.FC<Omit<ReplicasViewProps, 'rootReplica' | 'onTriggerGlobalSync' | 'cognitiveNetwork'> & { replica: Replica; path: string; }> = memo(({ replica, path, isInteractionDisabled, onSpawnReplica, onPruneReplica, onRecalibrate, onAssignPurpose, constitutions, onSetConstitution, onBroadcastProblem, onSetPersonality, onApplyPersonalityBoost }) => {
     const { t } = useTranslation();
     const [isPurposeModalOpen, setPurposeModalOpen] = useState(false);
     const [isBroadcastModalOpen, setBroadcastModalOpen] = useState(false);
     const [isPersonalityModalOpen, setPersonalityModalOpen] = useState(false);
+    const [isBoostModalOpen, setIsBoostModalOpen] = useState(false);
     
     const color = statusColors[replica.status] || statusColors.Dormant;
     const animationClass = replica.status === 'Pruning' ? 'animate-fade-out' : replica.status === 'Spawning' ? 'animate-spawn-in' : ['Executing Task', 'Recalibrating', 'Bidding'].includes(replica.status) ? 'animate-pulse' : '';
@@ -148,6 +169,11 @@ const ReplicaCard: React.FC<Omit<ReplicasViewProps, 'rootReplica' | 'onTriggerGl
         onSetPersonality(replica.id, newPersonality);
     }
 
+    const handleBoost = (boostType: 'CREATIVITY' | 'LOGIC' | 'FOCUS') => {
+        onApplyPersonalityBoost(replica.id, boostType);
+        setIsBoostModalOpen(false);
+    };
+
     const isCore = replica.depth === 0;
     const personalityCode = getPersonalityCode(replica.personality);
 
@@ -156,6 +182,7 @@ const ReplicaCard: React.FC<Omit<ReplicasViewProps, 'rootReplica' | 'onTriggerGl
             {isPurposeModalOpen && <PurposeModal currentPurpose={replica.purpose} onSave={handleSavePurpose} onClose={() => setPurposeModalOpen(false)} />}
             {isBroadcastModalOpen && <BroadcastModal onBroadcast={handleBroadcast} onClose={() => setBroadcastModalOpen(false)} />}
             {isPersonalityModalOpen && <PersonalityModal replica={replica} onSave={handleSavePersonality} onClose={() => setPersonalityModalOpen(false)} />}
+            {isBoostModalOpen && <BoostModal onBoost={handleBoost} onClose={() => setIsBoostModalOpen(false)} />}
 
             <DashboardCard 
                 title={replica.name} 
@@ -204,7 +231,7 @@ const ReplicaCard: React.FC<Omit<ReplicasViewProps, 'rootReplica' | 'onTriggerGl
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-nexus-surface/30">
+                    <div className="grid grid-cols-3 gap-2 pt-2 border-t border-nexus-surface/30">
                         <button onClick={() => onRecalibrate(replica.id)} disabled={isInteractionDisabled || replica.status !== 'Active'} className="replica-btn bg-blue-500/10 text-blue-400 border-blue-500/50 hover:bg-blue-500/20">
                             <CogIcon className="w-4 h-4" /> {t('replicas.recalibrate')}
                         </button>
@@ -222,6 +249,9 @@ const ReplicaCard: React.FC<Omit<ReplicasViewProps, 'rootReplica' | 'onTriggerGl
                         </button>
                         <button onClick={() => setBroadcastModalOpen(true)} disabled={isInteractionDisabled || replica.status !== 'Active'} className="replica-btn bg-purple-500/10 text-purple-400 border-purple-500/50 hover:bg-purple-500/20">
                             <ShareIcon className="w-4 h-4" /> {t('replicas.broadcastProblem')}
+                        </button>
+                        <button onClick={() => setIsBoostModalOpen(true)} disabled={isInteractionDisabled || replica.status !== 'Active'} className="replica-btn col-span-3 bg-yellow-500/10 text-yellow-400 border-yellow-500/50 hover:bg-yellow-500/20">
+                            <SparklesIcon className="w-4 h-4" /> {t('replicas.boost')}
                         </button>
                     </div>
                 </div>

@@ -1,3 +1,4 @@
+
 {
   "header": {
     "title": "NexusAI",
@@ -166,6 +167,11 @@
     "setPersonality": "تحديد الشخصية",
     "setPersonalityFor": "تحديد شخصية {{name}}",
     "savePersonality": "حفظ الشخصية",
+    "boost": "تعزيز",
+    "applyBoost": "تطبيق تعزيز مؤقت",
+    "creativityBoost": "تعزيز الإبداع",
+    "logicBoost": "تعزيز المنطق",
+    "focusBoost": "تعزيز التركيز",
     "issueGlobalTempoPulse": "إصدار نبضة إيقاع عالمية",
     "synchronizing": "جاري المزامنة...",
     "tooltipTitle": "{{name}} (الحالة: {{status}})",

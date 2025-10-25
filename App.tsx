@@ -290,6 +290,10 @@ const App: React.FC = () => {
     nexusAIService.setReplicaPersonality(replicaId, personality);
   }, []);
 
+  const applyTemporaryPersonalityBoost = useCallback((replicaId: string, boostType: 'CREATIVITY' | 'LOGIC' | 'FOCUS') => {
+    nexusAIService.applyTemporaryPersonalityBoost(replicaId, boostType);
+  }, []);
+
   const broadcastProblem = useCallback((replicaId: string, problem: string) => {
       nexusAIService.broadcastProblem(replicaId, problem);
   }, []);
@@ -516,6 +520,7 @@ const App: React.FC = () => {
             onSetConstitution={setReplicaConstitution}
             onBroadcastProblem={broadcastProblem}
             onSetPersonality={setReplicaPersonality}
+            onApplyPersonalityBoost={applyTemporaryPersonalityBoost}
             onTriggerGlobalSync={handleTriggerGlobalSync}
         />;
       case 'tools':

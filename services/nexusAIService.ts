@@ -387,6 +387,7 @@ const _seedInitialData = async () => {
         { id: 'tool-sandbox', name: 'Code Sandbox', description: 'Executes sandboxed JS code in an environment with a pre-loaded \'context_data\' variable for processing large contexts.', capabilities: ['Execution', 'Context Processing'], tags: ['core', 'sandbox'], status: 'Active', version: 1.0, complexity: 90, usageHistory: [] },
         { id: 'tool-search', name: 'Web Search Agent', description: 'Accesses and retrieves real-time information from the web.', capabilities: ['Search', 'Real-time Data'], tags: ['core', 'web'], status: 'Active', version: 1.0, complexity: 70, usageHistory: [] },
         { id: 'tool-2', name: 'Fractal Data Miner', description: 'Analyzes data structures using fractal geometry.', capabilities: ['Data Mining', 'Pattern Reco.'], tags: ['analysis', 'data'], status: 'Idle', version: 2.3, complexity: 88, usageHistory: [{timestamp: Date.now() - 3600000, task: 'Initial system diagnostics'}] },
+        { id: 'tool-sentiment', name: 'Sentiment Analyzer', description: 'Analyzes the emotional tone of a given text using natural language processing.', capabilities: ['Sentiment Analysis', 'NLP'], tags: ['analysis', 'nlp', 'text'], status: 'Idle', version: 1.0, complexity: 75, usageHistory: [] },
     ];
     await Promise.all(initialTools.map(t => dbService.put('tools', t)));
 
@@ -1497,6 +1498,48 @@ const service = {
         }
     },
     
+    // FIX: Implemented the missing 'applyTemporaryPersonalityBoost' method to handle temporary personality boosts for replicas.
+    applyTemporaryPersonalityBoost: (replicaId: string, boostType: 'CREATIVITY' | 'LOGIC' | 'FOCUS') => {
+        const result = findReplica(replicaId, replicaState);
+        if (result) {
+            const node = result.node;
+            if (node.status !== 'Active') {
+                log('WARN', `Cannot apply boost to ${node.name}, it is not in an Active state.`);
+                return;
+            }
+            
+            const originalPersonality = JSON.parse(JSON.stringify(node.personality));
+            log('REPLICA', `Applying temporary ${boostType} boost to ${node.name}.`);
+
+            switch (boostType) {
+                case 'CREATIVITY':
+                    node.personality.informationProcessing = 'INTUITION';
+                    node.personality.worldApproach = 'PERCEIVING';
+                    break;
+                case 'LOGIC':
+                    node.personality.decisionMaking = 'THINKING';
+                    node.personality.worldApproach = 'JUDGING';
+                    break;
+                case 'FOCUS':
+                    node.personality.energyFocus = 'INTROVERSION';
+                    node.personality.informationProcessing = 'SENSING';
+                    break;
+            }
+
+            notifyReplicas();
+
+            setTimeout(async () => {
+                const freshResult = findReplica(replicaId, replicaState);
+                if (freshResult) {
+                    freshResult.node.personality = originalPersonality;
+                    log('REPLICA', `Temporary ${boostType} boost for ${freshResult.node.name} has expired.`);
+                    await dbService.put('appState', { id: 'replicaRoot', data: replicaState });
+                    notifyReplicas();
+                }
+            }, 30000); // 30 second boost duration
+        }
+    },
+
     triggerGlobalSync: () => {
         if (isGlobalSyncActive) {
             log('WARN', 'Global sync is already in progress.');
