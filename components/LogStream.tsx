@@ -14,6 +14,7 @@ const levelColors: Record<LogEntry['level'], string> = {
     REPLICA: 'text-nexus-primary',
     AI: 'text-purple-400',
     NETWORK: 'text-cyan-400',
+    AUTONOMOUS: 'text-lime-400',
 };
 
 const LogItem = memo(({ log }: { log: LogEntry }) => (
@@ -21,7 +22,7 @@ const LogItem = memo(({ log }: { log: LogEntry }) => (
       <span className="text-nexus-text-muted me-3">
         {new Date(log.timestamp).toLocaleTimeString()}
       </span>
-      <span className={`font-bold w-16 ${levelColors[log.level]}`}>
+      <span className={`font-bold w-24 ${levelColors[log.level]}`}>
         [{log.level}]
       </span>
       <span className="flex-1 text-nexus-text whitespace-pre-wrap break-words">{log.message}</span>

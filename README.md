@@ -55,6 +55,7 @@ Observe the four pillars directly within the Cognitive Lab:
 ## Key Features
 
 -   **The Cognitive Canvas**: A fluid interface centered on the AI's transparent thought process—from planning and delegation to execution and synthesis.
+-   **Fully Autonomous Cognitive Loop**: Activate "Autonomous AI" mode to grant the AI full control over the lab. It will autonomously set its own goals, formulate plans, and execute actions using the lab's tools to improve itself, with all its intentions visualized for user observation.
 -   **Orchestrator-Sub-Agent Model**: Witness the core AI delegate tasks to its Cognitive Replicas, and watch their status change in real-time in the Replicas view.
 -   **Interactive Co-Cognitive Authoring**: Review, edit, and approve the AI's explicit plan before it's executed, making you a direct collaborator in its reasoning process.
 -   **Self-Optimizing Cognitive Router**: The AI uses a simulated **MICRO architecture** to select the best "expert persona" for a given task. A **reinforcement learning loop** allows it to learn from successful outcomes, automatically preferring the most effective experts for different problem types, making it smarter and faster over time.

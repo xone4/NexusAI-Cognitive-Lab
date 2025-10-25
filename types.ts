@@ -120,7 +120,7 @@ export interface PerformanceDataPoint {
 export interface LogEntry {
   id:string;
   timestamp: number;
-  level: 'INFO' | 'WARN' | 'ERROR' | 'SYSTEM' | 'REPLICA' | 'AI' | 'NETWORK';
+  level: 'INFO' | 'WARN' | 'ERROR' | 'SYSTEM' | 'REPLICA' | 'AI' | 'NETWORK' | 'AUTONOMOUS';
   message: string;
   source?: string; // Optional Replica ID
 }
@@ -504,6 +504,15 @@ export interface EvaluationState {
     isEvaluating: boolean;
     lastRun: number | null;
     metrics: EvaluationMetrics | null;
+}
+
+// --- Autonomous Control Types ---
+export type UICommand = { type: 'navigateTo', payload: ActiveView };
+
+export interface AutonomousState {
+  isActive: boolean;
+  goal: string;
+  action: string;
 }
 
 

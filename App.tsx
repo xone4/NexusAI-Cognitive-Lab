@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, ActiveView, CognitiveProcess, AppSettings, Toolchain, ChatMessage, PlanStep, CognitiveConstitution, EvolutionState, PlaybookItem, Language, Personality, WorldModelEntity, CognitiveNetworkState, LiveTranscriptionState, SimulationState, EvaluationState } from './types';
+import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, ActiveView, CognitiveProcess, AppSettings, Toolchain, ChatMessage, PlanStep, CognitiveConstitution, EvolutionState, PlaybookItem, Language, Personality, WorldModelEntity, CognitiveNetworkState, LiveTranscriptionState, SimulationState, EvaluationState, UICommand, AutonomousState } from './types';
 import { nexusAIService } from './services/nexusAIService';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -24,6 +24,7 @@ import LiveTranscriptionDisplay from './components/LiveTranscriptionDisplay';
 import ModalitiesLab from './components/ModalitiesLab';
 import SimulationLab from './components/SimulationLab';
 import EvaluationDashboard from './components/EvaluationDashboard';
+import AutonomousModeOverlay from './components/AutonomousModeOverlay';
 
 type SystemStatus = 'Online' | 'Degraded' | 'Offline' | 'Initializing';
 
@@ -46,6 +47,7 @@ const App: React.FC = () => {
   const [systemStatus, setSystemStatus] = useState<SystemStatus>('Initializing');
   const [cognitiveProcess, setCognitiveProcess] = useState<CognitiveProcess | null>(null);
   const [liveTranscription, setLiveTranscription] = useState<LiveTranscriptionState>({ isLive: false, isVideoActive: false, userTranscript: '', modelTranscript: '', history: [] });
+  const [autonomousState, setAutonomousState] = useState<AutonomousState>({ isActive: false, goal: '', action: '' });
   const [isRawIntrospectionOpen, setIsRawIntrospectionOpen] = useState(false);
   const [activeTrace, setActiveTrace] = useState<ChatMessage | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -178,6 +180,16 @@ const App: React.FC = () => {
   const handleLiveTranscriptionUpdate = useCallback((newState: LiveTranscriptionState) => {
     setLiveTranscription(newState);
   }, []);
+  
+  const handleAutonomousStateUpdate = useCallback((newState: AutonomousState) => {
+    setAutonomousState(newState);
+  }, []);
+
+  const handleUICommand = useCallback((command: UICommand) => {
+    if (command.type === 'navigateTo') {
+      setActiveView(command.payload);
+    }
+  }, []);
 
   const handleArchivesUpdate = useCallback((archives: ChatMessage[]) => {
     setArchivedTraces(archives);
@@ -248,6 +260,8 @@ const App: React.FC = () => {
       nexusAIService.subscribeToCognitiveProcess(handleCognitiveProcessUpdate);
       nexusAIService.subscribeToLiveTranscription(handleLiveTranscriptionUpdate);
       nexusAIService.subscribeToArchives(handleArchivesUpdate);
+      nexusAIService.subscribeToAutonomousState(handleAutonomousStateUpdate);
+      nexusAIService.subscribeToUICommands(handleUICommand);
   
       const serviceInterval = nexusAIService.start();
   
@@ -300,6 +314,10 @@ const App: React.FC = () => {
 
   const handleTriggerGlobalSync = useCallback(() => {
     nexusAIService.triggerGlobalSync();
+  }, []);
+  
+  const handleToggleAutonomousMode = useCallback(() => {
+    nexusAIService.toggleAutonomousMode();
   }, []);
 
   const submitQuery = useCallback((query: string, image?: { mimeType: string, data: string }) => {
@@ -430,16 +448,17 @@ const App: React.FC = () => {
     const isSimulating = simulationState?.isRunning || false;
     const isAnalyzingSimulation = simulationState?.isAnalyzing || false;
     const isEvaluating = evaluationState?.isEvaluating || false;
+    const isAutonomous = autonomousState.isActive;
 
     return {
-        canSubmitQuery: (state === 'Idle' || state === 'Done' || state === 'Error' || state === 'Cancelled') && !isLive && !isSimulating && !isAnalyzingSimulation && !isEvaluating,
-        canEditPlan: state === 'AwaitingExecution' && !isLive && !isSimulating && !isAnalyzingSimulation && !isEvaluating,
-        canExecutePlan: state === 'AwaitingExecution' && !isLive && !isSimulating && !isAnalyzingSimulation && !isEvaluating,
-        canCancelProcess: isProcessing && !isLive,
-        canUseManualControls: (state === 'Idle' || state === 'Done' || state === 'Error' || state === 'Cancelled') && !isLive && !isSimulating && !isAnalyzingSimulation && !isEvaluating,
-        isGloballyBusy: isProcessing || state === 'AwaitingExecution' || isLive || isSimulating || isAnalyzingSimulation || isEvaluating,
+        canSubmitQuery: (state === 'Idle' || state === 'Done' || state === 'Error' || state === 'Cancelled') && !isLive && !isSimulating && !isAnalyzingSimulation && !isEvaluating && !isAutonomous,
+        canEditPlan: state === 'AwaitingExecution' && !isLive && !isSimulating && !isAnalyzingSimulation && !isEvaluating && !isAutonomous,
+        canExecutePlan: state === 'AwaitingExecution' && !isLive && !isSimulating && !isAnalyzingSimulation && !isEvaluating && !isAutonomous,
+        canCancelProcess: isProcessing && !isLive && !isAutonomous,
+        canUseManualControls: (state === 'Idle' || state === 'Done' || state === 'Error' || state === 'Cancelled') && !isLive && !isSimulating && !isAnalyzingSimulation && !isEvaluating && !isAutonomous,
+        isGloballyBusy: isProcessing || state === 'AwaitingExecution' || isLive || isSimulating || isAnalyzingSimulation || isEvaluating || isAutonomous,
     };
-  }, [cognitiveProcess?.state, liveTranscription.isLive, simulationState?.isRunning, simulationState?.isAnalyzing, evaluationState?.isEvaluating]);
+  }, [cognitiveProcess?.state, liveTranscription.isLive, simulationState?.isRunning, simulationState?.isAnalyzing, evaluationState?.isEvaluating, autonomousState.isActive]);
 
 
   const replicaCount = useMemo(() => {
@@ -616,9 +635,10 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-nexus-dark font-sans">
+      <AutonomousModeOverlay autonomousState={autonomousState} />
       <Sidebar activeView={activeView} setActiveView={setActiveView} />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
+        <Header autonomousState={autonomousState} onToggleAutonomousMode={handleToggleAutonomousMode} />
         <main className={`flex-1 overflow-y-auto p-6 bg-nexus-bg transition-[margin] duration-500 ease-in-out ${isVitalsPanelOpen && activeView === 'dashboard' ? (isRtl ? 'ml-96' : 'mr-96') : ''}`}>
           <ErrorBoundary key={activeView}>
              {renderView()}

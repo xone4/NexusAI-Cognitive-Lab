@@ -178,6 +178,21 @@ This plan realigns priorities to address the identified gaps, ensuring safe, mea
         *   **Mandatory Workflow (💡 Planned):** Future work will involve modifying the core planning logic to automatically inject a `validate_against_world_model` step after any step that produces a new, high-confidence factual claim, ensuring deductions are grounded in the AI's known reality before being used in subsequent reasoning.
 
 ---
+### Phase 17: Metacognitive Autonomy - The Abstract Operator - ✅ Complete
+*   **Objective:** Implement a meta-cognitive loop where the AI uses a functional API of the application to control its own cognitive environment, enabling it to operate and improve itself autonomously.
+*   **Completed Implementation:**
+    *   **Autonomous Agent Service:** A new, modular `autonomousAgentService.ts` has been created to house the core logic for the AI's self-control loop. This service is responsible for defining the master `control_ui` tool for Gemini, which exposes the entire application's functionality as a set of callable sub-functions.
+    *   **Meta-Cognitive Loop:** A periodic loop is initiated when Autonomous Mode is active. In each cycle, the service:
+        1.  Gathers a complete JSON snapshot of the current application state (replicas, tools, memory, etc.).
+        2.  Sends this "state report" to the Gemini model with a high-level objective, such as "Analyze the current state and take one action to improve overall system efficiency or explore an underutilized feature."
+        3.  Receives a structured `FunctionCall` from Gemini (e.g., `control_ui.navigateTo({view: 'analysis'})`).
+        4.  Executes the requested function via `nexusAIService`, triggering a change in the application state and UI.
+    *   **User Interface & Control:**
+        *   **"Autonomous AI" Toggle:** A toggle button has been added to the main header, allowing the user to activate or deactivate the AI's autonomous control at any time. The button provides clear visual feedback when the mode is active.
+        *   **AI Action Visualization:** A new UI overlay, `AutonomousModeOverlay`, appears when Autonomous AI is active. It transparently displays the AI's current high-level **Goal** and the specific **Action** it is executing, giving the user a real-time window into its "thought process."
+        *   **Dedicated Logging:** A new `AUTONOMOUS` log level has been introduced, ensuring all AI-initiated actions are clearly tagged and visible in the system logs for later review.
+
+---
 ## Part 4: Key Mental Tools & Their Development Status
 
 This list represents a starting point for future development, with each tool marking a significant leap in the system's capabilities.

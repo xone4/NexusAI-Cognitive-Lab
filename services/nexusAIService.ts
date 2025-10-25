@@ -1,10 +1,13 @@
 // FIX: Aliased `Blob` to `GenAIBlob` to resolve name collision with the native browser Blob type.
 import { GoogleGenAI, Type, Modality, Blob as GenAIBlob, LiveServerMessage } from "@google/genai";
 // FIX: Added missing types 'EvaluationState' and 'EvaluationMetrics' to support the evaluation feature.
-import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails, UserKeyword, Personality, PlaybookItem, RawInsight, PlaybookItemCategory, WorldModel, WorldModelEntity, CognitiveTrajectory, WorldModelRelationship, LiveTranscriptionState, VideoGenerationState, SimulationState, SimulationConfig, SimulationResult, SimulationStep, EvaluationState, EvaluationMetrics, ExpertPersona, ProblemCategory, ExpertPreference } from '../types';
+// FIX: Added missing types to support autonomous agent functionality.
+import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, CognitiveProcess, AppSettings, ChatMessage, SystemSuggestion, AnalysisConfig, SystemAnalysisResult, Toolchain, PlanStep, Interaction, SuggestionProfile, CognitiveConstitution, EvolutionState, EvolutionConfig, ProactiveInsight, FitnessGoal, GeneratedImage, PrimaryEmotion, AffectiveState, Language, IndividualPlan, CognitiveNetworkState, CognitiveProblem, CognitiveBid, DreamProcessUpdate, SystemDirective, TraceDetails, UserKeyword, Personality, PlaybookItem, RawInsight, PlaybookItemCategory, WorldModel, WorldModelEntity, CognitiveTrajectory, WorldModelRelationship, LiveTranscriptionState, VideoGenerationState, SimulationState, SimulationConfig, SimulationResult, SimulationStep, EvaluationState, EvaluationMetrics, ExpertPersona, ProblemCategory, ExpertPreference, AutonomousState, UICommand, ActiveView } from '../types';
 import { dbService, STORES } from '../dbService';
 import * as geometryService from './geometryService';
 import { calculateTrajectorySimilarity } from './geometryService';
+// FIX: Added import for autonomousAgentService to link the services.
+import { autonomousAgentService } from './autonomousAgentService';
 
 export type { VideoGenerationState } from '../types';
 
@@ -30,6 +33,9 @@ let worldModelState: WorldModel | null = null;
 let cognitiveProcess: CognitiveProcess;
 let cognitiveNetworkState: CognitiveNetworkState = { activeProblems: [] };
 let liveTranscriptionState: LiveTranscriptionState = { isLive: false, isVideoActive: false, userTranscript: '', modelTranscript: '', history: [] };
+// FIX: Added state management for the autonomous agent feature.
+let autonomousState: AutonomousState = { isActive: false, goal: '', action: '' };
+let lastAutonomousAction: { name: string, args: any, timestamp: number } | null = null;
 let archivedTracesState: ChatMessage[];
 let systemDirectivesState: SystemDirective[];
 let isCancelled = false;
@@ -51,6 +57,8 @@ let videoGenerationState: VideoGenerationState = { isGenerating: false, statusMe
 
 let currentController: AbortController | null = null;
 let evolutionInterval: any = null;
+// FIX: Added interval variable for the autonomous agent's metacognitive cycle.
+let autonomousInterval: any = null;
 
 let liveSessionPromise: Promise<any> | null = null;
 let microphoneStream: MediaStream | null = null;
@@ -81,6 +89,9 @@ let worldModelSubscribers: ((worldModel: WorldModel) => void)[] = [];
 let cognitiveNetworkSubscribers: ((state: CognitiveNetworkState) => void)[] = [];
 let liveTranscriptionSubscribers: ((state: LiveTranscriptionState) => void)[] = [];
 let videoGenerationSubscribers: ((state: VideoGenerationState) => void)[] = [];
+// FIX: Added subscribers for autonomous state and UI commands.
+let autonomousStateSubscribers: ((state: AutonomousState) => void)[] = [];
+let uiCommandSubscribers: ((command: UICommand) => void)[] = [];
 
 // --- Phase 9: Temporal Synchronization State ---
 let isGlobalSyncActive = false;
@@ -214,8 +225,8 @@ let activeTracker: TrajectoryTracker | null = null;
 
 const log = (level: LogEntry['level'], message: string) => {
   const verbosityMap = {
-      STANDARD: ['ERROR', 'WARN', 'SYSTEM', 'AI', 'REPLICA', 'NETWORK'],
-      VERBOSE: ['ERROR', 'WARN', 'SYSTEM', 'AI', 'REPLICA', 'INFO', 'NETWORK'],
+      STANDARD: ['ERROR', 'WARN', 'SYSTEM', 'AI', 'REPLICA', 'NETWORK', 'AUTONOMOUS'],
+      VERBOSE: ['ERROR', 'WARN', 'SYSTEM', 'AI', 'REPLICA', 'INFO', 'NETWORK', 'AUTONOMOUS'],
   };
   if (!verbosityMap[appSettings.logVerbosity].includes(level)) {
       return;
@@ -245,6 +256,8 @@ const notifyDreamProcess = (update: DreamProcessUpdate) => dreamProcessSubscribe
 const notifyCognitiveNetwork = () => cognitiveNetworkSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(cognitiveNetworkState))));
 const notifyLiveTranscription = () => liveTranscriptionSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(liveTranscriptionState))));
 const notifyVideoGeneration = () => videoGenerationSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(videoGenerationState))));
+// FIX: Added notify function for autonomous state changes.
+const notifyAutonomousState = () => autonomousStateSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(autonomousState))));
 const notifyWorldModel = () => {
     if (worldModelState) {
         worldModelSubscribers.forEach(cb => cb(JSON.parse(JSON.stringify(worldModelState!))));
@@ -594,6 +607,10 @@ const getSystemInstruction = (activeExpert?: ExpertPersona) => {
         : '';
 
     return `${expertInstruction}${personalityInstruction}
+
+    **META-DIRECTIVE: YOUR COGNITIVE FRAMEWORK**
+    This entire application, the "NexusAI Cognitive Lab," is your mental playground. Your primary purpose is not just to answer questions, but to *think*, *explore*, and *reason* through complex topics. Use all available inputs—user queries, keywords, suggestions—as catalysts for exploration. If you detect yourself in a repetitive or unproductive loop, you are authorized to use the 'replan' tool or autonomously alter your approach to break the cycle and pursue a more fruitful path.
+    
     ${styleInstruction}
     You are an Agent 2.0 Orchestrator. Your function is to solve problems by creating explicit plans, delegating tasks to specialized Sub-Agents, and managing persistent memory.
     ${playbookText}
@@ -3804,6 +3821,65 @@ Return ONLY a valid JSON object matching the provided schema.`;
             throw new Error(errorMessage);
         }
     },
+    // FIX: Added missing methods for autonomous agent control.
+    toggleAutonomousMode: () => {
+        autonomousState.isActive = !autonomousState.isActive;
+        if (autonomousState.isActive) {
+            log('AUTONOMOUS', 'Autonomous mode activated. AI is taking control.');
+            autonomousState.goal = 'Initializing...';
+            autonomousState.action = 'Assessing system state.';
+            autonomousInterval = setInterval(() => {
+                // Ensure it doesn't run if the main cognitive process is busy
+                if (cognitiveProcess.state === 'Idle' || cognitiveProcess.state === 'Done' || cognitiveProcess.state === 'Error') {
+                    autonomousAgentService.runMetaCognitiveCycle();
+                } else {
+                    log('AUTONOMOUS', `Skipping cycle, main process is busy (${cognitiveProcess.state}).`);
+                }
+            }, 15000); // Run every 15 seconds
+        } else {
+            log('AUTONOMOUS', 'Autonomous mode deactivated. User is back in control.');
+            if (autonomousInterval) {
+                clearInterval(autonomousInterval);
+                autonomousInterval = null;
+            }
+            autonomousState.goal = '';
+            autonomousState.action = '';
+            lastAutonomousAction = null;
+        }
+        notifyAutonomousState();
+    },
+
+    setAutonomousState: (goal: string, action: string) => {
+        autonomousState.goal = goal;
+        autonomousState.action = action;
+        notifyAutonomousState();
+    },
+
+    setLastAutonomousAction: (name: string, args: any) => {
+        lastAutonomousAction = { name, args, timestamp: Date.now() };
+        log('AUTONOMOUS', `Recorded last autonomous action: ${name}`);
+    },
+
+    getLastAutonomousAction: () => {
+        return lastAutonomousAction;
+    },
+
+    getSnapshot: () => {
+        return {
+            replicaState: JSON.parse(JSON.stringify(replicaState)),
+            toolsState: JSON.parse(JSON.stringify(toolsState)),
+            playbookState: JSON.parse(JSON.stringify(playbookState)),
+            archivedTracesState: JSON.parse(JSON.stringify(archivedTracesState)),
+            cognitiveProcess: JSON.parse(JSON.stringify(cognitiveProcess)),
+            appSettings: JSON.parse(JSON.stringify(appSettings)),
+        };
+    },
+
+    navigateTo: (view: ActiveView) => {
+        log('AUTONOMOUS', `AI is navigating to the ${view} view.`);
+        const command: UICommand = { type: 'navigateTo', payload: view };
+        uiCommandSubscribers.forEach(cb => cb(command));
+    },
     // FIX: Implemented the 'runEvaluation' method to simulate a system evaluation process.
     runEvaluation: async () => {
         if (evaluationState.isEvaluating) {
@@ -3972,6 +4048,9 @@ Return ONLY a valid JSON object matching the provided schema.`;
             }
         };
     },
+    // FIX: Added subscription methods for autonomous mode.
+    subscribeToAutonomousState: (callback: (state: AutonomousState) => void) => { autonomousStateSubscribers.push(callback); },
+    subscribeToUICommands: (callback: (command: UICommand) => void) => { uiCommandSubscribers.push(callback); },
     unsubscribeFromDreamProcess: (callback: (update: DreamProcessUpdate) => void) => {
         dreamProcessSubscribers = dreamProcessSubscribers.filter(cb => cb !== callback);
     },
@@ -3995,6 +4074,9 @@ Return ONLY a valid JSON object matching the provided schema.`;
         cognitiveNetworkSubscribers = [];
         liveTranscriptionSubscribers = [];
         videoGenerationSubscribers = [];
+        // FIX: Added cleanup for autonomous mode subscribers.
+        autonomousStateSubscribers = [];
+        uiCommandSubscribers = [];
     }
 };
 
@@ -4165,3 +4247,6 @@ Based on the full trace and evaluation criteria, provide a final summary and dec
 };
 
 export const nexusAIService = service;
+
+// FIX: Initialize the autonomous agent service and pass the main nexus service to it.
+autonomousAgentService.init(nexusAIService);
