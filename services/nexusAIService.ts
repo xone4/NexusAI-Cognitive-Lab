@@ -2079,8 +2079,8 @@ const service = {
             isCancelled = true;
             currentController?.abort();
             cognitiveProcess.state = 'Cancelled';
-            activeTracker = null;
-            // FIX: Corrected typo from `process` to `cognitiveProcess` to access the correct history array.
+            // FIX: Ensure the active tracker is reset on cancellation to prevent state corruption.
+            activeTracker = null; 
             const lastMessage = cognitiveProcess.history[cognitiveProcess.history.length - 1];
             if(lastMessage?.role === 'model') {
                 lastMessage.state = 'error';
@@ -3081,6 +3081,7 @@ Provide your analysis in well-formatted markdown.`;
             log('ERROR', `Failed to generate a plan: ${errorMessage}`);
             modelMessage.text = `An error occurred during the 'Planning' stage. Please check the logs.\n\n*Details: ${errorMessage}*`;
             modelMessage.state = 'error';
+            // FIX: Ensure the active tracker is cleared on planning failure to prevent state corruption.
             if(activeTracker) {
                 modelMessage.cognitiveTrajectory = activeTracker.finalize();
                 activeTracker = null;

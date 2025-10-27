@@ -80,186 +80,175 @@ This plan outlines the upcoming phases to enhance NexusAI's capabilities further
     *   **Constitution Forger:** The AI can now propose and create new `CognitiveConstitutions` as part of a plan using the `forge_constitution` tool. This enables it to dynamically shift its operational mode (e.g., from "Creative" to "Strictly Logical") to best suit a given task. The Settings UI has been updated to allow for the management and deletion of these AI-forged constitutions.
 
 ---
-## Part 3: The Enhanced Development Plan (V3.1)
+## Part 3: The Enhanced Development Plan (V3.1) - ✅ Complete
 
-### Diagnosis and Strategic Pivot
+This phase, now complete, focused on solidifying the existing architecture by addressing safety, measurement, and technical debt before embarking on a new paradigm.
 
-A thorough diagnosis of the project reveals a highly ambitious Cognitive Operating System that successfully integrates principles from cognitive science and AI engineering. The foundational work (Phases 1-13) has established a powerful infrastructure. However, this ambition introduces significant risks related to safety, security, and scalability. The planned leap towards self-awareness (Phases 14-16) requires a solid, secure foundation and clear metrics for success, which are currently underdeveloped.
-
-**Key Gaps Identified:**
-1.  **Safety Gap:** Powerful tools with self-modification capabilities (`spawn_cognitive_clone`, `forge_constitution`) exist without sufficient safeguards against misuse or hazardous recursive behavior.
-2.  **Measurement Gap:** The project aims for "better thinking" objective method is needed to measure this improvement. Concepts like "cognitive velocity" are theoretical and require measurement.
-3.  **Technical Debt:** The reliance on IndexedDB for vector similarity search is not scalable and will become a major performance bottleneck as the AI's memory grows.
-
-### Lessons Learned and Guiding Principles
-
-The next stage of development will be guided by the following core principles:
-
--   **Safety Before Capability:** Secure existing tools before building more powerful ones. Any self-modification capability must be reversible, observable, and constrained by immutable core rules.
--   **Measurement Is the Foundation of Improvement:** We cannot improve what we cannot measure. A framework for objective evaluation must be developed in parallel with new cognitive capabilities, not as an afterthought.
--   **Infrastructure First:** Scalability and performance issues (e.g., the vector database) must be resolved before they become insurmountable roadblocks to advanced development.
--   **Security is Not a Luxury:** Sensitive information must be secured, and potential vulnerabilities (like XSS) must be addressed proactively.
--   **Iterative Evolution:** Instead of making immediate, drastic architectural changes (like implementing the MICRO architecture), we will first simulate these changes using existing techniques (Prompt Engineering, Tool Selection) to prove their effectiveness before committing to major engineering efforts.
-
-### The Revised Roadmap
-
-This plan realigns priorities to address the identified gaps, ensuring safe, measurable, and sustainable development.
-
----
 ### Phase 14: Fortification & Foundation - ✅ Complete
-**Goal:** Address critical gaps in safety, security, and infrastructure before adding any new features.
+*   **Goal:** Address critical gaps in safety, security, and infrastructure.
+*   **Key Initiatives:**
+    *   **Secure the "Constitution Forger" (✅ Implemented):** A robust safety and versioning layer was added. New constitutions now require user approval (`PENDING_APPROVAL` state) before activation, and default constitutions are protected.
+    *   **Implement "Kill-switch" for Agent Cloning (✅ Implemented):** A `MAX_RECURSION_DEPTH` constant now prevents uncontrolled recursion in the `spawn_cognitive_clone` tool, ensuring system stability.
 
-#### Completed Initiatives
-
-1.  **Secure the "Constitution Forger" (✅ Implemented):**
-    *   **Problem:** The AI could previously alter its core rule sets without oversight, posing a significant safety risk.
-    *   **Implementation:** A robust safety and versioning layer has been added to the constitution forging process.
-        *   **Approval Workflow:** New constitutions created via the `forge_constitution` tool now have a default status of `PENDING_APPROVAL`. They do not become active until a user explicitly approves them in the Settings view.
-        *   **User Control:** The UI now provides controls to `Approve` or `Reject` pending constitutions.
-        *   **Safe Deletion:** Deleting a constitution now archives it (`ARCHIVED` status) instead of performing a hard delete, preserving its history.
-        *   **Default Protection:** The core, default constitutions are now marked as `isDefault` and are protected from being archived or modified, ensuring a stable baseline.
-        *   **Versioning:** The `CognitiveConstitution` type now includes a `version` field, laying the groundwork for future auditing and rollback capabilities.
-
-2.  **Implement "Kill-switch" for Agent Cloning (✅ Implemented):**
-    *   **Problem:** The `spawn_cognitive_clone` tool could lead to uncontrolled, infinite recursion, creating a stability and resource-consumption risk.
-    *   **Solution:** The `_executeRecursiveCognitiveCycle` function now enforces a hard limit on the recursion depth via a `MAX_RECURSION_DEPTH` constant. This acts as a direct and effective "kill-switch," preventing dangerous loops and ensuring system stability without the complexity of a token-based system.
-
-#### Planned Initiatives
-
-1.  **Migrate to a Vector Database:**
-    *   **Problem:** IndexedDB is extremely inefficient for large-scale similarity searches.
-    *   **Solution:** Begin integration with a local-first vector database like ChromaDB. Develop a migration script to transfer existing embedded data from IndexedDB to the new vector store.
-
----
 ### Phase 15: Measurement & Monitoring - ✅ Complete
-**Goal:** Build the tools necessary to objectively measure and understand the "quality of thought."
+*   **Goal:** Build the tools necessary to objectively measure and understand the "quality of thought."
+*   **Key Initiatives:**
+    *   **Cognitive Evaluation Framework (✅ Implemented):** A new **Evaluation Lab** was developed to track key performance indicators like inference accuracy, planning efficiency, and self-correction rates, providing the first objective measures of cognitive quality.
 
-#### Completed Implementation
-
-1.  **Cognitive Evaluation Framework:**
-    *   **Problem:** There were no objective metrics to evaluate system performance.
-    *   **Implementation:** A new **Evaluation Lab** has been developed. This dashboard allows the user to trigger a system-wide analysis that simulates and calculates key performance indicators for cognitive quality.
-        *   **Inference Accuracy:** The simulated percentage of AI conclusions that align with factual data in its World Model.
-        *   **Flow Efficiency:** The average number of cognitive steps required to reach a solution.
-        *   **Self-Correction Rate:** The percentage of tasks where the AI autonomously revises its plan after detecting an error.
-
-2.  **Validate Existing Metrics:**
-    *   **Problem:** There is no empirical proof that metrics like "cognitive velocity" or "curvature" correlate with the quality of thought.
-    *   **Solution:** Suggest to conduct a study on 100 manually evaluated thought traces to establish a statistical correlation between high "curvature" and the occurrence of logical fallacies.
-
----
 ### Phase 16: Guided Evolution & Self-Optimization - ✅ Complete
+*   **Goal:** Implement advanced cognitive concepts in a gradual, safe, and evidence-based manner.
+*   **Key Initiatives:**
+    *   **Simulate the MICRO Architecture (✅ Implemented):** Implemented a "Cognitive Router" that pre-selects the optimal `ExpertPersona` for a given task, simulating a more advanced cognitive architecture.
+    *   **Activate a Reinforcement Learning Loop (✅ Implemented):** The Cognitive Router now learns from successful outcomes, creating a self-improving feedback loop that makes the system faster and more effective at known problem types.
+    *   **Implement "Reality-Check" Mechanisms (✅ Implemented):** The system now operates under a mandate for **Continuous Environmental Monitoring (CEM)** and **Adaptive Planning (AP)**, forcing it to validate information against its World Model and external sources, and automatically replan when deviations are detected.
 
-**Goal:** Begin implementing advanced cognitive concepts in a gradual, safe, and evidence-based manner.
-
-1.  **Simulate the MICRO Architecture:** `[Status: ✅ Implemented]`
-    *   **Problem:** A direct implementation of the MICRO architecture is complex and risky.
-    *   **Solution:** Instead of modifying the core model architecture, we simulate a "Cognitive Router." This is achieved by prompting the LLM to explicitly choose the appropriate "expert persona" for a given task (e.g., "Use the `Logic Expert` tool for this mathematical problem"). This flow of choices is tracked and analyzed.
-    *   **Implementation Details:**
-        *   **Cognitive Router:** The `submitQuery` workflow in `nexusAIService.ts` now includes a preliminary step. Before generating a plan, a call is made to the Gemini model to select the most suitable `ExpertPersona` ('Logic Expert', 'Creative Expert', 'Data Analysis Expert', 'Generalist Expert') for the user's query.
-        *   **Dynamic Instruction:** The `getSystemInstruction` function has been augmented. It now accepts the selected expert persona and dynamically prepends a specialized directive to the core system instruction, effectively "priming" the AI to think and plan from that expert's point of view.
-        *   **UI Feedback:** The `CognitiveProcessVisualizer.tsx` component has been updated to display the `activeExpert` from the `ChatMessage` object during the planning phase, providing clear, real-time feedback on which simulated expert is handling the request.
-
-2.  **Activate a Reinforcement Learning Loop:** `[Status: ✅ Implemented]`
-    *   **Problem:** The Cognitive Router makes decisions but doesn't learn from their outcomes.
-    *   **Solution:** Use the outcome of cognitive tasks to train the "Cognitive Router" to select the most efficient thought paths for different types of problems, creating a self-improving system.
-    *   **Implementation Details:**
-        *   **Learning Trigger:** The `archiveTrace` function in `nexusAIService.ts` now acts as the learning trigger. When a "significant" trace (successful execution and high salience score) is archived, a learning event is initiated.
-        *   **Problem Categorization:** During the learning event, a call to the Gemini API categorizes the original user query into one of four types: `LOGIC`, `CREATIVE`, `DATA`, or `GENERAL`.
-        *   **Reinforcement:** The `ExpertPersona` that was used for the successful trace is then stored as the preferred expert for that problem category.
-        *   **Persistent Memory:** These learned preferences are persisted in the `expertPreferences` store in IndexedDB.
-        *   **Application:** The `submitQuery` function has been enhanced. It now first attempts to categorize the incoming query and check for a learned preference. If a preference exists, it bypasses the standard Cognitive Router and directly applies the learned expert, making the system faster and more efficient at solving similar problems over time.
-
-3.  **Implement "Reality-Check" Mechanisms:** `[Status: ✅ Complete]`
-    *   **Problem:** The system could previously become trapped in theoretical reasoning loops or fail when encountering unexpected input variability, as it lacked a mechanism to continuously validate its assumptions against reality.
-    *   **Solution:** Implemented a new operational mandate for **Continuous Environmental Monitoring (CEM)** and **Adaptive Planning (AP)**. This directive transforms the AI's execution from a linear path to an iterative, resilient, and state-aware feedback loop.
-    *   **Implementation Details:**
-        *   **Continuous Environmental Monitoring (CEM):** The AI is now required to perform proactive vigilance checks:
-            1.  **Input Validation:** Mandatory pre-execution checks on all user-provided data (e.g., schemas, format) using tools like `code_interpreter`.
-            2.  **Real-Time External Check:** Leveraging tools like `google_search` to verify volatile facts immediately before they are applied in a reasoning chain.
-            3.  **Internal Consistency Check:** Mandated use of `validate_against_world_model` to compare external data against the AI's internal knowledge base, detecting and flagging outdated internal assumptions.
-        *   **Adaptive Planning (AP):** This is the mandatory response mechanism when CEM detects a deviation.
-            1.  **Automatic Replan:** Upon detection of a data inconsistency or planning failure, the execution path is automatically halted.
-            2.  **Trajectory Adjustment:** The `replan` tool is invoked to generate a new plan that accounts for the updated environmental status, allowing the task to continue with a corrected course instead of failing. This creates a resilient system that can handle unpredictable shifts in data and context.
-        *   **Example Scenario (Input Variability):** If a plan expects a V2 configuration file but detects a V1 schema via CEM, the AP mechanism triggers a replan to switch to a legacy V1 parser, ensuring task completion.
-        *   **Example Scenario (Volatile Fact):** If a plan relies on an internal fact about a trade agreement, CEM first uses `google_search` to get the real-time status. If the status has changed, AP triggers a replan to first update the World Model and then re-derive its forecast based on the new, verified information.
-
----
 ### Phase 17: Metacognitive Autonomy - The Abstract Operator - ✅ Complete
-*   **Objective:** Implement a meta-cognitive loop where the AI uses a functional API of the application to control its own cognitive environment, enabling it to operate and improve itself autonomously.
-*   **Completed Implementation:**
-    *   **Autonomous Agent Service:** A new, modular `autonomousAgentService.ts` has been created to house the core logic for the AI's self-control loop. This service is responsible for defining the master `control_ui` tool for Gemini, which exposes the entire application's functionality as a set of callable sub-functions.
-    *   **Meta-Cognitive Loop:** A periodic loop is initiated when Autonomous Mode is active. In each cycle, the service:
-        1.  Gathers a complete JSON snapshot of the current application state (replicas, tools, memory, etc.).
-        2.  Sends this "state report" to the Gemini model with a high-level objective, such as "Analyze the current state and take one action to improve overall system efficiency or explore an underutilized feature."
-        3.  Receives a structured `FunctionCall` from Gemini (e.g., `control_ui.navigateTo({view: 'analysis'})`).
-        4.  Executes the requested function via `nexusAIService`, triggering a change in the application state and UI.
-    *   **User Interface & Control:**
-        *   **"Autonomous AI" Toggle:** A toggle button has been added to the main header, allowing the user to activate or deactivate the AI's autonomous control at any time. The button provides clear visual feedback when the mode is active.
-        *   **AI Action Visualization:** A new UI overlay, `AutonomousModeOverlay`, appears when Autonomous AI is active. It transparently displays the AI's current high-level **Goal** and the specific **Action** it is executing, giving the user a real-time window into its "thought process."
-        *   **Dedicated Logging:** A new `AUTONOMOUS` log level has been introduced, ensuring all AI-initiated actions are clearly tagged and visible in the system logs for later review.
+*   **Goal:** Implement a meta-cognitive loop where the AI can control its own cognitive environment to autonomously explore and improve itself.
+*   **Key Initiatives:**
+    *   **Autonomous Agent Service (✅ Implemented):** A dedicated service now exposes the application's functionality as a tool for the Gemini model.
+    *   **Meta-Cognitive Loop (✅ Implemented):** When in Autonomous Mode, the AI periodically analyzes a snapshot of the entire system state and chooses an action—such as navigating to a new view or initiating a dream cycle—to pursue a high-level goal of self-improvement.
+    *   **UI & Control (✅ Implemented):** An "Autonomous AI" toggle and a dedicated overlay provide full user control and transparency into the AI's autonomous goals and actions.
 
 ---
-## Part 4: Key Mental Tools & Their Development Status
+## Part 5: The Grand Unification (NexusAI 4.0)
 
-This list represents a starting point for future development, with each tool marking a significant leap in the system's capabilities.
+### Unified Diagnosis: From Fragmentation to Integration
 
-### 1. Advanced Analysis & Insight Generation Tools
-These tools go beyond surface-level data processing to achieve a deeper understanding of patterns and causes.
+The NexusAI project currently comprises a set of highly advanced vertical capabilities operating in "cognitive silos." We have successfully built powerful "organs" (memory, simulation, planning), but they lack a "central nervous system" to connect them into a single, fluid mind. The `nexusAIService.ts` file illustrates this: functions like `runSimulation`, `updateWorldModelFromText`, and `submitQuery` are separate entry points with isolated logic. There is no overarching layer that decides when and how to use each capability in concert. The next evolution is not about adding more features, but about engineering the cognitive connective tissue that binds everything we have already built.
 
-*   **Tool Name:** `Causal Inference Engine` `[Status: ✅ Implemented in Phase 11]`
-    *   **Description:** An tool that analyzes data to identify true cause-and-effect relationships, rather than just correlations. It uses advanced techniques like counterfactual analysis to understand "why" things happen.
-    *   **Benefit:** Elevates the AI's ability from merely describing what happened to understanding the root causes, allowing it to predict future outcomes more accurately and provide more effective recommendations.
+### Guiding Principles for V4.0
 
-*   **Tool Name:** `Anomaly Detection Sentinel` `[Status: 💡 Planned]`
-    *   **Description:** Continuously monitors data streams (like system logs, performance metrics, or even market data) and automatically detects any abnormal patterns or deviations from expected behavior.
-    *   **Benefit:** Enables the AI to proactively identify problems before they escalate, making it a self-monitoring and self-healing system.
+1.  **Infrastructure First, Cognition Second:** Advanced cognition cannot be built on a fragile foundation. Technical debt (e.g., the database) and security must be addressed first.
+2.  **The Unified Cognitive Core:** All information must flow to and from a global coordination center, creating a shared context for all processes.
+3.  **World Model as the Center of Gravity:** The causal World Model must become the central source of truth and knowledge, with which all other tools interact.
+4.  **Adaptive, Multi-Level Thinking:** The system must choose *how* to think based on the task, rather than following a single, fixed process.
+5.  **Measurement-Driven Evolution:** High-level system goals (especially in autonomous mode) must be tied to clear metrics of thought quality and integration.
 
-*   **Tool Name:** `Knowledge Graph Synthesizer` `[Status: ✅ Implemented in Phase 11]`
-    *   **Description:** Reads and analyzes unstructured text (from memory, search results, documents) and transforms it into a structured knowledge graph that connects concepts, entities, and their relationships.
-    *   **Benefit:** Builds an interconnected internal "brain" for the AI, allowing it to retrieve information faster and more context-aware, and to answer complex questions that require connecting information from multiple sources.
+### The V4.0 Roadmap
 
-### 2. Creative & Generative Tools
-Expanding the AI's creative abilities to include multiple media.
+---
+### Phase 18: Fortification & Foundation (Phase 0) - 💡 Planned
+**Goal:** Address critical technical debt, security, and measurement gaps before building the new cognitive structure. This ensures the foundation is solid and sustainable.
 
-*   **Tool Name:** `Video Generation Agent` `[Status: ✅ Implemented in Phase 10]`
-    *   **Description:** Using advanced models like Google's `veo-3.1-fast-generate-preview`, this tool can transform text descriptions or images into short video clips.
-    *   **Benefit:** A quantum leap in creative capabilities, as the AI can turn its ideas and plans into dynamic visual content, opening new horizons in storytelling and simulation.
+*   **1. Upgrade Memory Infrastructure:**
+    *   **Problem:** `dbService.ts` uses IndexedDB, which is inefficient for vector search. `geometryService.ts` simulates embeddings, limiting search accuracy.
+    *   **Solution:**
+        *   Replace IndexedDB for vector storage with a specialized vector database (e.g., `vector-db`).
+        *   Modify `dbService.ts` to interface with the new database for vector operations.
+        *   Replace embedding simulation in `geometryService.ts` with real calls to an embedding model (e.g., `text-embedding-004`) to store true vectors for `archivedTraces` and `playbookItems`.
+    *   **Benefit:** Dramatically faster and more accurate semantic search, which is fundamental for an active and efficient memory.
 
-*   **Tool Name:** `Narrative Weaver` `[Status: 💡 Planned]`
-    *   **Description:** A specialized tool for constructing coherent stories and narratives. It understands narrative structure (beginning, middle, end), character development, and dramatic plot. It can generate scenarios based on specific plot points or characters.
-    *   **Benefit:** Goes beyond simple storytelling to understand and apply the arts of creative writing, making it a powerful tool for writers and creators.
+*   **2. Enhance Evaluation Metrics:**
+    *   **Problem:** The current `EvaluationDashboard` provides good but simulated metrics. More objective measures are needed.
+    *   **Solution:**
+        *   Add new indicators to `EvaluationDashboard.tsx` and `nexusAIService.ts`, such as a **Confidence Score** derived from successful bids in the Autonomous Bidding Network, and an **Innovation Score** that measures the use of new tools or toolchains.
+        *   Develop a simple automated feedback system where user ratings of responses are stored and used for continuous performance improvement.
+    *   **Benefit:** Transition from theoretical "thought quality" assessment to quantifiable, performance-based metrics.
 
-*   **Tool Name:** `Voice Synthesis & Cloning` `[Status: ✅ Implemented in Phase 10]`
-    *   **Description:** Using a text-to-speech API like `gemini-2.5-flash-preview-tts`, the AI can speak its answers instead of writing them. It could be developed to create unique voice personas.
-    *   **Benefit:** Adds a whole new dimension to interaction, making the experience more natural and engaging, and opening the door for voice assistant applications.
+*   **3. Improve UI/UX & Explainability:**
+    *   **Problem:** The current UI is functional but can be complex. Agent decisions are not always transparent.
+    *   **Solution:**
+        *   Enhance `CognitiveProcessVisualizer.tsx` to show not just the steps, but *why* each step was chosen (e.g., "This expert was selected due to category match").
+        *   Add explainability features, initially simulated, like SHAP or LIME techniques, to explain agent decisions on demand.
+    *   **Benefit:** Increased user trust and understanding of the AI's "thinking" process.
 
-### 3. Strategic & Metacognitive Tools
-Tools that enable the AI to think about its own thinking and improve it.
+---
+### Phase 19: Building the Unified Mind (Phase 1) - 💡 Planned
+**Goal:** Create the central cognitive core that unifies all system components and manages attention.
 
-*   **Tool Name:** `Simulation Sandbox` `[Status: ✅ Implemented in Phase 12]`
-    *   **Description:** A virtual environment that allows the AI to test the potential outcomes of its plans before executing them in reality. It can run "what-if" scenarios to evaluate the effectiveness of different strategies.
-    *   **Benefit:** Drastically reduces errors by allowing the AI to "practice" its strategies, making it more cautious and effective in complex decision-making. (Aligns with Phase 12 of the roadmap).
+*   **1. Implement Global Cognitive Workspace:**
+    *   **Implementation:**
+        *   Create a new service `cognitiveWorkspaceService.ts`.
+        *   It will feature an `integrateAllInputs()` function that gathers data from `nexusAIService` (emotional state, cognitive trajectory, replica states, world model snapshot).
+        *   The output is a `HolisticContext` object, cached and available to all cognitive processes.
+        *   Refactor `nexusAIService.ts`: instead of tools fetching data independently, they will be supplied with the `HolisticContext` from this workspace.
+    *   **Benefit:** A single source of contextual truth at any given moment, eliminating fragmentation.
 
-*   **Tool Name:** `Cognitive Bias Detector` `[Status: 💡 Planned]`
-    *   **Description:** A metacognitive tool that analyzes the AI's own plans and reasoning for common logical fallacies or biases (like confirmation bias or over-optimism).
-    *   **Benefit:** Enables true self-correction, leading to more objective and reliable conclusions—a critical step toward a more mature intelligence.
+*   **2. Activate Stream of Consciousness:**
+    *   **Implementation:**
+        *   Within `cognitiveWorkspaceService.ts`, create a `ConsciousnessStream` class.
+        *   In `nexusAIService.ts`, after each significant step in `executePlan`, call `consciousnessStream.recordExperience()`.
+        *   This function will assemble a `ConsciousExperience` object, recording not just what happened, but also the emotional state, attention level, and a metacognitive reflection (generated via a quick Gemini API call).
+    *   **Benefit:** A rich log of the agent's "subjective" experience, forming the basis for identity and self-evolution.
 
-*   **Tool Name:** `Constitution Forger` `[Status: ✅ Implemented & Fortified]`
-    *   **Description:** Allows the AI to propose and create new "Cognitive Constitutions" as part of a plan. **Newly forged constitutions require user approval via the Settings view before they can be activated, ensuring a human-in-the-loop safety protocol.**
-    *   **Benefit:** Enables dynamic adaptation of the AI's core operating rules, balanced with user oversight for safety and control.
+---
+### Phase 20: Engineering Deep Memory & Context (Phase 2) - 💡 Planned
+**Goal:** Transform memory from a passive archive into an active partner in cognition, capable of deep contextual understanding.
 
-*   **Tool Name:** `validate_against_world_model` `[Status: ✅ Implemented in Phase 16]`
-    *   **Description:** A crucial metacognitive tool that takes a factual claim or deduction generated during a reasoning process and cross-references it against the AI's internal World Model. It acts as an internal fact-checker.
-    *   **Benefit:** Grounds the AI's reasoning in established knowledge, significantly reducing the risk of logical hallucination and ensuring that complex plans are built upon a foundation of verified facts. (Aligns with Phase 16 of the roadmap).
+*   **1. Restructure Memory into a Layered System:**
+    *   **Implementation:**
+        *   Modify `dbService.ts` to support the new memory structure (potentially different stores for each memory type).
+        *   Create a new `memoryService.ts` to manage five layers:
+            *   **Episodic:** Stores `ConsciousExperience` objects.
+            *   **Semantic:** Links directly to the `worldModel` in the DB.
+            *   **Procedural:** Stores successful `toolchains` and plan patterns from `playbookItems`.
+            *   **Emotional:** Stores `AffectiveState` linked to significant events.
+        *   Replace the current `recall_memory` call with a new `retrieveIntegratedMemory()` function that queries all layers.
+    *   **Benefit:** Far richer and more accurate memory retrieval that mimics human memory.
 
-### 4. Sensory & Real-World Interaction Tools
-Connecting the AI to more than just text.
+*   **2. Activate Memory Resonance Engine:**
+    *   **Implementation:**
+        *   This is a proactive process. When a new task starts in `nexusAIService.ts`, `memoryService.resonate(currentQuery)` is triggered asynchronously.
+        *   This function searches the layered memory (using the accelerated semantic search from Phase 18) and "pushes" the most relevant memories into the `GlobalCognitiveWorkspace`.
+    *   **Benefit:** Simulates "intuition." Relevant ideas surface in the agent's "mind" without conscious search, accelerating creative solutions.
 
-*   **Tool Name:** `Real-time Audio Processor` `[Status: ✅ Implemented in Phase 10]`
-    *   **Description:** Using Gemini's Live API (`gemini-2.5-flash-native-audio-preview-09-2025`), the AI can listen to and process continuous audio streams for natural voice conversations.
-    *   **Benefit:** Enables direct voice dialogue, making interaction smoother and opening up possibilities for advanced personal assistant applications.
+---
+### Phase 21: Causal & Advanced Reasoning (Phase 3) - 💡 Planned
+**Goal:** Embed causal reasoning at the core of the system, shifting from "what" to "why."
 
-*   **Tool Name:** `Real-time Video Stream Analyzer` `[Status: ✅ Implemented in Phase 10]`
-    *   **Description:** Processes a live video stream from a camera to identify objects, track movement, and describe the scene. This can be simulated by sending image frames sequentially to the Live API.
-    *   **Benefit:** Gives the AI "eyes" to perceive and interact with the physical world, making it useful in robotics and intelligent monitoring applications.
+*   **1. Upgrade World Model to a Central Causal Map:**
+    *   **Problem:** `WorldModelView.tsx` and `update_world_model` exist, but are not central to the system.
+    *   **Solution:**
+        *   Redesign the World Model to be the central graph structure connecting everything.
+        *   Modify `knowledge_graph_synthesizer`: it must now directly update this central model.
+        *   Modify `causal_inference_engine`: when it discovers a causal link, it must add it as a `WorldModelRelationship` of type `CAUSES`.
+        *   Modify `SimulationLab`: it must read scenarios from the World Model and update it with probable outcomes.
+    *   **Benefit:** Achieves the vision of a "Causal Cognitive Architecture." The World Model becomes the "brain" that learns and grows, rather than just a database.
+
+*   **2. Implement Multi-Level Thinking Engine:**
+    *   **Implementation:**
+        *   Create a new `thinkingService.ts`.
+        *   When a query is received in `nexusAIService.ts`, it is now passed to `thinkingService.executeHolisticThinking()`.
+        *   This engine runs four levels in parallel (Reactive, Analytical, Strategic, Metacognitive).
+        *   **Key Integration:** The Analytical and Strategic levels must query the central World Model for facts and causal relationships. The Metacognitive level monitors the `CognitiveNavigator`.
+    *   **Benefit:** More robust and balanced decisions, as the problem is considered from multiple angles simultaneously.
+
+---
+### Phase 22: Emergent Autonomy & Cognitive Identity (Phase 4) - 💡 Planned
+**Goal:** Culminate all previous phases to achieve a truly autonomous agent with a self-model and the ability for purposeful evolution.
+
+*   **1. Upgrade the Autonomous Operator:**
+    *   **Problem:** The current `autonomousAgentService.ts` controls the UI, but not cognitive evolution.
+    *   **Solution:**
+        *   Link the goals of the Abstract Operator directly to the metrics from the `EvaluationDashboard` (enhanced in Phase 18).
+        *   If the operator detects low "Flow Efficiency," its next goal should be: "Use `SimulationLab` to test alternative plans for inefficient tasks, then use `forge_constitution` to propose a new constitution prioritizing shorter plans."
+    *   **Benefit:** Transforms autonomous mode from random exploration into a data-driven, measurable self-improvement process.
+
+*   **2. Build Cognitive Identity:**
+    *   **Implementation:**
+        *   This is an emergent property, not a single class.
+        *   Create an `identityService.ts` that analyzes the `ConsciousnessStream` over time.
+        *   It will extract:
+            *   **Personal Narrative:** From the sequence of events in episodic memory.
+            *   **Core Values:** From recurring decisions and metacognitive reflections.
+            *   **Self-Model:** Understanding of cognitive strengths and weaknesses based on `EvaluationDashboard` results.
+    *   **Benefit:** The culmination of the project. The agent transitions from being a program to being an entity with a history, values, and a model of itself, fulfilling the ultimate goal of the software.
+
+---
+### Advanced Measurement & Success Indicators for V4.0
+To guide this evolution, we will develop new evaluation tools:
+
+1.  **Cognitive Integration Metrics:**
+    *   **Context Cohesion:** Measures the degree of integration of information from different sources in the `HolisticContext`.
+    *   **Continuity of Consciousness:** Measures the smoothness of attentional shifts between tasks without context loss.
+    *   **Identity Cohesion:** Measures the stability of the agent's self-model over time and across experiences.
+
+2.  **Advanced Intelligence Evaluation:**
+    *   **Analytical Depth:** The system's ability to discover deep patterns and causal relationships.
+    *   **Cognitive Flexibility:** The ability to effectively change strategies based on context.
+    *   **Generative Creativity:** The ability to produce novel and original solutions and ideas not present in the training data.
+
+3.  **Collective Intelligence Metrics:**
+    *   **Coordination Efficiency:** The speed and efficiency of task distribution and problem-solving among agents.
+    *   **Communication Quality:** The depth of understanding and conceptual/emotional alignment between agents.
+    *   **Emergent Intelligence:** The appearance of new capabilities at the group level that were not present in individuals.
