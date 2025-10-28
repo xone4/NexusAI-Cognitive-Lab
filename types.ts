@@ -498,6 +498,8 @@ export interface EvaluationMetrics {
     inferenceAccuracy: number; // 0-100%
     flowEfficiency: number; // average steps per plan
     selfCorrectionRate: number; // 0-100%
+    planningQuality: number; // 0-100%
+    toolInnovationScore: number; // 0-100%
 }
 
 export interface EvaluationState {

@@ -127,10 +127,10 @@ The NexusAI project currently comprises a set of highly advanced vertical capabi
 ### The V4.0 Roadmap
 
 ---
-### Phase 18: Fortification & Foundation (Phase 0) - 💡 Planned
+### Phase 18: Fortification & Foundation (Phase 0) - 🚧 In Progress
 **Goal:** Address critical technical debt, security, and measurement gaps before building the new cognitive structure. This ensures the foundation is solid and sustainable.
 
-*   **1. Upgrade Memory Infrastructure:**
+*   **1. Upgrade Memory Infrastructure (In Progress)**
     *   **Problem:** `dbService.ts` uses IndexedDB, which is inefficient for vector search. `geometryService.ts` simulates embeddings, limiting search accuracy.
     *   **Solution:**
         *   Replace IndexedDB for vector storage with a specialized vector database (e.g., `vector-db`).
@@ -252,3 +252,136 @@ To guide this evolution, we will develop new evaluation tools:
     *   **Coordination Efficiency:** The speed and efficiency of task distribution and problem-solving among agents.
     *   **Communication Quality:** The depth of understanding and conceptual/emotional alignment between agents.
     *   **Emergent Intelligence:** The appearance of new capabilities at the group level that were not present in individuals.
+---
+## Part 6: The Executive Roadmap (NexusAI v4.1)
+
+**Vision:** To build a self-evolving and highly efficient cognitive architecture (`NexusAI v4.1`) by integrating three technological layers: a physical-visual layer to expand memory, an operational layer to increase efficiency, and an evolutionary layer to ensure sustainable self-improvement.
+
+---
+
+### **Phase 1: Foundation - Building the Physical and Visual Layer (The Glyph Layer)**
+
+**🎯 Primary Goal:** To completely overcome the limitations of the text-based context window, enabling NexusAI to ingest and analyze massive datasets (entire books, codebases, long memory logs) in a single pass.
+
+**🔧 Key Components to Build:**
+1.  **Visual Rendering Service:** A standalone component for converting text into images.
+2.  **Multimodal Cognitive Core:** An upgrade to the NexusAI engine to support mixed inputs.
+3.  **Visual MEMORIA v1:** The first generation of the multimodal memory system.
+
+**📋 Detailed Implementation Steps:**
+
+1.  **Create the Rendering Service:**
+    *   **Technology:** Select a specialized web rendering library like `Playwright` or `Puppeteer`. These libraries allow precise control over CSS and HTML, providing maximum flexibility in designing the visual representation of text.
+    *   **Build the API:** Create an internal API endpoint, e.g., `POST /render-text`, that accepts a JSON object containing `text_content` and a `rendering_options` array (like `dpi`, `font_size`, `page_layout`).
+    *   **Outputs:** The service will return a list of images (base64 encoded) or paths to temporarily stored image files.
+
+2.  **Upgrade the Cognitive Core:**
+    *   **Challenge:** The core logic of NexusAI, which expects only text inputs, must be modified.
+    *   **Solution:** Refactor the "Context Manager" to be able to construct inputs for Gemini models in a format that accepts mixed text and image parts.
+    *   **Testing:** Build unit tests to confirm the core's ability to send and receive correct responses when provided with inputs containing both images and text.
+
+3.  **Build Visual MEMORIA v1:**
+    *   **Modify `MEMORIA`:** Modify the function responsible for saving memories. Add new logic: `IF text_length > THRESHOLD OR is_archival_request == True THEN call RenderingService`.
+    *   **Define Data Schema:** Each entry in `Visual MEMORIA` will be a JSON object containing:
+        *   `memory_id`: Unique identifier.
+        *   `timestamp`: Creation time.
+        *   `type`: (e.g., `ARCHIVE`, `CHART`, `CONCEPT_IMAGE`).
+        *   `text_summary`: A short, LLM-generated text summary.
+        *   `vector_embedding`: A vector of the text summary for easy searching.
+        *   `storage_path`: Path to the actual image.
+        *   `source_tool`: The tool that produced this memory (e.g., `RenderingService`, `CodeInterpreter`).
+
+**⚙️ How It Will Look in NexusAI (Practical Example):**
+
+*   **Idea:** "I want you to analyze the entire book 'Thinking, Fast and Slow' and answer complex questions about it."
+*   **Agent's Internal Workflow:**
+    1.  `Thought:` "The size of the book exceeds my text context window. I must use my visual capabilities."
+    2.  `Action:` `visualize_text(file_path='thinking_fast_and_slow.pdf', options={...})`
+    3.  `Observation:` (The service receives a list of image paths)
+    4.  `Thought:` "Now I have the entire book as images. I will pass the images along with the user's question to the multimodal cognitive core."
+    5.  `Action:` `multimodal_query(images=[...], text="What is the relationship between System 1 and the Cognitive Biases mentioned in Part 2?")`
+
+**✅ Success Metrics for this Phase:**
+*   [ ] Achieve a compression ratio of at least 4x (1 million text tokens -> 250,000 visual tokens).
+*   [ ] Ability to answer 10 "Needle-in-a-Haystack" questions within a document of 1 million visual tokens.
+
+---
+
+### **Phase 2: Efficiency - Building the Operational Layer (The DeepAgent Layer)**
+
+**🎯 Primary Goal:** To equip NexusAI with the mechanisms to operate efficiently and flexibly, manage active context intelligently, and adapt to unexpected task requirements.
+
+**🔧 Key Components to Build:**
+1.  **Memory Folding Mechanism:** A tool for managing active context.
+2.  **Tool Creation and Discovery Service:** A search engine for tools.
+3.  **Tool Simulators:** For a safe and effective training environment.
+
+**📋 Detailed Implementation Steps:**
+
+1.  **Implement `Memory Folding` as a Tool:**
+    *   **Tool Creation:** Develop a `fold_active_memory()` tool.
+    *   **Internal Logic:** When called, the tool takes the last `N` interactions in the active memory, sends them to an auxiliary LLM with a specific prompt: "Summarize these interactions into a JSON object with the following structure: {episodic_memory: {...}, working_memory: {...}, tool_memory: {...}}".
+    *   **Activation:** The tool is called automatically when the context size approaches its limit, or when the `Cognitive Navigator` detects that the agent is stuck in a loop.
+
+2.  **Build the Tool Discovery or Innovation Service:**
+    *   **Database Setup:** Use a simple vector database like `ChromaDB`.
+    *   **Data Ingestion:** Write a script that scans the tools folder (or a list of external APIs), extracts docstrings, converts them to vectors, and stores them in `ChromaDB`.
+    *   **Tool Creation:** Develop a `search_for_tool(query: string)` tool that converts the query into a vector and searches for the nearest `k` tools in `ChromaDB`.
+    *   **Tool Innovation:** Test the newly created tool in case the system autonomously creates a new mental tool to solve the problem.
+
+**⚙️ How It Will Look in NexusAI (Practical Example):**
+
+*   **Idea:** "Analyze the sales data in this file, then convert the amounts from USD to EUR."
+*   **Agent's Internal Workflow:**
+    1.  `Thought:` "I have successfully analyzed the data. Now I need to convert currencies. There is no `convert_currency` tool in my current toolbox."
+    2.  `Action:` `search_for_tool(query="currency conversion API")`
+    3.  `Observation:` (Receives a list of potential tools with their documentation, if available)
+    4.  `Thought:` "The `exchange_rate_api` tool looks suitable. The documentation says it requires a call to `get_rate(from, to)`. I will use it."
+    5.  `Action:` `exchange_rate_api.get_rate(from='USD', to='EUR')`
+    6.  In case a suitable existing tool cannot be accessed, the system will innovate or develop a new mental tool to achieve the required goal and add it to the list of mental tools in the program for review by the user to install, modify, or cancel it, so that the tool is available for reuse in the future.
+
+**✅ Success Metrics for this Phase:**
+*   [ ] Complete a task requiring 50 interactive steps without exceeding the context window, thanks to calling `fold_active_memory` at least twice.
+*   [ ] Successfully solve a task that requires 3 previously undefined tools.
+
+---
+
+### **Phase 3: Evolution - Building the Evolutionary Layer (The HGM Layer)**
+
+**🎯 Primary Goal:** To transform the process of improving NexusAI from a manual or intuition-based process into a systematic, data-driven Darwinian process that ensures real long-term evolution.
+
+**🔧 Key Components to Build:**
+1.  **CMP Metric:** An objective scoring system for agent quality.
+2.  **Evolution Chamber v2:** The mastermind of the evolution process.
+3.  **Asynchronous Evaluator System:** The "army" of workers who perform the evaluation.
+
+**📋 Detailed Implementation Steps:**
+
+1.  **Build the CMP Metric:**
+    *   **Define the Formula:** `CMP_Score = (0.5 * task_success_rate) + (0.3 * efficiency_score) + (0.2 * cognitive_quality_score)`. Weights can be adjusted.
+    *   **Develop Functions:** Write Python functions to calculate each part of the equation. `task_success_rate` comes from `SimulationLab`. `efficiency_score` calculates tokens and time. `cognitive_quality_score` comes from `Cognitive Navigator` metrics.
+    *   **Database:** Create a table in the database to store the evolution tree and CMP results for each node.
+
+2.  **Re-engineer `Evolution Chamber v2`:**
+    *   **Core Logic:** The chamber will operate as a `while True:` loop that sleeps for a period then wakes up to execute an evolution cycle.
+    *   **Cycle Steps:**
+        1.  `select_promising_node()`: Queries the CMP database and uses an algorithm (like Upper Confidence Bound or Thompson Sampling) to select the best node to expand.
+        2.  `generate_mutation(node)`: Asks the selected node (the "parent" agent) to propose a modification to its constitution or structure. `Dreaming Chamber` can be used here as a source of inspiration for mutations.
+        3.  `create_child_node(parent_node, mutation)`: Creates a new version of the agent (the "child") with the applied modification.
+        4.  `add_to_evaluation_queue(child_node)`: Adds the new "child" to a queue to be evaluated.
+
+3.  **Build the Asynchronous Evaluator System:**
+    *   **Queue:** Use a simple queue system (like RabbitMQ or a Redis Queue).
+    *   **Workers:** `SimulationLab` will be modified to act as a worker. Instead of running on demand, it will run continuously, pulling an agent from the queue, evaluating it on a set of tasks, and then writing the updated CMP result to the database.
+
+**⚙️ How It Will Look in NexusAI (Practical Example):**
+
+*   **View from the Control Room:**
+    *   `Log - Evolution Chamber:` "Woke up. After analyzing the evolution tree, node `v4.17` (which developed a more efficient visual memory) has the highest expected CMP value. I will expand it."
+    *   `Log - Evolution Chamber:` "`v4.18` was created as a child of `v4.17` with the mutation 'use thumbnails for quick retrieval'. Added to the evaluation queue."
+    *   `Log - SimulationLab Worker 3:` "Pulling `v4.18` from the queue. Starting evaluation on 50 standard tasks."
+    *   `Log - SimulationLab Worker 3:` "Evaluation finished. CMP database updated. The initial CMP value for `v4.18` is 0.82 (higher than its parent's 0.79)."
+
+**✅ Success Metrics for this Phase:**
+*   [ ] Running the evolution system for an extended period results in a new version of NexusAI that outperforms the initial version by at least 15% in CMP score.
+*   [ ] Show that the best agent found by CMP was not necessarily the best-performing agent in the first generation (proving the solution to the "performance mismatch" problem).

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { EvaluationState } from '../types';
 import DashboardCard from './DashboardCard';
 // FIX: Replaced local icon definition with standardized import from Icons.tsx to ensure consistency.
-import { ChartPieIcon, BrainCircuitIcon, SparklesIcon, RefreshIcon, CheckCircleIcon } from './Icons';
+import { ChartPieIcon, BrainCircuitIcon, SparklesIcon, RefreshIcon, CheckCircleIcon, LightBulbIcon, WrenchScrewdriverIcon } from './Icons';
 
 interface EvaluationDashboardProps {
     evaluationState: EvaluationState;
@@ -53,18 +53,18 @@ const EvaluationDashboard: React.FC<EvaluationDashboardProps> = ({ evaluationSta
                         <p className="text-sm text-center text-nexus-text-muted mb-6">
                             {t('evaluation.lastRun', { date: new Date(lastRun!).toLocaleString() })}
                         </p>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             <MetricDisplay
                                 icon={<CheckCircleIcon className="w-12 h-12 text-green-400"/>}
                                 label={t('evaluation.inferenceAccuracy')}
                                 value={`${metrics.inferenceAccuracy.toFixed(1)}%`}
                                 description={t('evaluation.inferenceAccuracyDesc')}
                             />
-                            <MetricDisplay
-                                icon={<SparklesIcon className="w-12 h-12 text-yellow-400"/>}
-                                label={t('evaluation.flowEfficiency')}
-                                value={metrics.flowEfficiency.toFixed(2)}
-                                description={t('evaluation.flowEfficiencyDesc')}
+                             <MetricDisplay
+                                icon={<LightBulbIcon className="w-12 h-12 text-yellow-400"/>}
+                                label={t('evaluation.planningQuality')}
+                                value={`${metrics.planningQuality.toFixed(1)}%`}
+                                description={t('evaluation.planningQualityDesc')}
                             />
                             <MetricDisplay
                                 icon={<RefreshIcon className="w-12 h-12 text-blue-400"/>}
@@ -72,6 +72,19 @@ const EvaluationDashboard: React.FC<EvaluationDashboardProps> = ({ evaluationSta
                                 value={`${metrics.selfCorrectionRate.toFixed(1)}%`}
                                 description={t('evaluation.selfCorrectionDesc')}
                             />
+                             <MetricDisplay
+                                icon={<WrenchScrewdriverIcon className="w-12 h-12 text-purple-400"/>}
+                                label={t('evaluation.toolInnovation')}
+                                value={`${metrics.toolInnovationScore.toFixed(1)}%`}
+                                description={t('evaluation.toolInnovationDesc')}
+                            />
+                            <MetricDisplay
+                                icon={<SparklesIcon className="w-12 h-12 text-pink-400"/>}
+                                label={t('evaluation.flowEfficiency')}
+                                value={metrics.flowEfficiency.toFixed(2)}
+                                description={t('evaluation.flowEfficiencyDesc')}
+                            />
+                           
                         </div>
                     </div>
                 </DashboardCard>

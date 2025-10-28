@@ -1,4 +1,4 @@
-# NexusAI Cognitive Lab 3.1: The Deep Agent Paradigm
+# NexusAI Cognitive Lab 4.0: The Deep Agent Paradigm
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![React](https://img.shields.io/badge/React-18-blue?logo=react)](https://react.dev/)
@@ -89,7 +89,7 @@ The UI is designed to provide a clear window into the Agent 2.0 flow, with the C
 +----------------------------------------------------------------------+
 ```
 
-## The Sentience Roadmap (Version 3.1)
+## The Sentience Roadmap
 
 > This roadmap has been updated to prioritize safety, measurement, and sustainable growth based on a comprehensive system review. For a full technical breakdown, see the [Detailed Development Plan](./DETAILED_PLAN.md).
 
@@ -100,7 +100,7 @@ Our development strategy is guided by several core principles:
 - **Iterative Evolution:** Simulating and validating new architectures before large-scale engineering investment.
 
 ---
-### **Completed Milestones (Phases 1-17)**
+### **Completed Milestones (Version 3.1)**
 
 NexusAI has successfully completed its foundational development, establishing a fully functional Agent 2.0 platform. All 17 phases, from core architecture to advanced metacognitive autonomy, are now complete. Key achievements include:
 -   **Core Cognitive Architecture:** A robust Orchestrator/Sub-Agent model with a persistent, emotionally-aware memory system (**MEMORIA**).
@@ -123,6 +123,24 @@ This new architecture will be centered on three groundbreaking concepts:
 3.  **Layered, Contextual Memory:** The memory system will be re-architected to mirror human cognition, featuring distinct layers for episodic (events), semantic (facts), procedural (skills), and emotional memories. This will enable far richer, more context-aware recall, moving beyond simple data retrieval to a more associative and intuitive form of memory.
 
 The goal of V4.0 is to evolve NexusAI from an "executing agent" that follows plans, to a true "thinking agent" that possesses a unified awareness, a deep understanding of context, and the capacity for genuine insight and creativity.
+
+---
+### **The V4.1 Executive Roadmap: Materializing Intelligence**
+
+The `v4.1` plan builds upon the unified vision of `v4.0` by introducing a three-layered executive architecture designed to make the AI more efficient, adaptable, and self-improving in a systematic way.
+
+1.  **The Glyph Layer (Physical-Visual):** This layer's primary goal is to **obliterate the context window barrier**. By developing a service that renders massive amounts of text (entire books, codebases) into compact image-based formats, the AI can visually "read" and analyze datasets that were previously impossible to fit into a text-based context. This moves from sequential text processing to holistic visual comprehension.
+
+2.  **The DeepAgent Layer (Operational):** This layer focuses on operational efficiency and adaptability. Key features include:
+    *   **Memory Folding:** An intelligent context management tool that summarizes older parts of a conversation, keeping the active context window lean and focused without losing critical information.
+    *   **Dynamic Tool Discovery:** An internal service that allows the AI to search for and learn to use new tools on the fly. If it needs a capability it doesn't have (e.g., currency conversion), it can find an appropriate API, understand its documentation, and integrate it into its plan, or even innovate a new tool if none exists.
+
+3.  **The HGM Layer (Evolutionary):** This layer institutes a Darwinian, data-driven process for self-improvement.
+    *   **Cognitive Merit Point (CMP):** A new, objective metric to score an agent's "quality of thought" based on success, efficiency, and cognitive elegance.
+    *   **Evolution Chamber v2:** An automated system that continuously generates "mutations" of the AI's core logic and architecture, creating new "child" agents.
+    *   **Asynchronous Evaluator:** A fleet of background workers (using the `SimulationLab`) that constantly test these new child agents, measure their CMP score, and feed the results back into the system. The agents with the highest scores are then selected for future generations, ensuring true, long-term evolution.
+
+This three-tiered plan represents a shift from building features to building a self-sustaining ecosystem for intelligence to grow.
 
 ---
 ## Contributing

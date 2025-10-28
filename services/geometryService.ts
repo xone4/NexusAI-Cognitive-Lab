@@ -1,6 +1,15 @@
+import { GoogleGenAI } from '@google/genai';
 import type { CognitiveMetricStep, CognitiveTrajectory } from '../types';
 
-// --- Embedding Simulation ---
+// IMPORTANT: This would be populated by a secure mechanism in a real app
+const API_KEY = process.env.API_KEY;
+if (!API_KEY) {
+    console.error("API_KEY environment variable not set. Geometric analysis will be impaired.");
+}
+const ai = new GoogleGenAI({ apiKey: API_KEY });
+
+
+// --- Embedding Generation ---
 
 // Simple string hash function for seeding
 function simpleHash(str: string): number {
@@ -13,32 +22,42 @@ function simpleHash(str: string): number {
     return hash;
 }
 
-// Seedable pseudo-random number generator
-function seededRandom(seed: number) {
-    let x = Math.sin(seed) * 10000;
-    return x - Math.floor(x);
-}
 
 const embeddingCache = new Map<string, number[]>();
-const EMBEDDING_DIM = 128;
 
-export const getEmbedding = (text: string): number[] => {
-    const fullTextHash = simpleHash(text);
-    const cacheKey = String(fullTextHash);
+export const getEmbedding = async (text: string): Promise<number[]> => {
+    if (!text || text.trim() === "") {
+        // Return a zero vector for empty strings to avoid API errors.
+        return Array(768).fill(0); // Assuming text-embedding-004 has 768 dimensions
+    }
+    
+    const cacheKey = String(simpleHash(text));
 
     if (embeddingCache.has(cacheKey)) {
         return embeddingCache.get(cacheKey)!;
     }
 
-    const seed = fullTextHash; // Use the same hash for seeding
-    const vector = Array.from({ length: EMBEDDING_DIM }, (_, i) => seededRandom(seed + i) - 0.5);
+    if (!API_KEY) {
+        console.warn("API_KEY not found, returning zero vector for embedding.");
+        return Array(768).fill(0);
+    }
     
-    // Normalize the vector to have a magnitude of 1
-    const magnitude = Math.sqrt(vector.reduce((sum, val) => sum + val * val, 0));
-    const normalized = vector.map(v => v / (magnitude || 1));
+    try {
+        const response = await ai.models.embedContent({
+            model: 'text-embedding-004',
+            contents: text,
+        });
 
-    embeddingCache.set(cacheKey, normalized);
-    return normalized;
+        const embedding = response.embeddings[0].values;
+        
+        embeddingCache.set(cacheKey, embedding);
+        return embedding;
+
+    } catch (error) {
+        console.error(`Failed to generate embedding for text: "${text.substring(0, 30)}..."`, error);
+        // Return a zero vector on failure to prevent crashing consumers of this function.
+        return Array(768).fill(0);
+    }
 };
 
 
@@ -50,6 +69,15 @@ const norm = (v: number[]): number => Math.sqrt(v.reduce((sum, val) => sum + val
 export const calculateVelocity = (p1: number[], p2: number[]): number[] => subtract(p2, p1);
 export const calculateDistance = (p1: number[], p2: number[]): number => norm(subtract(p1, p2));
 
+export const cosineSimilarity = (v1: number[], v2: number[]): number => {
+    const dotProduct = v1.reduce((sum, a, i) => sum + a * v2[i], 0);
+    const magnitude1 = norm(v1);
+    const magnitude2 = norm(v2);
+    if (magnitude1 === 0 || magnitude2 === 0) return 0;
+    return dotProduct / (magnitude1 * magnitude2);
+};
+
+
 export const calculateMengerCurvature = (p1: number[], p2: number[], p3: number[]): number => {
     const a = norm(subtract(p2, p3));
     const b = norm(subtract(p1, p3));
@@ -59,7 +87,10 @@ export const calculateMengerCurvature = (p1: number[], p2: number[], p3: number[
 
     // Area of the triangle using Heron's formula
     const s = (a + b + c) / 2;
-    const area = Math.sqrt(s * (s - a) * (s - b) * (s - c));
+    // Add a check for invalid triangle sides which can lead to NaN
+    const areaContent = s * (s - a) * (s - b) * (s - c);
+    if (areaContent < 0) return 0;
+    const area = Math.sqrt(areaContent);
     
     const denominator = a * b * c;
     if (denominator === 0) return 0;

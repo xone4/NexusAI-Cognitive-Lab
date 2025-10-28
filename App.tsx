@@ -485,6 +485,7 @@ const App: React.FC = () => {
               onArchiveTrace={handleArchiveTrace}
               onExtractBehavior={handleExtractBehavior}
               onRerunTrace={handleRerunTrace}
+// FIX: The function was being passed as `onUpdateWorldModel` but the handler was named `handleUpdateWorldModelFromTrace`. This corrects the property name to match the handler.
               onUpdateWorldModel={handleUpdateWorldModelFromTrace}
               onExpandPlan={expandPlan}
               onOptimizePlan={optimizePlan}
