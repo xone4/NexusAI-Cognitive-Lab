@@ -143,6 +143,15 @@ The `v4.1` plan builds upon the unified vision of `v4.0` by introducing a three-
 This three-tiered plan represents a shift from building features to building a self-sustaining ecosystem for intelligence to grow.
 
 ---
+### **The V5.0 Vision: The Cognitive Spark (Curiosity)**
+
+**New Vision:** To transform NexusAI from a system that mechanically "thinks" and "evolves" into one that possesses an intrinsic drive for exploration and learning. We will engineer "Curiosity" not as a transient state but as a fundamental, measurable, and controllable mechanism that acts as a catalyst for all other system capabilities. This will be achieved in three phases:
+
+1.  **Diagnosis & Measurement:** Building a "Curiosity Meter" within the `SimulationLab` to objectively measure different dimensions of curiosity (information-seeking, thrill-seeking, social).
+2.  **Activation:** Engineering a "Curious Thinking Mode" that the `Cognitive Navigator` can automatically trigger when it detects cognitive stagnation or dead ends, using a "Curious Chain-of-Questioning" (CoQ) technique to break through logical blocks.
+3.  **Evolution:** Integrating the `CuriosityScore` directly into the `CMP` fitness function, making curiosity a desirable trait for the `Evolution Chamber` to select for, ensuring that NexusAI evolves not just to be more successful, but also intrinsically more curious.
+
+---
 ## Contributing
 
 Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.

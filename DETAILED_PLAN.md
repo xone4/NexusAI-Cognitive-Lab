@@ -385,3 +385,111 @@ To guide this evolution, we will develop new evaluation tools:
 **✅ Success Metrics for this Phase:**
 *   [ ] Running the evolution system for an extended period results in a new version of NexusAI that outperforms the initial version by at least 15% in CMP score.
 *   [ ] Show that the best agent found by CMP was not necessarily the best-performing agent in the first generation (proving the solution to the "performance mismatch" problem).
+---
+## Part 7: The Cognitive Spark (NexusAI v5.0)
+
+**New Vision:** To transform NexusAI from a system that mechanically "thinks" and "evolves" into one that possesses an intrinsic drive for exploration and learning. We will engineer "Curiosity" not as a transient state but as a fundamental, measurable, and controllable mechanism that acts as a catalyst for all other system capabilities.
+
+---
+### Phase 1: Diagnosis & Measurement – Building the "Curiosity Meter"
+
+**🎯 Primary Goal:** Before we can engineer curiosity, we must be able to measure it objectively. We will build a suite of evaluation tools within the `SimulationLab` to benchmark the baseline curiosity of NexusAI and any of its evolved versions.
+
+**🔧 Key Components to Build:**
+1.  **Curiosity Dashboard:** A set of tasks designed to measure different dimensions of curiosity.
+2.  **Composite Curiosity Score:** A unified numerical metric.
+
+**📋 Detailed Implementation Steps:**
+
+1.  **Implement Behavioral Evaluation Tasks:**
+    *   **"Information Seeking" Task:**
+        *   **Implementation:** Build the "Missing-Letter Game" as described in the paper. The agent will be presented with a series of incomplete words. After each attempt, it will be asked if it wants to see the correct answer (in exchange for a small deduction from its reward).
+        *   **Metric:** The percentage of times the agent chooses to see the answer. A high percentage indicates high epistemic curiosity.
+    *   **"Thrill Seeking" Task:**
+        *   **Implementation:** Build the "Underwater Game." The agent is given two choices: Window A, which reveals a known type of fish (low risk), and Window B, which reveals random, unexpected fish (high risk).
+        *   **Metric:** The percentage of times the agent chooses Window B. A high percentage indicates a greater appetite for risk and exploration.
+    *   **"Social Curiosity" Task:**
+        *   **Implementation:** Set up a dialogue scenario in the `SimulationLab` where the agent interacts with a "stranger" (simulated by another LLM like GPT-4).
+        *   **Metric:** The number of open-ended questions the agent asks about the "other person" during the conversation.
+
+2.  **Develop the Composite Curiosity Score:**
+    *   **Definition:** Create a formula that combines the results of the three tasks into a single score, giving greater weight to information seeking. Example: `CuriosityScore = (0.6 * InfoSeeking) + (0.2 * ThrillSeeking) + (0.2 * SocialCuriosity)`.
+    *   **Logging:** This score will be stored for every version of NexusAI that is evaluated.
+
+3.  **Establish a Baseline Assessment:**
+    *   **Goal:** To know the starting point.
+    *   **Implementation:** Run the current version of NexusAI through the "Curiosity Dashboard" tasks 100 times to determine its baseline curiosity score. Expected results (based on the paper): very high information-seeking, very low thrill-seeking.
+
+**✅ Success Metrics for this Phase:**
+*   The three evaluation tasks are fully built and operational within `SimulationLab`.
+*   A stable and reliable baseline `CuriosityScore` for the current NexusAI is established.
+
+---
+### Phase 2: Activation – Engineering the "Curious Thinking Mode"
+
+**🎯 Primary Goal:** To equip NexusAI with the ability to proactively enter a "curious mode" when facing complex problems or dead ends, using the "Curious Chain-of-Questioning" (CoQ) technique.
+
+**🔧 Key Components to Build:**
+1.  **CoQ Prompting Engine:** A component to generate curiosity-inducing prompts.
+2.  **Cognitive Navigator Integration:** Linking curiosity to the thinking quality monitoring mechanism.
+
+**📋 Detailed Implementation Steps:**
+
+1.  **Build the CoQ Engine:**
+    *   **Logic:** Develop a module that can take any standard prompt and wrap it with CoQ instructions.
+    *   **Instruction Example:** "You are now in Curious Thinker mode. Before answering, pause and ask yourself exploratory questions like 'What if?', 'Why is this assumption true?', 'What information am I missing here?'. Answer your own questions first, then provide your final answer."
+    *   **Flexibility:** The engine should allow for experimenting with different "curious personas" (e.g., an inquisitive student, a skeptical scientist, a meticulous detective).
+
+2.  **Integrate Intelligently with the Cognitive Navigator:**
+    *   **Concept:** Curious mode is not activated all the time (as it is token-intensive), but only when necessary.
+    *   **Trigger Rule:** Modify the `Cognitive Navigator` to automatically activate curious mode when it detects one of the following patterns:
+        *   **Cognitive Stagnation:** If the "curvature" of the thought trajectory remains high for an extended period (the agent is circling the same ideas).
+        *   **Premature Conclusion:** If the "velocity" drops to zero too quickly on a complex problem.
+        *   **Infinite Loops:** If it detects repetition in the reasoning steps.
+
+3.  **Tag "Eureka Moments" in Memory:**
+    *   **Logic:** When a problem is successfully solved after curious mode was activated, this experience must be marked in `MEMORIA`.
+    *   **Implementation:** Add a `eureka: true` flag to the memory's metadata. These tagged memories will be invaluable for the `Dreaming Chamber` in the next phase.
+
+**⚙️ How it will look in NexusAI (Practical Example):**
+*   **Problem:** The three-light-bulbs puzzle (from the paper's example).
+*   **Agent's Internal Workflow:**
+    1.  **Thought (Normal Mode):** "If I turn on switch A, go in, and the bulb is on, it's A. If not, I don't know. This is a dead end."
+    2.  **Cognitive Navigator Log:** "Cognitive stagnation detected. Activating curious mode for the next 3 steps."
+    3.  **Thought (Curious Mode):** "Curious mode activated. I must ask questions. Why are there three switches? What other properties does a light bulb have besides being on or off? A bulb produces heat! What if I use heat as an additional piece of information?"
+    4.  **Thought (Eureka!):** "I can turn on switch A, wait, turn it off, then turn on switch B and enter. If it's on, it's B. If it's off and warm, it's A. If it's off and cold, it's C. Solved."
+    5.  **MEMORIA Log:** "Memory saved with `eureka: true` flag."
+
+**✅ Success Metrics for this Phase:**
+*   Successfully solve 5 logical puzzles that the agent could not solve in normal mode, after activating curious mode.
+*   Reduce the occurrence of "infinite loops" in `SimulationLab` by 50%.
+
+---
+### Phase 3: Evolution – Curiosity-Driven Evolution
+
+**🎯 Primary Goal:** To integrate "Curiosity" as a fundamental factor in the Darwinian evolution process, making NexusAI strive not just to be "more successful" but also intrinsically "more curious."
+
+**🔧 Key Components to Build:**
+1.  **Updated CMP Score Formula.**
+2.  **Expanded capabilities for Evolution Chamber v2.**
+
+**📋 Detailed Implementation Steps:**
+
+1.  **Incorporate Curiosity into the Fitness Function:**
+    *   **Modification:** Update the Clade-Metaproductivity (CMP) score formula to include the `CuriosityScore`.
+    *   **New Formula:** `CMP_Score = (0.4 * task_success) + (0.3 * efficiency) + (0.2 * cognitive_quality) + (0.1 * curiosity_score)`.
+    *   **Impact:** Now, an agent that succeeds at tasks while being curious is considered "fitter" than another agent that achieves the same success but is "dull" and non-exploratory. This ensures that evolution favors lineages capable of continuous learning.
+
+2.  **Make Curiosity a "Gene" that can Evolve:**
+    *   **Concept:** The "curiosity persona" is not fixed. The `Evolution Chamber` should be able to experiment with different types.
+    *   **Implementation:** In each agent's constitution, add a new section for `curiosity_persona`.
+    *   **Mutations:** When the `Evolution Chamber` generates a new "child," one of the mutations can be to alter this section (e.g., changing "inquisitive student" to "skeptical philosopher"). The evaluation system will then determine which "curiosity gene" leads to the best long-term outcomes.
+
+3.  **Create a Feedback Loop from the Dreaming Chamber:**
+    *   **Logic:** The `Dreaming Chamber` will now specifically analyze memories flagged as `eureka: true`.
+    *   **Goal:** To find patterns. For example, it might discover that "asking questions about the physical properties of objects often leads to innovative solutions."
+    *   **Feedback:** This insight becomes a "mutation suggestion" that is fed to the `Evolution Chamber`, which can then create a new agent that explicitly adopts this strategy in its curious persona.
+
+**✅ Success Metrics for this Phase:**
+*   Show that the average `CuriosityScore` of new generations of agents increases over time.
+*   Produce at least one evolved agent that solves a complex, "out-of-the-box" problem that none of the previous generations could solve.
