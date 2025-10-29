@@ -18,8 +18,7 @@ const SuggestionTray: React.FC<SuggestionTrayProps> = ({ process, permissions, o
   const [keywords, setKeywords] = useState('');
   const [isGeneratingKeywords, setIsGeneratingKeywords] = useState(false);
 
-  const hasHistory = process && process.history.length > 0;
-  const isVisible = permissions.canSubmitQuery && !hasHistory;
+  const isVisible = permissions.canSubmitQuery;
 
   const fetchSuggestions = useCallback((profile: SuggestionProfile, currentKeywords: string) => {
     setLoadingSuggestions(true);
@@ -29,8 +28,6 @@ const SuggestionTray: React.FC<SuggestionTrayProps> = ({ process, permissions, o
   }, []);
 
   const handleSuggestionProfileChange = (profile: SuggestionProfile) => {
-    // FIX: Removed the conditional check. This allows refetching suggestions
-    // by clicking the currently active profile button again.
     setSuggestionProfile(profile);
     fetchSuggestions(profile, keywords);
   };

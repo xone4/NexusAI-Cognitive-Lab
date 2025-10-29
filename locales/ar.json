@@ -336,7 +336,15 @@
     "planningQuality": "جودة التخطيط",
     "planningQualityDesc": "النسبة المئوية للخطط الأولية التي تم تنفيذها بنجاح دون الحاجة إلى تصحيح ذاتي عبر 'replan'.",
     "toolInnovation": "ابتكار الأدوات",
-    "toolInnovationDesc": "يقيس تنوع الأدوات المستخدمة في جميع المهام، ويكافئ استكشاف مسارات معرفية جديدة."
+    "toolInnovationDesc": "يقيس تنوع الأدوات المستخدمة في جميع المهام، ويكافئ استكشاف مسارات معرفية جديدة.",
+    "curiosityMeter": "مقياس الفضول",
+    "curiosityDesc": "قم بقياس الدافع الجوهري للذكاء الاصطناعي للاستكشاف والتعلم عبر أبعاد مختلفة.",
+    "runBenchmark": "تشغيل قياس الفضول",
+    "runningBenchmark": "جاري قياس الفضول...",
+    "infoSeeking": "البحث عن المعلومات",
+    "thrillSeeking": "البحث عن الإثارة",
+    "socialCuriosity": "الفضول الاجتماعي",
+    "compositeScore": "النتيجة المركبة"
   },
   "settings": {
     "cognitiveCore": "النواة المعرفية",
@@ -478,6 +486,7 @@
     "summary": "ملخص",
     "executionFlow": "تدفق التنفيذ",
     "geometry": "الهندسة المعرفية",
+    "navigatorLog": "سجل الملاح",
     "aiReflection": "تأمل الذكاء الاصطناعي",
     "discussTrace": "مناقشة الأثر",
     "userQuery": "استعلام المستخدم",

@@ -63,6 +63,9 @@ import {
   CameraOff,
   FlaskConical,
   ShieldCheck,
+  AlertTriangle,
+  AlertOctagon,
+  Route,
   type LucideProps,
 } from 'lucide-react';
 
@@ -135,3 +138,6 @@ export const CameraIcon: React.FC<IconProps> = (props) => <Camera {...props} str
 export const CameraOffIcon: React.FC<IconProps> = (props) => <CameraOff {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;
 export const FlaskConicalIcon: React.FC<IconProps> = (props) => <FlaskConical {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;
 export const ShieldCheckIcon: React.FC<IconProps> = (props) => <ShieldCheck {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;
+export const AlertTriangleIcon: React.FC<IconProps> = (props) => <AlertTriangle {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;
+export const AlertOctagonIcon: React.FC<IconProps> = (props) => <AlertOctagon {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;
+export const RouteIcon: React.FC<IconProps> = (props) => <Route {...props} strokeWidth={props.strokeWidth ?? DEFAULT_STROKE_WIDTH} />;

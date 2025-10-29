@@ -172,6 +172,7 @@ export interface PlanStep {
     task?: string; // For delegate_task_to_replica
     personalityOverride?: Partial<Personality>;
     childProcess?: CognitiveProcess; // For recursive delegation state management
+    cognitiveAlert?: 'stagnation' | 'confusion';
 }
 
 // --- Affective Core Types ---
@@ -215,6 +216,15 @@ export interface CognitiveTrajectory {
   summary: CognitiveTrajectorySummary;
 }
 
+export interface NavigatorAlert {
+    timestamp: number;
+    stepIndex: number;
+    stepDescription: string;
+    reason: 'stagnation' | 'confusion';
+    metrics: { velocity: number; curvature: number };
+    userAction: 'pending' | 'revised' | 'ignored' | 'cancelled';
+}
+
 export interface ChatMessage {
     id: string;
     role: 'user' | 'model';
@@ -247,6 +257,9 @@ export interface ChatMessage {
 
     // For Cognitive Geometry
     cognitiveTrajectory?: CognitiveTrajectory;
+
+    // For Cognitive Navigator analysis
+    navigatorAlerts?: NavigatorAlert[];
 
     // For MICRO Architecture Simulation
     activeExpert?: ExpertPersona;
@@ -443,6 +456,7 @@ export interface WorldModelPrinciple {
   statement: string; // e.g., "Market volatility increases with unexpected political events."
   confidence: number; // 0 to 1
   sourceTraceId?: string; // ID of the ChatMessage it was derived from
+  lastUpdated: number;
 }
 
 export interface WorldModel {
@@ -500,12 +514,22 @@ export interface EvaluationMetrics {
     selfCorrectionRate: number; // 0-100%
     planningQuality: number; // 0-100%
     toolInnovationScore: number; // 0-100%
+    confidenceScore: number; // 0-100%
+}
+
+export interface CuriosityMetrics {
+    infoSeeking: number; // 0-100%
+    thrillSeeking: number; // 0-100%
+    socialCuriosity: number; // count of questions
+    compositeScore: number; // 0-100
 }
 
 export interface EvaluationState {
     isEvaluating: boolean;
+    isEvaluatingCuriosity: boolean;
     lastRun: number | null;
     metrics: EvaluationMetrics | null;
+    curiosityMetrics: CuriosityMetrics | null;
 }
 
 // --- Autonomous Control Types ---

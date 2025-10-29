@@ -336,7 +336,15 @@
     "planningQuality": "Planning Quality",
     "planningQualityDesc": "The percentage of initial plans that were executed successfully without needing self-correction via 'replan'.",
     "toolInnovation": "Tool Innovation",
-    "toolInnovationDesc": "Measures the diversity of tools used across all tasks, rewarding the exploration of novel cognitive pathways."
+    "toolInnovationDesc": "Measures the diversity of tools used across all tasks, rewarding the exploration of novel cognitive pathways.",
+    "curiosityMeter": "Curiosity Meter",
+    "curiosityDesc": "Measure the AI's intrinsic drive for exploration and learning across different dimensions.",
+    "runBenchmark": "Run Curiosity Benchmark",
+    "runningBenchmark": "Benchmarking Curiosity...",
+    "infoSeeking": "Information Seeking",
+    "thrillSeeking": "Thrill Seeking",
+    "socialCuriosity": "Social Curiosity",
+    "compositeScore": "Composite Score"
   },
   "settings": {
     "cognitiveCore": "Cognitive Core",
@@ -478,6 +486,7 @@
     "summary": "Summary",
     "executionFlow": "Execution Flow",
     "geometry": "Cognitive Geometry",
+    "navigatorLog": "Navigator Log",
     "aiReflection": "AI Reflection",
     "discussTrace": "Discuss Trace",
     "userQuery": "User Query",

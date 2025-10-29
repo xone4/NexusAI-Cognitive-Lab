@@ -130,7 +130,7 @@ The NexusAI project currently comprises a set of highly advanced vertical capabi
 ### Phase 18: Fortification & Foundation (Phase 0) - 🚧 In Progress
 **Goal:** Address critical technical debt, security, and measurement gaps before building the new cognitive structure. This ensures the foundation is solid and sustainable.
 
-*   **1. Upgrade Memory Infrastructure (In Progress)**
+*   **1. Upgrade Memory Infrastructure (💡 Planned)**
     *   **Problem:** `dbService.ts` uses IndexedDB, which is inefficient for vector search. `geometryService.ts` simulates embeddings, limiting search accuracy.
     *   **Solution:**
         *   Replace IndexedDB for vector storage with a specialized vector database (e.g., `vector-db`).
@@ -138,14 +138,19 @@ The NexusAI project currently comprises a set of highly advanced vertical capabi
         *   Replace embedding simulation in `geometryService.ts` with real calls to an embedding model (e.g., `text-embedding-004`) to store true vectors for `archivedTraces` and `playbookItems`.
     *   **Benefit:** Dramatically faster and more accurate semantic search, which is fundamental for an active and efficient memory.
 
-*   **2. Enhance Evaluation Metrics:**
-    *   **Problem:** The current `EvaluationDashboard` provides good but simulated metrics. More objective measures are needed.
-    *   **Solution:**
-        *   Add new indicators to `EvaluationDashboard.tsx` and `nexusAIService.ts`, such as a **Confidence Score** derived from successful bids in the Autonomous Bidding Network, and an **Innovation Score** that measures the use of new tools or toolchains.
-        *   Develop a simple automated feedback system where user ratings of responses are stored and used for continuous performance improvement.
-    *   **Benefit:** Transition from theoretical "thought quality" assessment to quantifiable, performance-based metrics.
+*   **2. Enhance Evaluation Metrics & Implement Curiosity Meter (✅ In Progress):**
+    *   **Problem:** The current `EvaluationDashboard` provides good but simulated metrics. Furthermore, to pursue the V5.0 vision, we need a way to measure the AI's curiosity.
+    *   **Solution & Progress:**
+        *   **Confidence Score (✅ Implemented):** The `EvaluationMetrics` type and `runEvaluation` service have been updated to include a `confidenceScore`, laying the groundwork for more nuanced performance tracking.
+        *   **Curiosity Meter (✅ Implemented):** As the first step of the V5.0 vision, the foundational "Curiosity Meter" has been built within the **Evaluation Lab**. This includes:
+            *   New `CuriosityMetrics` types in `types.ts`.
+            *   A `runCuriosityEvaluation` function in `nexusAIService.ts` that simulates behavioral tasks to produce metrics on information-seeking, thrill-seeking, and social curiosity.
+            *   An updated `EvaluationDashboard.tsx` UI to display these new curiosity benchmarks.
+        *   **Innovation Score (💡 Planned):** The next step is to implement an `Innovation Score` that measures the use of new tools or toolchains.
+        *   **User Feedback System (💡 Planned):** Following that, a simple automated feedback system will be developed where user ratings of responses are stored and used for continuous performance improvement.
+    *   **Benefit:** Transition from theoretical "thought quality" assessment to quantifiable, performance-based metrics, and establish the crucial measurement foundation for engineering curiosity.
 
-*   **3. Improve UI/UX & Explainability:**
+*   **3. Improve UI/UX & Explainability (💡 Planned):**
     *   **Problem:** The current UI is functional but can be complex. Agent decisions are not always transparent.
     *   **Solution:**
         *   Enhance `CognitiveProcessVisualizer.tsx` to show not just the steps, but *why* each step was chosen (e.g., "This expert was selected due to category match").
@@ -393,7 +398,7 @@ To guide this evolution, we will develop new evaluation tools:
 ---
 ### Phase 1: Diagnosis & Measurement – Building the "Curiosity Meter"
 
-**🎯 Primary Goal:** Before we can engineer curiosity, we must be able to measure it objectively. We will build a suite of evaluation tools within the `SimulationLab` to benchmark the baseline curiosity of NexusAI and any of its evolved versions.
+**🎯 Primary Goal:** Before we can engineer curiosity, we must be able to measure it objectively. We will build a suite of evaluation tools within the `EvaluationLab` to benchmark the baseline curiosity of NexusAI and any of its evolved versions.
 
 **🔧 Key Components to Build:**
 1.  **Curiosity Dashboard:** A set of tasks designed to measure different dimensions of curiosity.
@@ -421,7 +426,7 @@ To guide this evolution, we will develop new evaluation tools:
     *   **Implementation:** Run the current version of NexusAI through the "Curiosity Dashboard" tasks 100 times to determine its baseline curiosity score. Expected results (based on the paper): very high information-seeking, very low thrill-seeking.
 
 **✅ Success Metrics for this Phase:**
-*   The three evaluation tasks are fully built and operational within `SimulationLab`.
+*   The three evaluation tasks are fully built and operational within `EvaluationLab`.
 *   A stable and reliable baseline `CuriosityScore` for the current NexusAI is established.
 
 ---

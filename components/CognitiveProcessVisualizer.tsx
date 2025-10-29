@@ -1,7 +1,7 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
-import type { CognitiveProcess, ChatMessage, PlanStep, CognitiveConstitution, GeneratedImage, Language, ExpertPersona } from '../types';
+import type { CognitiveProcess, ChatMessage, PlanStep, CognitiveConstitution, GeneratedImage, Language, ExpertPersona, NavigatorAlert } from '../types';
 import { useTranslation } from 'react-i18next';
-import { BrainCircuitIcon, UserIcon, BookOpenIcon, CogIcon, CheckCircleIcon, CubeTransparentIcon, PlayIcon, PencilIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, PlusCircleIcon, CodeBracketIcon, LightBulbIcon, LinkIcon, ArrowRightIcon, PhotographIcon, SparklesIcon, ArchiveBoxArrowDownIcon, RefreshIcon, GlobeAltIcon, DocumentTextIcon, ShareIcon, ReplicaIcon, DicesIcon, ArrowsRightLeftIcon, XCircleIcon, SaveIcon, TrajectoryIcon, ChartPieIcon, ShieldCheckIcon } from './Icons';
+import { BrainCircuitIcon, UserIcon, BookOpenIcon, CogIcon, CheckCircleIcon, CubeTransparentIcon, PlayIcon, PencilIcon, TrashIcon, ArrowUpIcon, ArrowDownIcon, PlusCircleIcon, CodeBracketIcon, LightBulbIcon, LinkIcon, ArrowRightIcon, PhotographIcon, SparklesIcon, ArchiveBoxArrowDownIcon, RefreshIcon, GlobeAltIcon, DocumentTextIcon, ShareIcon, ReplicaIcon, DicesIcon, ArrowsRightLeftIcon, XCircleIcon, SaveIcon, TrajectoryIcon, ChartPieIcon, ShieldCheckIcon, AlertTriangleIcon, AlertOctagonIcon } from './Icons';
 import TextActionOverlay from './TextActionOverlay';
 
 interface CognitiveProcessVisualizerProps {
@@ -12,6 +12,7 @@ interface CognitiveProcessVisualizerProps {
   onReorderPlan: (messageId: string, fromIndex: number, toIndex: number) => void;
   onAddPlanStep: (messageId: string) => void;
   onDeletePlanStep: (messageId: string, stepIndex: number) => void;
+  onAcknowledgeAlert: (messageId: string, stepIndex: number, action: NavigatorAlert['userAction']) => void;
   onSavePlanAsToolchain: (plan: PlanStep[]) => void;
   onArchiveTrace: (messageId: string) => void;
   onExtractBehavior: (messageId: string) => void;
@@ -136,7 +137,7 @@ const SubProcessVisualizer: React.FC<{ process: CognitiveProcess }> = memo(({ pr
 SubProcessVisualizer.displayName = 'SubProcessVisualizer';
 
 
-const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: boolean, onUpdate: (newStep: PlanStep) => void, onDelete: () => void, onMove: (direction: 'up' | 'down') => void, isFirst: boolean, isLast: boolean }> = ({ step, isCurrent, isEditable, onUpdate, onDelete, onMove, isFirst, isLast }) => {
+const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: boolean, onUpdate: (newStep: PlanStep) => void, onDelete: () => void, onMove: (direction: 'up' | 'down') => void, isFirst: boolean, isLast: boolean, onRevise: () => void, onAcknowledge: () => void }> = ({ step, isCurrent, isEditable, onUpdate, onDelete, onMove, isFirst, isLast, onRevise, onAcknowledge }) => {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
@@ -164,6 +165,12 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
     };
 
     const statusIcon = () => {
+        if (step.cognitiveAlert === 'stagnation') {
+            return <div title="Cognitive Navigator Alert: Stagnation Detected"><AlertTriangleIcon className="w-5 h-5 text-yellow-400 animate-pulse"/></div>;
+        }
+        if (step.cognitiveAlert === 'confusion') {
+            return <div title="Cognitive Navigator Alert: Confusion Detected"><AlertOctagonIcon className="w-5 h-5 text-orange-500 animate-pulse"/></div>;
+        }
         switch (step.status) {
             case 'pending': return <div className="w-5 h-5 rounded-full border-2 border-nexus-text-muted/50" title="Pending" />;
             case 'executing': return <div className="w-5 h-5 relative"><div className="nexus-loader"></div></div>;
@@ -229,6 +236,12 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
                         {step.inputRef && <span className="text-xs text-nexus-text-muted font-mono flex-shrink-0">(Input: Step {step.inputRef})</span>}
                      </p>
                  </div>
+                 {step.cognitiveAlert && (
+                    <div className="flex-shrink-0 flex items-center gap-1 animate-spawn-in">
+                        <button onClick={onRevise} title="Revise Plan" className="p-1 text-nexus-text-muted hover:text-nexus-primary"><RefreshIcon className="w-4 h-4"/></button>
+                        <button onClick={onAcknowledge} title="Ignore Warning" className="p-1 text-nexus-text-muted hover:text-green-400"><CheckCircleIcon className="w-4 h-4"/></button>
+                    </div>
+                )}
                  <button onClick={() => setIsDetailsOpen(!isDetailsOpen)} className={`transform transition-transform duration-200 ${isDetailsOpen ? 'rotate-90' : 'rotate-0'}`}>
                      <ArrowRightIcon className="w-4 h-4 text-nexus-text-muted" />
                  </button>
@@ -295,7 +308,7 @@ const ExpertBadge: React.FC<{ expert: ExpertPersona }> = ({ expert }) => {
 };
 
 const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMessage }> = memo((props) => {
-    const { message, process, constitutions, onExecutePlan, onUpdatePlanStep, onReorderPlan, onAddPlanStep, onDeletePlanStep, onSavePlanAsToolchain, onArchiveTrace, onExtractBehavior, onRerunTrace, onUpdateWorldModel, onExpandPlan, onOptimizePlan, onRevisePlan, onDiscardPlan } = props;
+    const { message, process, constitutions, onExecutePlan, onUpdatePlanStep, onReorderPlan, onAddPlanStep, onDeletePlanStep, onAcknowledgeAlert, onSavePlanAsToolchain, onArchiveTrace, onExtractBehavior, onRerunTrace, onUpdateWorldModel, onExpandPlan, onOptimizePlan, onRevisePlan, onDiscardPlan } = props;
     const { t } = useTranslation();
     const isPlanEditable = message.state === 'awaiting_execution' && !message.isPlanFinalized;
     const isPlanModifying = process.state === 'Planning' && process.history[process.history.length-1].id === message.id;
@@ -353,7 +366,7 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
                     <div className="w-5 h-5 me-2 relative"><div className="nexus-loader"></div></div>
                     {message.activeExpert ? (
                         <div className="flex items-center gap-2">
-                           <span>Routing to</span> <ExpertBadge expert={message.activeExpert} />
+                           <span>Routing to</span> <ExpertBadge expert={message.activeExpert} /> <span>...</span>
                         </div>
                     ) : (
                         <span>NexusAI is formulating a cognitive plan...</span>
@@ -402,6 +415,11 @@ const ModelMessage: React.FC<CognitiveProcessVisualizerProps & { message: ChatMe
                                       onMove={(dir) => onReorderPlan(message.id, index, dir === 'up' ? index - 1 : index + 1)}
                                       isFirst={index === 0}
                                       isLast={index === message.plan.length - 1}
+                                      onRevise={() => {
+                                        onAcknowledgeAlert(message.id, index, 'revised');
+                                        onRevisePlan(message.id);
+                                      }}
+                                      onAcknowledge={() => onAcknowledgeAlert(message.id, index, 'ignored')}
                                     />
                                 ))}
                             </ul>

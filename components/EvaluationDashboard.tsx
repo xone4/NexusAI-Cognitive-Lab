@@ -8,6 +8,8 @@ import { ChartPieIcon, BrainCircuitIcon, SparklesIcon, RefreshIcon, CheckCircleI
 interface EvaluationDashboardProps {
     evaluationState: EvaluationState;
     onRunEvaluation: () => void;
+    // FIX: Added onRunCuriosityEvaluation prop to match what's passed in App.tsx
+    onRunCuriosityEvaluation: () => void;
 }
 
 const MetricDisplay: React.FC<{
@@ -22,30 +24,40 @@ const MetricDisplay: React.FC<{
     </DashboardCard>
 );
 
-const EvaluationDashboard: React.FC<EvaluationDashboardProps> = ({ evaluationState, onRunEvaluation }) => {
+const EvaluationDashboard: React.FC<EvaluationDashboardProps> = ({ evaluationState, onRunEvaluation, onRunCuriosityEvaluation }) => {
     const { t } = useTranslation();
-    const { isEvaluating, lastRun, metrics } = evaluationState;
+    const { isEvaluating, lastRun, metrics, isEvaluatingCuriosity, curiosityMetrics } = evaluationState;
 
     return (
         <div className="space-y-6 max-w-5xl mx-auto">
             <DashboardCard title={t('evaluation.title')} icon={<ChartPieIcon />}>
                 <div className="text-center p-4">
                     <p className="text-nexus-text-muted mb-6 max-w-3xl mx-auto">{t('evaluation.description')}</p>
-                    <button
-                        onClick={onRunEvaluation}
-                        disabled={isEvaluating}
-                        className="flex items-center justify-center gap-3 mx-auto bg-nexus-primary text-nexus-dark font-bold py-3 px-8 rounded-full border border-nexus-primary/80 hover:bg-nexus-secondary transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-nexus-secondary disabled:bg-nexus-surface/50 disabled:text-nexus-text-muted disabled:cursor-not-allowed"
-                    >
-                        <BrainCircuitIcon className={`w-6 h-6 ${isEvaluating ? 'animate-spin' : ''}`} />
-                        {isEvaluating ? t('evaluation.running') : t('evaluation.run')}
-                    </button>
+                    <div className="flex justify-center gap-4">
+                        <button
+                            onClick={onRunEvaluation}
+                            disabled={isEvaluating || isEvaluatingCuriosity}
+                            className="flex items-center justify-center gap-3 mx-auto bg-nexus-primary text-nexus-dark font-bold py-3 px-8 rounded-full border border-nexus-primary/80 hover:bg-nexus-secondary transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-nexus-secondary disabled:bg-nexus-surface/50 disabled:text-nexus-text-muted disabled:cursor-not-allowed"
+                        >
+                            <BrainCircuitIcon className={`w-6 h-6 ${isEvaluating ? 'animate-spin' : ''}`} />
+                            {isEvaluating ? t('evaluation.running') : t('evaluation.run')}
+                        </button>
+                        <button
+                            onClick={onRunCuriosityEvaluation}
+                            disabled={isEvaluating || isEvaluatingCuriosity}
+                            className="flex items-center justify-center gap-3 mx-auto bg-yellow-500/20 text-yellow-400 font-bold py-3 px-8 rounded-full border border-yellow-500/50 hover:bg-yellow-500/40 hover:text-white transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 disabled:bg-nexus-surface/50 disabled:text-nexus-text-muted disabled:cursor-not-allowed"
+                        >
+                            <LightBulbIcon className={`w-6 h-6 ${isEvaluatingCuriosity ? 'animate-spin' : ''}`} />
+                            {isEvaluatingCuriosity ? t('evaluation.runningCuriosity') : t('evaluation.runCuriosity')}
+                        </button>
+                    </div>
                 </div>
             </DashboardCard>
 
-            {isEvaluating ? (
+            {isEvaluating || isEvaluatingCuriosity ? (
                 <div className="flex flex-col items-center justify-center text-center text-nexus-text-muted p-8">
                     <div className="w-16 h-16 mb-4 relative"><div className="nexus-loader"></div></div>
-                    <p className="font-semibold text-lg animate-pulse">{t('evaluation.running')}</p>
+                    <p className="font-semibold text-lg animate-pulse">{isEvaluating ? t('evaluation.running') : t('evaluation.runningCuriosity')}</p>
                 </div>
             ) : metrics ? (
                 <DashboardCard title={t('evaluation.resultsTitle')} icon={<SparklesIcon />}>
@@ -89,9 +101,22 @@ const EvaluationDashboard: React.FC<EvaluationDashboardProps> = ({ evaluationSta
                     </div>
                 </DashboardCard>
             ) : (
-                 <div className="text-center text-nexus-text-muted py-10">
+                 !curiosityMetrics && <div className="text-center text-nexus-text-muted py-10">
                     <p>{t('evaluation.notRun')}</p>
                 </div>
+            )}
+            
+            {curiosityMetrics && (
+                <DashboardCard title={t('evaluation.curiosityResultsTitle')} icon={<LightBulbIcon />}>
+                    <div className="p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <MetricDisplay icon={<BrainCircuitIcon className="w-12 h-12 text-yellow-400"/>} label={t('evaluation.compositeScore')} value={curiosityMetrics.compositeScore.toFixed(1)} description={t('evaluation.compositeScoreDesc')} />
+                            <MetricDisplay icon={<SparklesIcon className="w-12 h-12 text-pink-400"/>} label={t('evaluation.infoSeeking')} value={`${curiosityMetrics.infoSeeking.toFixed(1)}%`} description={t('evaluation.infoSeekingDesc')} />
+                            <MetricDisplay icon={<SparklesIcon className="w-12 h-12 text-orange-400"/>} label={t('evaluation.thrillSeeking')} value={`${curiosityMetrics.thrillSeeking.toFixed(1)}%`} description={t('evaluation.thrillSeekingDesc')} />
+                            <MetricDisplay icon={<SparklesIcon className="w-12 h-12 text-blue-400"/>} label={t('evaluation.socialCuriosity')} value={curiosityMetrics.socialCuriosity.toFixed(0)} description={t('evaluation.socialCuriosityDesc')} />
+                        </div>
+                    </div>
+                </DashboardCard>
             )}
         </div>
     );

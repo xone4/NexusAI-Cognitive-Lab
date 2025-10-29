@@ -65,7 +65,7 @@ Observe the four pillars directly within the Cognitive Lab:
 -   **Architectural Plasticity**: The AI can dynamically `forge_tool`, `spawn_replica`, and even `forge_constitution` as part of its plan. **Newly forged constitutions require user approval from the Settings view, ensuring the Cognitive Architect maintains ultimate control over the system's core principles.**
 -   **Video Synthesis (Modalities Lab)**: A dedicated interface for generating dynamic video content from textual prompts using Google's Veo model.
 -   **Simulation Lab**: A strategic sandbox where the user can define a scenario, and the AI can **autonomously generate competing strategies**. The simulation can be run in a "Wargaming" mode, treating each strategy as an independent agent and simulating their turn-by-turn interactions. After a simulation, the AI can analyze the results to explain outcomes.
--   **Evaluation Lab**: A dedicated dashboard for objectively measuring the AI's "quality of thought." It tracks key performance indicators like inference accuracy, planning efficiency, and self-correction rates over time.
+-   **Evaluation Lab**: A dedicated dashboard for objectively measuring the AI's "quality of thought." It tracks key performance indicators like inference accuracy and planning efficiency, and now includes a **Curiosity Meter** to benchmark the AI's intrinsic drive for exploration.
 
 ## System Architecture
 
@@ -147,7 +147,7 @@ This three-tiered plan represents a shift from building features to building a s
 
 **New Vision:** To transform NexusAI from a system that mechanically "thinks" and "evolves" into one that possesses an intrinsic drive for exploration and learning. We will engineer "Curiosity" not as a transient state but as a fundamental, measurable, and controllable mechanism that acts as a catalyst for all other system capabilities. This will be achieved in three phases:
 
-1.  **Diagnosis & Measurement:** Building a "Curiosity Meter" within the `SimulationLab` to objectively measure different dimensions of curiosity (information-seeking, thrill-seeking, social).
+1.  **Diagnosis & Measurement:** Building a "Curiosity Meter" within the **Evaluation Lab** to objectively measure different dimensions of curiosity (information-seeking, thrill-seeking, social). **The foundational implementation of this meter is now complete, allowing the system to run simulated behavioral tasks to benchmark its curiosity.**
 2.  **Activation:** Engineering a "Curious Thinking Mode" that the `Cognitive Navigator` can automatically trigger when it detects cognitive stagnation or dead ends, using a "Curious Chain-of-Questioning" (CoQ) technique to break through logical blocks.
 3.  **Evolution:** Integrating the `CuriosityScore` directly into the `CMP` fitness function, making curiosity a desirable trait for the `Evolution Chamber` to select for, ensuring that NexusAI evolves not just to be more successful, but also intrinsically more curious.
 

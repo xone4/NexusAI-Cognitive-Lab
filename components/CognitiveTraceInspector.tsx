@@ -1,10 +1,10 @@
 import React, { useState, Fragment, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Tab } from '@headlessui/react';
-import type { ChatMessage, PlanStep, GeneratedImage } from '../types';
+import type { ChatMessage, PlanStep, GeneratedImage, NavigatorAlert } from '../types';
 import { nexusAIService } from '../services/nexusAIService';
 import AffectiveStateVisualizer from './QualiaVectorVisualizer';
-import { DocumentMagnifyingGlassIcon, CheckCircleIcon, CogIcon, CodeBracketIcon, CubeTransparentIcon, LightBulbIcon, PhotographIcon, SparklesIcon, XCircleIcon, BrainCircuitIcon, ChatBubbleLeftRightIcon, UserIcon, TrajectoryIcon, DocumentTextIcon } from './Icons';
+import { DocumentMagnifyingGlassIcon, CheckCircleIcon, CogIcon, CodeBracketIcon, CubeTransparentIcon, LightBulbIcon, PhotographIcon, SparklesIcon, XCircleIcon, BrainCircuitIcon, ChatBubbleLeftRightIcon, UserIcon, TrajectoryIcon, DocumentTextIcon, RouteIcon } from './Icons';
 import TextActionOverlay from './TextActionOverlay';
 import CognitiveTrajectoryVisualizer from './CognitiveTrajectoryVisualizer';
 
@@ -173,6 +173,14 @@ const CognitiveTraceInspector: React.FC<CognitiveTraceInspectorProps> = ({ trace
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
 
+    const userActionStyles: Record<NavigatorAlert['userAction'], string> = {
+        pending: 'text-gray-400 bg-gray-500/10',
+        revised: 'text-blue-400 bg-blue-500/10',
+        ignored: 'text-green-400 bg-green-500/10',
+        cancelled: 'text-red-400 bg-red-500/10',
+    };
+
+
     return (
         <>
             <div className={`fixed inset-0 bg-nexus-dark/60 backdrop-blur-sm z-50 transition-opacity duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'}`} onClick={handleClose} />
@@ -196,6 +204,9 @@ const CognitiveTraceInspector: React.FC<CognitiveTraceInspectorProps> = ({ trace
                             <Tab className={tabClasses}><CogIcon className="w-5 h-5"/>{t('traceInspector.executionFlow')}</Tab>
                             {trace.cognitiveTrajectory && (
                                 <Tab className={tabClasses}><TrajectoryIcon className="w-5 h-5"/> {t('traceInspector.geometry')}</Tab>
+                            )}
+                            {trace.navigatorAlerts && trace.navigatorAlerts.length > 0 && (
+                                <Tab className={tabClasses}><RouteIcon className="w-5 h-5"/> {t('traceInspector.navigatorLog')}</Tab>
                             )}
                             <Tab className={tabClasses}><BrainCircuitIcon className="w-5 h-5"/>{t('traceInspector.aiReflection')}</Tab>
                             <Tab className={tabClasses}><ChatBubbleLeftRightIcon className="w-5 h-5"/>{t('traceInspector.discussTrace')}</Tab>
@@ -235,6 +246,27 @@ const CognitiveTraceInspector: React.FC<CognitiveTraceInspectorProps> = ({ trace
                                 {trace.cognitiveTrajectory && (
                                     <Tab.Panel className="p-6">
                                         <CognitiveTrajectoryVisualizer trajectory={trace.cognitiveTrajectory} />
+                                    </Tab.Panel>
+                                )}
+                                {trace.navigatorAlerts && trace.navigatorAlerts.length > 0 && (
+                                    <Tab.Panel className="p-6">
+                                         <div className="space-y-4">
+                                            {trace.navigatorAlerts.map((alert, index) => (
+                                                <div key={index} className="bg-nexus-dark/50 p-4 rounded-xl border-l-4 border-yellow-400">
+                                                    <div className="flex justify-between items-start">
+                                                        <div>
+                                                            <h4 className="font-semibold text-yellow-300 uppercase">{alert.reason}</h4>
+                                                            <p className="text-sm text-nexus-text-muted">On step {alert.stepIndex + 1}: "{alert.stepDescription}"</p>
+                                                        </div>
+                                                        <span className={`text-xs font-bold px-2 py-1 rounded-full capitalize ${userActionStyles[alert.userAction]}`}>{alert.userAction}</span>
+                                                    </div>
+                                                    <div className="mt-2 pt-2 border-t border-nexus-surface/50 grid grid-cols-2 gap-2 text-xs font-mono">
+                                                        <p>Velocity: <span className="text-nexus-secondary">{alert.metrics.velocity.toFixed(4)}</span></p>
+                                                        <p>Curvature: <span className="text-nexus-accent">{alert.metrics.curvature.toFixed(4)}</span></p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                         </div>
                                     </Tab.Panel>
                                 )}
                                 <Tab.Panel className="p-6">

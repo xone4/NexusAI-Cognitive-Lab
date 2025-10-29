@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, ActiveView, CognitiveProcess, AppSettings, Toolchain, ChatMessage, PlanStep, CognitiveConstitution, EvolutionState, PlaybookItem, Language, Personality, WorldModelEntity, CognitiveNetworkState, LiveTranscriptionState, SimulationState, EvaluationState, UICommand, AutonomousState } from './types';
+import type { Replica, MentalTool, PerformanceDataPoint, LogEntry, ActiveView, CognitiveProcess, AppSettings, Toolchain, ChatMessage, PlanStep, CognitiveConstitution, EvolutionState, PlaybookItem, Language, Personality, WorldModelEntity, CognitiveNetworkState, LiveTranscriptionState, SimulationState, EvaluationState, UICommand, AutonomousState, NavigatorAlert } from './types';
 import { nexusAIService } from './services/nexusAIService';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -339,7 +339,9 @@ const App: React.FC = () => {
 
   const expandPlan = useCallback((messageId: string) => nexusAIService.expandPlan(messageId), []);
   const optimizePlan = useCallback((messageId: string) => nexusAIService.optimizePlan(messageId), []);
-  const revisePlan = useCallback((messageId: string) => nexusAIService.revisePlan(messageId), []);
+  const revisePlan = useCallback((messageId: string) => {
+    nexusAIService.revisePlan(messageId);
+  }, []);
   const discardPlan = useCallback((messageId: string) => nexusAIService.discardPlan(messageId), []);
 
   const updatePlanStep = useCallback((messageId: string, stepIndex: number, newStep: PlanStep) => {
@@ -358,6 +360,10 @@ const App: React.FC = () => {
       nexusAIService.deletePlanStep(messageId, stepIndex);
   }, []);
   
+  const acknowledgeAlert = useCallback((messageId: string, stepIndex: number, action: NavigatorAlert['userAction']) => {
+    nexusAIService.acknowledgeAlert(messageId, stepIndex, action);
+  }, []);
+
   const handleSavePlanAsToolchain = useCallback((plan: PlanStep[]) => {
       const name = prompt(t('toolchains.promptName'), t('toolchains.promptNameDefault'));
       if (!name) return;
@@ -481,11 +487,11 @@ const App: React.FC = () => {
               onReorderPlan={reorderPlan}
               onAddPlanStep={addPlanStep}
               onDeletePlanStep={deletePlanStep}
+              onAcknowledgeAlert={acknowledgeAlert}
               onSavePlanAsToolchain={handleSavePlanAsToolchain}
               onArchiveTrace={handleArchiveTrace}
               onExtractBehavior={handleExtractBehavior}
               onRerunTrace={handleRerunTrace}
-// FIX: The function was being passed as `onUpdateWorldModel` but the handler was named `handleUpdateWorldModelFromTrace`. This corrects the property name to match the handler.
               onUpdateWorldModel={handleUpdateWorldModelFromTrace}
               onExpandPlan={expandPlan}
               onOptimizePlan={optimizePlan}
@@ -627,6 +633,7 @@ const App: React.FC = () => {
         return evaluationState && <EvaluationDashboard
                   evaluationState={evaluationState}
                   onRunEvaluation={nexusAIService.runEvaluation}
+                  onRunCuriosityEvaluation={nexusAIService.runCuriosityEvaluation}
                 />;
       case 'dashboard':
       default:
