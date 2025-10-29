@@ -150,11 +150,12 @@ The NexusAI project currently comprises a set of highly advanced vertical capabi
         *   **User Feedback System (💡 Planned):** Following that, a simple automated feedback system will be developed where user ratings of responses are stored and used for continuous performance improvement.
     *   **Benefit:** Transition from theoretical "thought quality" assessment to quantifiable, performance-based metrics, and establish the crucial measurement foundation for engineering curiosity.
 
-*   **3. Improve UI/UX & Explainability (💡 Planned):**
+*   **3. Improve UI/UX & Explainability (🚧 In Progress):**
     *   **Problem:** The current UI is functional but can be complex. Agent decisions are not always transparent.
-    *   **Solution:**
-        *   Enhance `CognitiveProcessVisualizer.tsx` to show not just the steps, but *why* each step was chosen (e.g., "This expert was selected due to category match").
-        *   Add explainability features, initially simulated, like SHAP or LIME techniques, to explain agent decisions on demand.
+    *   **Solution & Progress:**
+        *   **(✅ Implemented):** The planning schema has been updated to include a `rationale` for each step. The core system prompt now instructs the AI to explain *why* it chose a specific tool for each task.
+        *   **(✅ Implemented):** The `CognitiveProcessVisualizer.tsx` component has been updated to display this rationale, making the AI's decision-making process more transparent.
+        *   **(💡 Planned):** Add more advanced explainability features, like SHAP or LIME techniques, to explain agent decisions on demand.
     *   **Benefit:** Increased user trust and understanding of the AI's "thinking" process.
 
 ---

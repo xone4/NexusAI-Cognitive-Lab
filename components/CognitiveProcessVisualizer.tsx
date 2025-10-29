@@ -271,9 +271,15 @@ const PlanStepView: React.FC<{ step: PlanStep, isCurrent: boolean, isEditable: b
                         </div>
                     ) : (
                         <div className="flex items-start justify-between">
-                            <div className="flex-grow">
-                              {renderResult()}
-                              {step.childProcess && <SubProcessVisualizer process={step.childProcess} />}
+                            <div className="flex-grow space-y-2">
+                                {step.rationale && (
+                                    <p className="text-xs text-amber-300/90 italic flex items-start gap-2 bg-nexus-dark/30 p-2 rounded-lg">
+                                        <LightBulbIcon className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                                        <span>{step.rationale}</span>
+                                    </p>
+                                )}
+                                {renderResult()}
+                                {step.childProcess && <SubProcessVisualizer process={step.childProcess} />}
                             </div>
                             {isEditable && (
                                 <div className="flex-shrink-0 flex items-center gap-1">

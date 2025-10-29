@@ -173,6 +173,7 @@ export interface PlanStep {
     personalityOverride?: Partial<Personality>;
     childProcess?: CognitiveProcess; // For recursive delegation state management
     cognitiveAlert?: 'stagnation' | 'confusion';
+    rationale?: string;
 }
 
 // --- Affective Core Types ---
