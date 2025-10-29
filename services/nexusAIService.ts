@@ -2925,25 +2925,43 @@ const service = {
         evaluationState.isEvaluating = true;
         notifyEvaluation();
         log('SYSTEM', 'Starting system-wide cognitive evaluation...');
-
+    
         // Simulate a multi-step evaluation process
-        await new Promise(res => setTimeout(res, 2000));
+        await new Promise(res => setTimeout(res, 1500));
         log('AI', 'Evaluating inference accuracy on benchmark dataset...');
-        await new Promise(res => setTimeout(res, 3000));
+        await new Promise(res => setTimeout(res, 2000));
         log('AI', 'Assessing planning quality and self-correction rates from recent traces...');
-        await new Promise(res => setTimeout(res, 3000));
+        await new Promise(res => setTimeout(res, 2000));
         log('AI', 'Calculating tool innovation score based on forged tools and playbook growth...');
-
+    
+        // --- Calculate Tool Innovation Score ---
+        const allUsedTools = new Set<string>();
+        let forgeToolCount = 0;
+        archivedTracesState.forEach(trace => {
+            trace.plan?.forEach(step => {
+                allUsedTools.add(step.tool);
+                if (step.tool === 'forge_tool' && step.status === 'complete') {
+                    forgeToolCount++;
+                }
+            });
+        });
+    
+        const uniqueToolsUsed = allUsedTools.size;
+        const totalAvailableTools = toolsState.length;
+        const diversityScore = totalAvailableTools > 0 ? (uniqueToolsUsed / totalAvailableTools) * 70 : 0;
+        const forgingScore = forgeToolCount * 10;
+        const toolInnovationScore = Math.min(100, diversityScore + forgingScore);
+        // --- End Calculation ---
+    
         const metrics: EvaluationMetrics = {
             inferenceAccuracy: 92.5 + Math.random() * 5,
             flowEfficiency: 5.2 + Math.random() * 2,
             selfCorrectionRate: 15.0 + Math.random() * 10,
             planningQuality: 88.0 + Math.random() * 10,
-            toolInnovationScore: 45.0 + Math.random() * 20,
-            // FIX: Added missing 'confidenceScore' property to conform to the EvaluationMetrics type.
+            toolInnovationScore: toolInnovationScore,
             confidenceScore: 85.0 + Math.random() * 15,
         };
-        // FIX: Preserved existing state properties (like curiosity metrics) when updating the evaluation state.
+    
         evaluationState = {
             ...evaluationState,
             isEvaluating: false,

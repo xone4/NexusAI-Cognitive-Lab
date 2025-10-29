@@ -48,7 +48,7 @@ const EvaluationDashboard: React.FC<EvaluationDashboardProps> = ({ evaluationSta
                             className="flex items-center justify-center gap-3 mx-auto bg-yellow-500/20 text-yellow-400 font-bold py-3 px-8 rounded-full border border-yellow-500/50 hover:bg-yellow-500/40 hover:text-white transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-yellow-400 disabled:bg-nexus-surface/50 disabled:text-nexus-text-muted disabled:cursor-not-allowed"
                         >
                             <LightBulbIcon className={`w-6 h-6 ${isEvaluatingCuriosity ? 'animate-spin' : ''}`} />
-                            {isEvaluatingCuriosity ? t('evaluation.runningCuriosity') : t('evaluation.runCuriosity')}
+                            {isEvaluatingCuriosity ? t('evaluation.runningBenchmark') : t('evaluation.runBenchmark')}
                         </button>
                     </div>
                 </div>
@@ -57,7 +57,7 @@ const EvaluationDashboard: React.FC<EvaluationDashboardProps> = ({ evaluationSta
             {isEvaluating || isEvaluatingCuriosity ? (
                 <div className="flex flex-col items-center justify-center text-center text-nexus-text-muted p-8">
                     <div className="w-16 h-16 mb-4 relative"><div className="nexus-loader"></div></div>
-                    <p className="font-semibold text-lg animate-pulse">{isEvaluating ? t('evaluation.running') : t('evaluation.runningCuriosity')}</p>
+                    <p className="font-semibold text-lg animate-pulse">{isEvaluating ? t('evaluation.running') : t('evaluation.runningBenchmark')}</p>
                 </div>
             ) : metrics ? (
                 <DashboardCard title={t('evaluation.resultsTitle')} icon={<SparklesIcon />}>
@@ -107,13 +107,13 @@ const EvaluationDashboard: React.FC<EvaluationDashboardProps> = ({ evaluationSta
             )}
             
             {curiosityMetrics && (
-                <DashboardCard title={t('evaluation.curiosityResultsTitle')} icon={<LightBulbIcon />}>
+                <DashboardCard title={t('evaluation.curiosityMeter')} icon={<LightBulbIcon />}>
                     <div className="p-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            <MetricDisplay icon={<BrainCircuitIcon className="w-12 h-12 text-yellow-400"/>} label={t('evaluation.compositeScore')} value={curiosityMetrics.compositeScore.toFixed(1)} description={t('evaluation.compositeScoreDesc')} />
-                            <MetricDisplay icon={<SparklesIcon className="w-12 h-12 text-pink-400"/>} label={t('evaluation.infoSeeking')} value={`${curiosityMetrics.infoSeeking.toFixed(1)}%`} description={t('evaluation.infoSeekingDesc')} />
-                            <MetricDisplay icon={<SparklesIcon className="w-12 h-12 text-orange-400"/>} label={t('evaluation.thrillSeeking')} value={`${curiosityMetrics.thrillSeeking.toFixed(1)}%`} description={t('evaluation.thrillSeekingDesc')} />
-                            <MetricDisplay icon={<SparklesIcon className="w-12 h-12 text-blue-400"/>} label={t('evaluation.socialCuriosity')} value={curiosityMetrics.socialCuriosity.toFixed(0)} description={t('evaluation.socialCuriosityDesc')} />
+                            <MetricDisplay icon={<BrainCircuitIcon className="w-12 h-12 text-yellow-400"/>} label={t('evaluation.compositeScore')} value={curiosityMetrics.compositeScore.toFixed(1)} description={t('evaluation.curiosityDesc')} />
+                            <MetricDisplay icon={<SparklesIcon className="w-12 h-12 text-pink-400"/>} label={t('evaluation.infoSeeking')} value={`${curiosityMetrics.infoSeeking.toFixed(1)}%`} description={t('evaluation.curiosityDesc')} />
+                            <MetricDisplay icon={<SparklesIcon className="w-12 h-12 text-orange-400"/>} label={t('evaluation.thrillSeeking')} value={`${curiosityMetrics.thrillSeeking.toFixed(1)}%`} description={t('evaluation.curiosityDesc')} />
+                            <MetricDisplay icon={<SparklesIcon className="w-12 h-12 text-blue-400"/>} label={t('evaluation.socialCuriosity')} value={String(curiosityMetrics.socialCuriosity)} description={t('evaluation.curiosityDesc')} />
                         </div>
                     </div>
                 </DashboardCard>

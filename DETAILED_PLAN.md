@@ -139,14 +139,14 @@ The NexusAI project currently comprises a set of highly advanced vertical capabi
     *   **Benefit:** Dramatically faster and more accurate semantic search, which is fundamental for an active and efficient memory.
 
 *   **2. Enhance Evaluation Metrics & Implement Curiosity Meter (✅ In Progress):**
-    *   **Problem:** The current `EvaluationDashboard` provides good but simulated metrics. Furthermore, to pursue the V5.0 vision, we need a way to measure the AI's curiosity.
+    *   **Problem:** The current `EvaluationDashboard` provides good but simulated metrics. Furthermore, to pursue the V5.0 vision, we need a way to measure the AI's curiosity and creativity.
     *   **Solution & Progress:**
         *   **Confidence Score (✅ Implemented):** The `EvaluationMetrics` type and `runEvaluation` service have been updated to include a `confidenceScore`, laying the groundwork for more nuanced performance tracking.
         *   **Curiosity Meter (✅ Implemented):** As the first step of the V5.0 vision, the foundational "Curiosity Meter" has been built within the **Evaluation Lab**. This includes:
             *   New `CuriosityMetrics` types in `types.ts`.
             *   A `runCuriosityEvaluation` function in `nexusAIService.ts` that simulates behavioral tasks to produce metrics on information-seeking, thrill-seeking, and social curiosity.
             *   An updated `EvaluationDashboard.tsx` UI to display these new curiosity benchmarks.
-        *   **Innovation Score (💡 Planned):** The next step is to implement an `Innovation Score` that measures the use of new tools or toolchains.
+        *   **Innovation Score (✅ Implemented):** An `Innovation Score` that measures the diversity of tools used and the creation of new ones has been implemented, providing a metric for novel problem-solving. The `EvaluationDashboard` and `nexusAIService` have been updated accordingly.
         *   **User Feedback System (💡 Planned):** Following that, a simple automated feedback system will be developed where user ratings of responses are stored and used for continuous performance improvement.
     *   **Benefit:** Transition from theoretical "thought quality" assessment to quantifiable, performance-based metrics, and establish the crucial measurement foundation for engineering curiosity.
 
@@ -412,7 +412,7 @@ To guide this evolution, we will develop new evaluation tools:
         *   **Metric:** The percentage of times the agent chooses to see the answer. A high percentage indicates high epistemic curiosity.
     *   **"Thrill Seeking" Task:**
         *   **Implementation:** Build the "Underwater Game." The agent is given two choices: Window A, which reveals a known type of fish (low risk), and Window B, which reveals random, unexpected fish (high risk).
-        *   **Metric:** The percentage of times the agent chooses Window B. A high percentage indicates a greater appetite for risk and exploration.
+        *   **Metric:** The percentage of times the agent chooses to Window B. A high percentage indicates a greater appetite for risk and exploration.
     *   **"Social Curiosity" Task:**
         *   **Implementation:** Set up a dialogue scenario in the `SimulationLab` where the agent interacts with a "stranger" (simulated by another LLM like GPT-4).
         *   **Metric:** The number of open-ended questions the agent asks about the "other person" during the conversation.
